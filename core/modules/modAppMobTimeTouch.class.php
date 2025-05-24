@@ -41,6 +41,10 @@ class modAppMobTimeTouch extends DolibarrModules
 	public function __construct($db)
 	{
 		global $langs, $conf;
+		
+		// DEBUG LOG
+		dol_syslog("AppMobTimeTouch: Constructor called", LOG_DEBUG);
+		
 		$this->db = $db;
 
 		// Id for module (must be unique).
@@ -69,7 +73,7 @@ class modAppMobTimeTouch extends DolibarrModules
 		$this->editor_url = '';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '1.1';
+		$this->version = '1.0';
 
 		// Key used in llx_const table to save module status enabled/disabled
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
@@ -423,6 +427,9 @@ class modAppMobTimeTouch extends DolibarrModules
 		$this->export_sql_end[$r] .= ' AND t.entity IN ('.getEntity('user').')';
 
 		// No imports for security reasons - time tracking should be done through the interface
+		
+		// DEBUG LOG
+		dol_syslog("AppMobTimeTouch: Constructor finished", LOG_DEBUG);
 	}
 
 	/**
@@ -437,33 +444,67 @@ class modAppMobTimeTouch extends DolibarrModules
 	{
 		global $conf, $langs;
 
+		// DEBUG LOG
+		dol_syslog("AppMobTimeTouch: init() called with options: ".$options, LOG_DEBUG);
+
 		// Load SQL tables for time tracking
+		dol_syslog("AppMobTimeTouch: Starting _load_tables", LOG_DEBUG);
 		$result = $this->_load_tables('/appmobtimetouch/sql/');
+		dol_syslog("AppMobTimeTouch: _load_tables result: ".$result, LOG_DEBUG);
+		
 		if ($result < 0) {
+			dol_syslog("AppMobTimeTouch: Error in _load_tables: ".$result, LOG_ERR);
 			return -1;
 		}
 
 		// Insert default time clock types
-		$sql = array();
-		$sql[] = "INSERT IGNORE INTO ".MAIN_DB_PREFIX."timeclock_types (code, label, color, position, active, module) VALUES";
-		$sql[] = "('OFFICE', 'Office Work', '#4CAF50', 1, 1, 'appmobtimetouch'),";
-		$sql[] = "('REMOTE', 'Remote Work', '#2196F3', 2, 1, 'appmobtimetouch'),";
-		$sql[] = "('MISSION', 'External Mission', '#FF9800', 3, 1, 'appmobtimetouch'),";
-		$sql[] = "('TRAINING', 'Training', '#9C27B0', 4, 1, 'appmobtimetouch')";
+		dol_syslog("AppMobTimeTouch: Starting default data insertion", LOG_DEBUG);
+		$sql_array = array();
+		
+		// Check if timeclock_types table exists before inserting
+		$sql_check = "SHOW TABLES LIKE '".MAIN_DB_PREFIX."timeclock_types'";
+		$resql_check = $this->db->query($sql_check);
+		
+		if ($resql_check && $this->db->num_rows($resql_check) > 0) {
+			dol_syslog("AppMobTimeTouch: timeclock_types table exists, inserting default data", LOG_DEBUG);
+			
+			$sql_array[] = "INSERT IGNORE INTO ".MAIN_DB_PREFIX."timeclock_types (entity, datec, code, label, color, position, active, module) VALUES";
+			$sql_array[] = "(1, NOW(), 'OFFICE', 'Office Work', '#4CAF50', 1, 1, 'appmobtimetouch'),";
+			$sql_array[] = "(1, NOW(), 'REMOTE', 'Remote Work', '#2196F3', 2, 1, 'appmobtimetouch'),";
+			$sql_array[] = "(1, NOW(), 'MISSION', 'External Mission', '#FF9800', 3, 1, 'appmobtimetouch'),";
+			$sql_array[] = "(1, NOW(), 'TRAINING', 'Training', '#9C27B0', 4, 1, 'appmobtimetouch')";
 
 		// Execute SQL to insert default data
-		foreach ($sql as $query) {
-			$resql = $this->db->query($query);
+			$full_sql = implode(' ', $sql_array);
+			dol_syslog("AppMobTimeTouch: Executing SQL: ".$full_sql, LOG_DEBUG);
+			
+			$resql = $this->db->query($full_sql);
 			if (!$resql) {
+				dol_syslog("AppMobTimeTouch: Error inserting default data: ".$this->db->lasterror(), LOG_ERR);
 				dol_print_error($this->db);
 				return -1;
+			} else {
+				dol_syslog("AppMobTimeTouch: Default data inserted successfully", LOG_DEBUG);
 			}
+		} else {
+			dol_syslog("AppMobTimeTouch: timeclock_types table does not exist yet", LOG_WARNING);
 		}
 
 		// Permissions
+		dol_syslog("AppMobTimeTouch: Calling remove() before _init()", LOG_DEBUG);
 		$this->remove($options);
 
-		return $this->_init(array(), $options);
+		dol_syslog("AppMobTimeTouch: Calling _init()", LOG_DEBUG);
+		$init_result = $this->_init(array(), $options);
+		dol_syslog("AppMobTimeTouch: _init() result: ".$init_result, LOG_DEBUG);
+
+		if ($init_result < 0) {
+			dol_syslog("AppMobTimeTouch: Error in _init(): ".$init_result, LOG_ERR);
+			return -1;
+		}
+
+		dol_syslog("AppMobTimeTouch: init() completed successfully", LOG_DEBUG);
+		return $init_result;
 	}
 
 	/**
@@ -476,7 +517,13 @@ class modAppMobTimeTouch extends DolibarrModules
 	 */
 	public function remove($options = '')
 	{
+		// DEBUG LOG
+		dol_syslog("AppMobTimeTouch: remove() called with options: ".$options, LOG_DEBUG);
+		
 		$sql = array();
-		return $this->_remove($sql, $options);
+		$result = $this->_remove($sql, $options);
+		
+		dol_syslog("AppMobTimeTouch: remove() result: ".$result, LOG_DEBUG);
+		return $result;
 	}
 }
