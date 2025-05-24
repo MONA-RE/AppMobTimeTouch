@@ -54,10 +54,11 @@ Types de pointage : Configuration des types via dictionnaire Dolibarr
 
 
 
-je veux que tu créer les classes PHP Dolibarr nécessaires pour le module de pointage. Ces classes doivent respecter les conventions Dolibarr et hériter des classes de base appropriées.
+je veux que tu créer les classes PHP Dolibarr nécessaires pour le module de pointage. 
+Ces classes doivent respecter les conventions Dolibarr et hériter des classes de base appropriées.
 Classes PHP à créer :
 [x] 1. TimeclockRecord.class.php - Classe principale pour les pointages
-2. TimeclockType.class.php - Gestion des types de pointage
+[x] 2. TimeclockType.class.php - Gestion des types de pointage
 3. TimeclockBreak.class.php - Gestion des pauses
 4. TimeclockConfig.class.php - Configuration du module
 5. WeeklySummary.class.php - Résumés hebdomadaires
