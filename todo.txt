@@ -1,0 +1,51 @@
+Principales modifications apportées :
+1. Métadonnées du module
+
+Description : Changée pour "Mobile time tracking and employee presence management"
+Famille : Passée de "other" à "hr" (Ressources Humaines)
+Picto : Changé pour "clock" (horloge)
+Position : 85 dans la famille HR
+
+2. Dépendances
+
+Ajout : modUser comme dépendance obligatoire
+Module parts : Activation des triggers et models
+
+3. Constantes de configuration
+
+APPMOBTIMETOUCH_AUTO_BREAK_MINUTES : Durée pause automatique
+APPMOBTIMETOUCH_MAX_HOURS_DAY : Heures max par jour
+APPMOBTIMETOUCH_REQUIRE_LOCATION : Géolocalisation obligatoire
+APPMOBTIMETOUCH_ALLOW_MANUAL_EDIT : Modification manuelle autorisée
+APPMOBTIMETOUCH_VALIDATION_REQUIRED : Validation manager requise
+
+4. Permissions détaillées
+
+read : Lire ses propres pointages
+write : Créer/modifier ses pointages
+delete : Supprimer ses pointages
+readall : Lire tous les pointages (managers)
+validate : Valider les pointages
+export : Exporter les rapports
+config : Configurer le module
+
+5. Structure de menus
+
+Menu principal : TimeTracking
+Sous-menus utilisateur : Clock In/Out, Mes enregistrements
+Sous-menus manager : Gestion, Validation, Rapports
+
+6. Hooks et intégrations
+
+Onglet utilisateur : Ajout d'un onglet time tracking sur la fiche utilisateur
+Hooks : usercard, globalcard, timeclockcard
+Widgets : Statut actuel et résumé hebdomadaire
+
+7. Tâches automatisées (Cron)
+
+Fermeture auto : Fermeture des pointages ouverts la nuit
+Résumés hebdo : Génération automatique des résumés
+
+8. Dictionnaires
+
+Types de pointage : Configuration des types via dictionnaire Dolibarr

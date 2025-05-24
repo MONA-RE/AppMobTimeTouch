@@ -44,7 +44,7 @@ class modAppMobTimeTouch extends DolibarrModules
 		$this->db = $db;
 
 		// Id for module (must be unique).
-		$this->numero = 136005; // TODO Go on page https://wiki.dolibarr.org/index.php/List_of_modules_id to reserve an id number for your module
+		$this->numero = 500000; // TODO Go on page https://wiki.dolibarr.org/index.php/List_of_modules_id to reserve an id number for your module
 
 		// Key text used to identify module (for permissions, menus, etc...)
 		$this->rights_class = 'appmobtimetouch';
@@ -65,8 +65,8 @@ class modAppMobTimeTouch extends DolibarrModules
 		$this->descriptionlong = "Complete mobile solution for employee time tracking, presence management, and work hours reporting. Allows employees to clock in/out with mobile interface and provides management tools for time validation and reporting.";
 
 		// Author
-		$this->editor_name = 'MONA';
-		$this->editor_url = '';
+		$this->editor_name = 'Your Company';
+		$this->editor_url = 'https://www.yourcompany.com';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
 		$this->version = '1.0';
