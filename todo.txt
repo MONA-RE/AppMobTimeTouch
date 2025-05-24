@@ -61,5 +61,5 @@ Classes PHP à créer :
 [x] 2. TimeclockType.class.php - Gestion des types de pointage
 [x] 3. TimeclockBreak.class.php - Gestion des pauses
 [x] 4. TimeclockConfig.class.php - Configuration du module
-5. WeeklySummary.class.php - Résumés hebdomadaires
+[x] 5. WeeklySummary.class.php - Résumés hebdomadaires
 6. ActionsAppMobTimeTouch.class.php - Hooks et actions
