@@ -97,7 +97,7 @@ $version = $moduleInstance->version;
     <!-- CSS files with version parameter -->
     <link rel="stylesheet" href="css/onsenui.min.css?v=<?php echo $version;?>">
     <link rel="stylesheet" href="css/onsen-css-components.min.css?v=<?php echo $version;?>">
-    <link rel="stylesheet" href="css/font_awesome/css/font-awesome.min.css?v=<?php echo $version;?>">
+    <link rel="stylesheet" href="css/font_awesome/css/fontawesome.min.css?v=<?php echo $version;?>">
     <link rel="stylesheet" href="css/index.css?v=<?php echo $version;?>">
     
     <!-- Add manifest link -->
