@@ -34,6 +34,7 @@ if (!$res) {
 	die("Include of main fails");
 }
 
+// Vérifier si la fonction isModEnabled existe (compatibilité)
 if (!function_exists('isModEnabled')) {
 	function isModEnabled($module)
 	{
@@ -42,15 +43,18 @@ if (!function_exists('isModEnabled')) {
 	}
 }
 
+// Load required libraries
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/date.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 
+// Load module specific libraries
 dol_include_once('/appmobtimetouch/lib/appmobtimetouch.lib.php');
-dol_include_once('/appmobtimetouch/class/timeclockrecord.class.php');
-dol_include_once('/appmobtimetouch/class/timeclocktype.class.php');
-dol_include_once('/appmobtimetouch/class/weeklysummary.class.php');
+dol_include_once('/appmobtimetouch/class/timeclock_record_class.php');
+dol_include_once('/appmobtimetouch/class/timeclocktype_class.php');
+dol_include_once('/appmobtimetouch/class/weekly_summary_class.php');
 
+// Load translations
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch", "users", "companies"));
 
 // Get parameters
@@ -59,6 +63,16 @@ $targetId = "feedMyTimeclock";
 
 // Set default values if not provided
 if (empty($view)) $view = 1;
+
+// Security check - vérifier que le module est activé
+if (!isModEnabled('appmobtimetouch')) {
+    accessforbidden('Module not enabled');
+}
+
+// Security check - vérifier les droits
+if (!$user->rights->appmobtimetouch->timeclock->read) {
+    accessforbidden();
+}
 
 // Initialize time tracking objects
 $timeclockrecord = new TimeclockRecord($db);
@@ -124,6 +138,18 @@ $default_type_id = TimeclockType::getDefaultType($db);
 
 // Prepare data for template
 $num_records = count($recent_records);
+
+// Fonction helper pour convertir les secondes en format lisible
+if (!function_exists('convertSecondsToReadableTime')) {
+    function convertSecondsToReadableTime($seconds) {
+        if ($seconds <= 0) return '0h00';
+        
+        $hours = floor($seconds / 3600);
+        $minutes = floor(($seconds % 3600) / 60);
+        
+        return sprintf('%dh%02d', $hours, $minutes);
+    }
+}
 
 // Include template
 include "tpl/home.tpl";

@@ -1,529 +1,318 @@
-<?php
-/* Copyright (C) 2004-2018  Laurent Destailleur     <eldy@users.sourceforge.net>
- * Copyright (C) 2018-2019  Nicolas ZABOURI         <info@inovea-conseil.com>
- * Copyright (C) 2019-2020  Frédéric France         <frederic.france@netlogic.fr>
- * Copyright (C) 2025 SuperAdmin
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
+<ons-page id="ONSHome">
+  <?php include "tpl/parts/topbar-home.tpl"; ?>
+  
+  <ons-pull-hook id="pull-hook">
+    <?php echo $langs->trans("PullToRefresh"); ?>
+  </ons-pull-hook>
+  
+  <!-- Status Card -->
+  <div style="padding: 15px;">
+    <ons-card>
+      <div class="title" style="text-align: center; padding: 10px 0;">
+        <h2><?php echo $langs->trans("TimeclockStatus"); ?></h2>
+      </div>
+      
+      <div class="content" style="text-align: center; padding: 20px;">
+        <?php if ($is_clocked_in): ?>
+          <!-- User is clocked in -->
+          <div class="timeclock-status-active">
+            <ons-icon icon="md-time" size="48px" style="color: #4CAF50;"></ons-icon>
+            <h3 style="color: #4CAF50; margin: 10px 0;">
+              <?php echo $langs->trans("ClockedIn"); ?>
+            </h3>
+            <p style="margin: 5px 0;">
+              <strong><?php echo $langs->trans("Since"); ?>:</strong> 
+              <?php echo dol_print_date($clock_in_time, 'dayhour'); ?>
+            </p>
+            <p style="margin: 5px 0;">
+              <strong><?php echo $langs->trans("Duration"); ?>:</strong>
+              <span id="current-duration"><?php echo convertSecondsToReadableTime($current_duration); ?></span>
+            </p>
+            <?php if ($active_record && !empty($active_record->fk_timeclock_type)): ?>
+              <?php
+              $type = new TimeclockType($db);
+              $type->fetch($active_record->fk_timeclock_type);
+              ?>
+              <p style="margin: 5px 0;">
+                <strong><?php echo $langs->trans("Type"); ?>:</strong>
+                <span style="color: <?php echo $type->color; ?>; font-weight: bold;">
+                  <?php echo $type->label; ?>
+                </span>
+              </p>
+            <?php endif; ?>
+          </div>
+          
+          <!-- Clock Out Button -->
+          <div style="margin-top: 20px;">
+            <ons-button modifier="large" onclick="clockOut()" style="background-color: #f44336; color: white; width: 100%; border-radius: 25px;">
+              <ons-icon icon="md-stop" style="margin-right: 10px;"></ons-icon>
+              <?php echo $langs->trans("ClockOut"); ?>
+            </ons-button>
+          </div>
+          
+        <?php else: ?>
+          <!-- User is not clocked in -->
+          <div class="timeclock-status-inactive">
+            <ons-icon icon="md-pause-circle-outline" size="48px" style="color: #999;"></ons-icon>
+            <h3 style="color: #999; margin: 10px 0;">
+              <?php echo $langs->trans("NotClockedIn"); ?>
+            </h3>
+            <p style="color: #666; margin: 10px 0;">
+              <?php echo $langs->trans("ReadyToStart"); ?>
+            </p>
+          </div>
+          
+          <!-- Clock In Button -->
+          <div style="margin-top: 20px;">
+            <ons-button modifier="large" onclick="clockIn()" style="background-color: #4CAF50; color: white; width: 100%; border-radius: 25px;">
+              <ons-icon icon="md-play-arrow" style="margin-right: 10px;"></ons-icon>
+              <?php echo $langs->trans("ClockIn"); ?>
+            </ons-button>
+          </div>
+          
+        <?php endif; ?>
+      </div>
+    </ons-card>
+  </div>
+  
+  <!-- Today's Summary -->
+  <div style="padding: 0 15px 15px 15px;">
+    <ons-card>
+      <div class="title" style="padding: 10px;">
+        <h3><?php echo $langs->trans("TodaySummary"); ?></h3>
+      </div>
+      <div class="content" style="padding: 0 15px 15px 15px;">
+        <ons-row>
+          <ons-col width="50%">
+            <div style="text-align: center; padding: 10px;">
+              <ons-icon icon="md-access-time" style="color: #2196F3;"></ons-icon>
+              <p style="margin: 5px 0; font-size: 14px; color: #666;">
+                <?php echo $langs->trans("WorkedHours"); ?>
+              </p>
+              <p style="margin: 0; font-size: 18px; font-weight: bold; color: #2196F3;">
+                <?php echo convertSecondsToReadableTime($today_total_hours * 3600); ?>
+              </p>
+            </div>
+          </ons-col>
+          <ons-col width="50%">
+            <div style="text-align: center; padding: 10px;">
+              <ons-icon icon="md-pause" style="color: #FF9800;"></ons-icon>
+              <p style="margin: 5px 0; font-size: 14px; color: #666;">
+                <?php echo $langs->trans("BreakTime"); ?>
+              </p>
+              <p style="margin: 0; font-size: 18px; font-weight: bold; color: #FF9800;">
+                <?php echo convertSecondsToReadableTime($today_total_breaks * 60); ?>
+              </p>
+            </div>
+          </ons-col>
+        </ons-row>
+      </div>
+    </ons-card>
+  </div>
+  
+  <!-- Weekly Summary -->
+  <?php if ($weekly_summary): ?>
+  <div style="padding: 0 15px 15px 15px;">
+    <ons-card>
+      <div class="title" style="padding: 10px;">
+        <h3><?php echo $langs->trans("WeekSummary"); ?> - <?php echo $langs->trans("Week"); ?> <?php echo $weekly_summary->week_number; ?></h3>
+      </div>
+      <div class="content" style="padding: 0 15px 15px 15px;">
+        <ons-row>
+          <ons-col width="33%">
+            <div style="text-align: center; padding: 10px;">
+              <p style="margin: 5px 0; font-size: 12px; color: #666;">
+                <?php echo $langs->trans("TotalHours"); ?>
+              </p>
+              <p style="margin: 0; font-size: 16px; font-weight: bold;">
+                <?php echo convertSecondsToReadableTime($weekly_summary->total_hours * 3600); ?>
+              </p>
+            </div>
+          </ons-col>
+          <ons-col width="33%">
+            <div style="text-align: center; padding: 10px;">
+              <p style="margin: 5px 0; font-size: 12px; color: #666;">
+                <?php echo $langs->trans("DaysWorked"); ?>
+              </p>
+              <p style="margin: 0; font-size: 16px; font-weight: bold;">
+                <?php echo $weekly_summary->days_worked; ?>
+              </p>
+            </div>
+          </ons-col>
+          <ons-col width="33%">
+            <div style="text-align: center; padding: 10px;">
+              <p style="margin: 5px 0; font-size: 12px; color: #666;">
+                <?php echo $langs->trans("Status"); ?>
+              </p>
+              <div style="margin: 0;">
+                <?php echo $weekly_summary->getLibStatut(3); ?>
+              </div>
+            </div>
+          </ons-col>
+        </ons-row>
+        
+        <?php if ($weekly_summary->overtime_hours > 0): ?>
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 10px; margin-top: 10px;">
+          <p style="margin: 0; color: #856404; font-size: 14px;">
+            <ons-icon icon="md-warning" style="color: #ffc107;"></ons-icon>
+            <strong><?php echo $langs->trans("OvertimeHours"); ?>:</strong>
+            <?php echo convertSecondsToReadableTime($weekly_summary->overtime_hours * 3600); ?>
+          </p>
+        </div>
+        <?php endif; ?>
+      </div>
+    </ons-card>
+  </div>
+  <?php endif; ?>
+  
+  <!-- Recent Records -->
+  <?php if (!empty($recent_records)): ?>
+  <div style="padding: 0 15px 15px 15px;">
+    <ons-card>
+      <div class="title" style="padding: 10px;">
+        <h3><?php echo $langs->trans("RecentRecords"); ?></h3>
+      </div>
+      <ons-list style="margin: 0;">
+        <?php 
+        $count = 0;
+        foreach ($recent_records as $record): 
+          if ($count >= 5) break; // Limit to 5 records
+          $count++;
+          
+          // Get type info
+          $type = new TimeclockType($db);
+          $type->fetch($record->fk_timeclock_type);
+          
+          $record_date = dol_print_date($db->jdate($record->clock_in_time), 'day');
+          $clock_in = dol_print_date($db->jdate($record->clock_in_time), 'hour');
+          $clock_out = !empty($record->clock_out_time) ? dol_print_date($db->jdate($record->clock_out_time), 'hour') : '';
+          $duration = !empty($record->work_duration) ? convertSecondsToReadableTime($record->work_duration * 60) : '';
+        ?>
+        <ons-list-item tappable onclick="viewRecord(<?php echo $record->id; ?>)">
+          <div class="left">
+            <div style="width: 8px; height: 40px; background-color: <?php echo $type->color; ?>; border-radius: 4px;"></div>
+          </div>
+          <div class="center">
+            <div style="font-weight: bold; margin-bottom: 2px;">
+              <?php echo $record_date; ?>
+            </div>
+            <div style="font-size: 14px; color: #666; margin-bottom: 2px;">
+              <?php echo $type->label; ?>
+            </div>
+            <div style="font-size: 12px; color: #999;">
+              <?php echo $clock_in; ?>
+              <?php if ($clock_out): ?>
+                - <?php echo $clock_out; ?>
+              <?php else: ?>
+                - <?php echo $langs->trans("InProgress"); ?>
+              <?php endif; ?>
+            </div>
+          </div>
+          <div class="right">
+            <?php if ($duration): ?>
+              <div style="font-weight: bold; color: #4CAF50;">
+                <?php echo $duration; ?>
+              </div>
+            <?php else: ?>
+              <ons-icon icon="md-more-vert" style="color: #999;"></ons-icon>
+            <?php endif; ?>
+          </div>
+        </ons-list-item>
+        <?php endforeach; ?>
+      </ons-list>
+    </ons-card>
+  </div>
+  <?php endif; ?>
+  
+  <script type="text/javascript">
+    var updateDurationTimer = null;
+    
+    ons.ready(function () {
+      // Initialize pull to refresh
+      var pullHook = document.getElementById('pull-hook');
 
-/**
- * 	\defgroup   appmobtimetouch     Module AppMobTimeTouch
- *  \brief      AppMobTimeTouch module descriptor - Time tracking and presence management.
- *
- *  \file       htdocs/appmobtimetouch/core/modules/modAppMobTimeTouch.class.php
- *  \ingroup    appmobtimetouch
- *  \brief      Description and activation file for module AppMobTimeTouch - Employee time tracking
- */
-include_once DOL_DOCUMENT_ROOT.'/core/modules/DolibarrModules.class.php';
+      pullHook.addEventListener('changestate', function (event) {
+        var message = '';
+        switch (event.state) {
+          case 'initial':
+            message = '<?php echo $langs->trans("PullToRefresh"); ?>';
+            break;
+          case 'preaction':
+            message = '<?php echo $langs->trans("Release"); ?>';
+            break;
+          case 'action':
+            message = '<?php echo $langs->trans("Loading"); ?>...';
+            break;
+        }
+        pullHook.innerHTML = message;
+      });
 
-/**
- *  Description and activation class for module AppMobTimeTouch - Employee Time Tracking
- */
-class modAppMobTimeTouch extends DolibarrModules
-{
-	/**
-	 * Constructor. Define names, constants, directories, boxes, permissions
-	 *
-	 * @param DoliDB $db Database handler
-	 */
-	public function __construct($db)
-	{
-		global $langs, $conf;
-		
-		// DEBUG LOG
-		dol_syslog("AppMobTimeTouch: Constructor called", LOG_DEBUG);
-		
-		$this->db = $db;
-
-		// Id for module (must be unique).
-		$this->numero = 136005; // TODO Go on page https://wiki.dolibarr.org/index.php/List_of_modules_id to reserve an id number for your module
-
-		// Key text used to identify module (for permissions, menus, etc...)
-		$this->rights_class = 'appmobtimetouch';
-
-		// Family can be 'base' (core modules),'crm','financial','hr','projects','products','ecm','technic' (transverse modules),'interface' (link with external tools),'other','...'
-		// Module is HR related for time tracking
-		$this->family = "hr";
-
-		// Module position in the family on 2 digits ('01', '10', '20', ...)
-		$this->module_position = '85';
-
-		// Module label (no space allowed), used if translation string 'ModuleAppMobTimeTouchName' not found
-		$this->name = preg_replace('/^mod/i', '', get_class($this));
-
-		// Module description, used if translation string 'ModuleAppMobTimeTouchDesc' not found
-		$this->description = "Mobile time tracking and employee presence management";
-		// Used only if file README.md and README-LL.md not found.
-		$this->descriptionlong = "Complete mobile solution for employee time tracking, presence management, and work hours reporting. Allows employees to clock in/out with mobile interface and provides management tools for time validation and reporting.";
-
-		// Author
-		$this->editor_name = 'MONA';
-		$this->editor_url = '';
-
-		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '1.0';
-
-		// Key used in llx_const table to save module status enabled/disabled
-		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
-
-		// Name of image file used for this module.
-		$this->picto = 'clock'; // Use clock icon for time tracking
-
-		// Define some features supported by module (triggers, login, substitutions, menus, css, etc...)
-		$this->module_parts = array(
-			// Set this to 1 if module has its own trigger directory (core/triggers)
-			'triggers' => 1,
-			// Set this to 1 if module has its own login method file (core/login)
-			'login' => 0,
-			// Set this to 1 if module has its own substitution function file (core/substitutions)
-			'substitutions' => 0,
-			// Set this to 1 if module has its own menus handler directory (core/menus)
-			'menus' => 0,
-			// Set this to 1 if module overwrite template dir (core/tpl)
-			'tpl' => 0,
-			// Set this to 1 if module has its own barcode directory (core/modules/barcode)
-			'barcode' => 0,
-			// Set this to 1 if module has its own models directory (core/modules/xxx)
-			'models' => 1,
-			// Set this to 1 if module has its own printing directory (core/modules/printing)
-			'printing' => 0,
-			// Set this to 1 if module has its own theme directory (theme)
-			'theme' => 0,
-			// Set this to relative path of css file if module has its own css file
-			'css' => array(
-				'/appmobtimetouch/css/appmobtimetouch.css.php',
-			),
-			// Set this to relative path of js file if module must load a js on all pages
-			'js' => array(
-				'/appmobtimetouch/js/appmobtimetouch.js.php',
-			),
-			// Set here all hooks context managed by module
-			'hooks' => array(
-				'data' => array(
-					'usercard',
-					'globalcard',
-					'leftblock',
-					'rightblock',
-					'timeclockcard',
-				),
-				'entity' => '0',
-			),
-			// Set this to 1 if features of module are opened to external users
-			'moduleforexternal' => 0,
-		);
-
-		// Data directories to create when module is enabled.
-		$this->dirs = array("/appmobtimetouch/temp");
-
-		// Config pages. Put here list of php page, stored into appmobtimetouch/admin directory, to use to setup module.
-		$this->config_page_url = array("setup.php@appmobtimetouch");
-
-		// Dependencies
-		$this->hidden = false;
-		// List of module class names that must be enabled if this module is enabled
-		$this->depends = array('modUser'); // Requires user module
-		$this->requiredby = array();
-		$this->conflictwith = array();
-
-		// The language file dedicated to your module
-		$this->langfiles = array("appmobtimetouch@appmobtimetouch");
-
-		// Prerequisites
-		$this->phpmin = array(5, 6);
-		$this->need_dolibarr_version = array(11, -3);
-
-		// Messages at activation
-		$this->warnings_activation = array();
-		$this->warnings_activation_ext = array();
-
-		// Constants
-		// Default configuration constants for time tracking
-		$this->const = array(
-			1 => array('APPMOBTIMETOUCH_AUTO_BREAK_MINUTES', 'chaine', '60', 'Default break duration in minutes', 1),
-			2 => array('APPMOBTIMETOUCH_MAX_HOURS_DAY', 'chaine', '12', 'Maximum hours per day', 1),
-			3 => array('APPMOBTIMETOUCH_REQUIRE_LOCATION', 'chaine', '0', 'Require GPS location for clock in/out', 1),
-			4 => array('APPMOBTIMETOUCH_ALLOW_MANUAL_EDIT', 'chaine', '1', 'Allow manual time editing', 1),
-			5 => array('APPMOBTIMETOUCH_DEFAULT_TIMECLOCK_TYPE', 'chaine', '1', 'Default time clock type', 1),
-			6 => array('APPMOBTIMETOUCH_VALIDATION_REQUIRED', 'chaine', '1', 'Require manager validation', 1),
-		);
-
-		if (!isset($conf->appmobtimetouch) || !isset($conf->appmobtimetouch->enabled)) {
-			$conf->appmobtimetouch = new stdClass();
-			$conf->appmobtimetouch->enabled = 0;
-		}
-
-		// Array to add new pages in new tabs
-		$this->tabs = array();
-		// Add time tracking tab to user card
-		$this->tabs[] = array('data'=>'user:+timeclock:TimeTracking:appmobtimetouch@appmobtimetouch:$user->rights->appmobtimetouch->read:/appmobtimetouch/timeclock_user.php?id=__ID__');
-
-		// Dictionaries - Time clock types
-		$this->dictionaries = array(
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'tabname'=>array("llx_timeclock_types"),
-			'tablib'=>array("TimeclockTypes"),
-			'tabsql'=>array('SELECT t.rowid, t.code, t.label, t.color, t.active FROM '.MAIN_DB_PREFIX.'timeclock_types as t'),
-			'tabsqlsort'=>array("position ASC, label ASC"),
-			'tabfield'=>array("code,label,color"),
-			'tabfieldvalue'=>array("code,label,color"),
-			'tabfieldinsert'=>array("code,label,color"),
-			'tabrowid'=>array("rowid"),
-			'tabcond'=>array($conf->appmobtimetouch->enabled),
-			'tabhelp'=>array(array('code'=>$langs->trans('TimeclockTypeCodeTooltip'), 'label'=>$langs->trans('TimeclockTypeLabelTooltip'), 'color'=>$langs->trans('TimeclockTypeColorTooltip'))),
-		);
-
-		// Boxes/Widgets for dashboard
-		$this->boxes = array(
-			0 => array(
-				'file' => 'timeclockwidget.php@appmobtimetouch',
-				'note' => 'Current time tracking status widget',
-				'enabledbydefaulton' => 'Home',
-			),
-			1 => array(
-				'file' => 'weeklysummarywidget.php@appmobtimetouch',
-				'note' => 'Weekly time summary widget',
-				'enabledbydefaulton' => 'Home',
-			),
-		);
-
-		// Cronjobs for automated tasks
-		$this->cronjobs = array(
-			0 => array(
-				'label' => 'Auto close open timeclock records',
-				'jobtype' => 'method',
-				'class' => '/appmobtimetouch/class/timeclockrecord.class.php',
-				'objectname' => 'TimeclockRecord',
-				'method' => 'autoCloseOpenRecords',
-				'parameters' => '',
-				'comment' => 'Automatically close timeclock records left open overnight',
-				'frequency' => 1,
-				'unitfrequency' => 86400, // Daily
-				'status' => 1,
-				'test' => '$conf->appmobtimetouch->enabled',
-				'priority' => 50,
-			),
-			1 => array(
-				'label' => 'Generate weekly summaries',
-				'jobtype' => 'method',
-				'class' => '/appmobtimetouch/class/weeklysummary.class.php',
-				'objectname' => 'WeeklySummary',
-				'method' => 'generateWeeklySummaries',
-				'parameters' => '',
-				'comment' => 'Generate weekly time summaries for all users',
-				'frequency' => 1,
-				'unitfrequency' => 604800, // Weekly
-				'status' => 1,
-				'test' => '$conf->appmobtimetouch->enabled',
-				'priority' => 40,
-			),
-		);
-
-		// Permissions provided by this module
-		$this->rights = array();
-		$r = 0;
-
-		// Time tracking permissions
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1);
-		$this->rights[$r][1] = 'Read own time tracking records';
-		$this->rights[$r][4] = 'timeclock';
-		$this->rights[$r][5] = 'read';
-		$r++;
-
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1);
-		$this->rights[$r][1] = 'Create/Update own time tracking records';
-		$this->rights[$r][4] = 'timeclock';
-		$this->rights[$r][5] = 'write';
-		$r++;
-
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1);
-		$this->rights[$r][1] = 'Delete own time tracking records';
-		$this->rights[$r][4] = 'timeclock';
-		$this->rights[$r][5] = 'delete';
-		$r++;
-
-		// Management permissions
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1);
-		$this->rights[$r][1] = 'Read all users time tracking records';
-		$this->rights[$r][4] = 'timeclock';
-		$this->rights[$r][5] = 'readall';
-		$r++;
-
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1);
-		$this->rights[$r][1] = 'Validate time tracking records';
-		$this->rights[$r][4] = 'timeclock';
-		$this->rights[$r][5] = 'validate';
-		$r++;
-
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1);
-		$this->rights[$r][1] = 'Export time tracking reports';
-		$this->rights[$r][4] = 'timeclock';
-		$this->rights[$r][5] = 'export';
-		$r++;
-
-		// Configuration permissions
-		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1);
-		$this->rights[$r][1] = 'Configure time tracking module';
-		$this->rights[$r][4] = 'timeclock';
-		$this->rights[$r][5] = 'config';
-		$r++;
-
-		// Main menu entries
-		$this->menu = array();
-		$r = 0;
-
-		// Top menu for time tracking
-		$this->menu[$r++] = array(
-			'fk_menu'=>'',
-			'type'=>'top',
-			'titre'=>'TimeTracking',
-			'prefix' => img_picto('', $this->picto, 'class="paddingright pictofixedwidth valignmiddle"'),
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'',
-			'url'=>'/appmobtimetouch/index.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000 + $r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->read',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - My Time Tracking
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch',
-			'type'=>'left',
-			'titre'=>'MyTimeTracking',
-			'prefix' => img_picto('', 'clock', 'class="paddingright pictofixedwidth valignmiddle"'),
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'mytimeclock',
-			'url'=>'/appmobtimetouch/timeclock_card.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->read',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - Clock In/Out
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=mytimeclock',
-			'type'=>'left',
-			'titre'=>'ClockInOut',
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'clockinout',
-			'url'=>'/appmobtimetouch/clockinout.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->write',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - My Records
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=mytimeclock',
-			'type'=>'left',
-			'titre'=>'MyRecords',
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'myrecords',
-			'url'=>'/appmobtimetouch/timeclock_list.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->read',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - Management (for managers)
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch',
-			'type'=>'left',
-			'titre'=>'TimeManagement',
-			'prefix' => img_picto('', 'group', 'class="paddingright pictofixedwidth valignmiddle"'),
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'timemanagement',
-			'url'=>'/appmobtimetouch/management.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->readall',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - All Records (for managers)
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=timemanagement',
-			'type'=>'left',
-			'titre'=>'AllRecords',
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'allrecords',
-			'url'=>'/appmobtimetouch/timeclock_list.php?mode=all',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->readall',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - Validation
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=timemanagement',
-			'type'=>'left',
-			'titre'=>'Validation',
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'validation',
-			'url'=>'/appmobtimetouch/validation.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->validate',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - Reports
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=timemanagement',
-			'type'=>'left',
-			'titre'=>'Reports',
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'reports',
-			'url'=>'/appmobtimetouch/reports.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->export',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Exports profiles
-		$r = 1;
-		$this->export_code[$r] = $this->rights_class.'_'.$r;
-		$this->export_label[$r] = 'TimeclockRecords';
-		$this->export_icon[$r] = 'timeclock@appmobtimetouch';
-		$this->export_sql_start[$r] = 'SELECT DISTINCT ';
-		$this->export_sql_end[$r] = ' FROM '.MAIN_DB_PREFIX.'timeclock_records as t';
-		$this->export_sql_end[$r] .= ' LEFT JOIN '.MAIN_DB_PREFIX.'user as u ON u.rowid = t.fk_user';
-		$this->export_sql_end[$r] .= ' LEFT JOIN '.MAIN_DB_PREFIX.'timeclock_types as tt ON tt.rowid = t.fk_timeclock_type';
-		$this->export_sql_end[$r] .= ' WHERE 1 = 1';
-		$this->export_sql_end[$r] .= ' AND t.entity IN ('.getEntity('user').')';
-
-		// No imports for security reasons - time tracking should be done through the interface
-		
-		// DEBUG LOG
-		dol_syslog("AppMobTimeTouch: Constructor finished", LOG_DEBUG);
-	}
-
-	/**
-	 *  Function called when module is enabled.
-	 *  The init function add constants, boxes, permissions and menus (defined in constructor) into Dolibarr database.
-	 *  It also creates data directories and loads SQL tables
-	 *
-	 *  @param      string  $options    Options when enabling module ('', 'noboxes')
-	 *  @return     int             	1 if OK, 0 if KO
-	 */
-	public function init($options = '')
-	{
-		global $conf, $langs;
-
-		// DEBUG LOG
-		dol_syslog("AppMobTimeTouch: init() called with options: ".$options, LOG_DEBUG);
-
-		// Load SQL tables for time tracking
-		dol_syslog("AppMobTimeTouch: Starting _load_tables", LOG_DEBUG);
-		$result = $this->_load_tables('/appmobtimetouch/sql/');
-		dol_syslog("AppMobTimeTouch: _load_tables result: ".$result, LOG_DEBUG);
-		
-		if ($result < 0) {
-			dol_syslog("AppMobTimeTouch: Error in _load_tables: ".$result, LOG_ERR);
-			return -1;
-		}
-
-		// Insert default time clock types
-		dol_syslog("AppMobTimeTouch: Starting default data insertion", LOG_DEBUG);
-		$sql_array = array();
-		
-		// Check if timeclock_types table exists before inserting
-		$sql_check = "SHOW TABLES LIKE '".MAIN_DB_PREFIX."timeclock_types'";
-		$resql_check = $this->db->query($sql_check);
-		
-		if ($resql_check && $this->db->num_rows($resql_check) > 0) {
-			dol_syslog("AppMobTimeTouch: timeclock_types table exists, inserting default data", LOG_DEBUG);
-			
-			$sql_array[] = "INSERT IGNORE INTO ".MAIN_DB_PREFIX."timeclock_types (entity, datec, code, label, color, position, active, module) VALUES";
-			$sql_array[] = "(1, NOW(), 'OFFICE', 'Office Work', '#4CAF50', 1, 1, 'appmobtimetouch'),";
-			$sql_array[] = "(1, NOW(), 'REMOTE', 'Remote Work', '#2196F3', 2, 1, 'appmobtimetouch'),";
-			$sql_array[] = "(1, NOW(), 'MISSION', 'External Mission', '#FF9800', 3, 1, 'appmobtimetouch'),";
-			$sql_array[] = "(1, NOW(), 'TRAINING', 'Training', '#9C27B0', 4, 1, 'appmobtimetouch')";
-
-			// Execute SQL to insert default data
-			$full_sql = implode(' ', $sql_array);
-			dol_syslog("AppMobTimeTouch: Executing SQL: ".$full_sql, LOG_DEBUG);
-			
-			$resql = $this->db->query($full_sql);
-			if (!$resql) {
-				dol_syslog("AppMobTimeTouch: Error inserting default data: ".$this->db->lasterror(), LOG_ERR);
-				dol_print_error($this->db);
-				return -1;
-			} else {
-				dol_syslog("AppMobTimeTouch: Default data inserted successfully", LOG_DEBUG);
-			}
-		} else {
-			dol_syslog("AppMobTimeTouch: timeclock_types table does not exist yet", LOG_WARNING);
-		}
-
-		// Permissions
-		dol_syslog("AppMobTimeTouch: Calling remove() before _init()", LOG_DEBUG);
-		$this->remove($options);
-
-		dol_syslog("AppMobTimeTouch: Calling _init()", LOG_DEBUG);
-		$init_result = $this->_init(array(), $options);
-		dol_syslog("AppMobTimeTouch: _init() result: ".$init_result, LOG_DEBUG);
-
-		if ($init_result < 0) {
-			dol_syslog("AppMobTimeTouch: Error in _init(): ".$init_result, LOG_ERR);
-			return -1;
-		}
-
-		dol_syslog("AppMobTimeTouch: init() completed successfully", LOG_DEBUG);
-		return $init_result;
-	}
-
-	/**
-	 *  Function called when module is disabled.
-	 *  Remove from database constants, boxes and permissions from Dolibarr database.
-	 *  Data directories are not deleted
-	 *
-	 *  @param      string	$options    Options when enabling module ('', 'noboxes')
-	 *  @return     int                 1 if OK, 0 if KO
-	 */
-	public function remove($options = '')
-	{
-		// DEBUG LOG
-		dol_syslog("AppMobTimeTouch: remove() called with options: ".$options, LOG_DEBUG);
-		
-		$sql = array();
-		$result = $this->_remove($sql, $options);
-		
-		dol_syslog("AppMobTimeTouch: remove() result: ".$result, LOG_DEBUG);
-		return $result;
-	}
-}
+      pullHook.onAction = function (done) {
+        // Refresh the page
+        setTimeout(function() {
+          location.reload();
+          done();
+        }, 1000);
+      };
+      
+      <?php if ($is_clocked_in): ?>
+      // Start duration update timer
+      startDurationTimer();
+      <?php endif; ?>
+    });
+    
+    // Function to start updating duration
+    function startDurationTimer() {
+      updateDurationTimer = setInterval(function() {
+        updateCurrentDuration();
+      }, 60000); // Update every minute
+    }
+    
+    // Function to stop duration timer
+    function stopDurationTimer() {
+      if (updateDurationTimer) {
+        clearInterval(updateDurationTimer);
+        updateDurationTimer = null;
+      }
+    }
+    
+    // Function to update current duration display
+    function updateCurrentDuration() {
+      var clockInTime = <?php echo $is_clocked_in ? $clock_in_time : 0; ?>;
+      if (clockInTime > 0) {
+        var now = Math.floor(Date.now() / 1000);
+        var duration = now - clockInTime;
+        var hours = Math.floor(duration / 3600);
+        var minutes = Math.floor((duration % 3600) / 60);
+        
+        var durationText = hours + 'h' + (minutes < 10 ? '0' : '') + minutes;
+        
+        var durationElement = document.getElementById('current-duration');
+        if (durationElement) {
+          durationElement.textContent = durationText;
+        }
+      }
+    }
+    
+    // Clock In function (placeholder)
+    function clockIn() {
+      console.log('Clock In clicked');
+      // TODO: Implement clock in functionality
+      ons.notification.alert('<?php echo $langs->trans("ClockInFunctionality"); ?>');
+    }
+    
+    // Clock Out function (placeholder)
+    function clockOut() {
+      console.log('Clock Out clicked');
+      // TODO: Implement clock out functionality
+      ons.notification.alert('<?php echo $langs->trans("ClockOutFunctionality"); ?>');
+    }
+    
+    // View record function (placeholder)
+    function viewRecord(recordId) {
+      console.log('View record:', recordId);
+      // TODO: Implement view record functionality
+      ons.notification.alert('<?php echo $langs->trans("ViewRecordFunctionality"); ?>: ' + recordId);
+    }
+  </script>
+</ons-page>
