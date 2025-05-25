@@ -2,7 +2,6 @@
 ├── admin
 │   ├── about.php
 │   └── setup.php
-├── AppMobTimeTouch_tree_file.txt
 ├── backport
 │   └── v16
 │       └── core
@@ -22,6 +21,9 @@
 │   ├── actions_appmobtimetouch.php
 │   └── modules
 │       └── modAppMobTimeTouch.class.php
+├── css
+│   └── font_awesome
+│       └── css
 ├── diff.txt
 ├── doc
 │   ├── home-php.md
@@ -32,15 +34,18 @@
 │   └── topbar-tpl.md
 ├── home.php
 ├── img
+│   ├── clock-icon.png
 │   ├── object_appmobtimetouch_over.png
 │   └── object_appmobtimetouch.png
 ├── index.php
+├── js
 ├── langs
 │   └── en_US
 │       └── appmobtimetouch.lang
 ├── lib
 │   └── appmobtimetouch.lib.php
 ├── LICENSE
+├── manifest.json
 ├── modulebuilder.txt
 ├── README.md
 ├── sql
@@ -56,12 +61,13 @@
 │   └── phpunit
 │       └── AppMobTimeTouchFunctionalTest.php
 ├── todo.txt
-└── tpl
-    ├── home.tpl
-    └── parts
-        ├── rightmenu.tpl
-        ├── tabbar.tpl
-        ├── topbar-home.tpl
-        └── topbar.tpl
+├── tpl
+│   ├── home.tpl
+│   └── parts
+│       ├── rightmenu.tpl
+│       ├── tabbar.tpl
+│       ├── topbar-home.tpl
+│       └── topbar.tpl
+└── tree_file_AppMobTimeTouch.txt
 
-19 directories, 45 files
+23 directories, 47 files
