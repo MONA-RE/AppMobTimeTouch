@@ -1197,10 +1197,10 @@ class TimeclockRecord extends CommonObject
         } else {
             if ($withpicto) {
                 require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
-
+        
                 list($class, $module) = explode('@', $this->picto);
                 $upload_dir = $conf->$module->multidir_output[$conf->entity]."/$class/".dol_sanitizeFileName($this->ref);
-                $filearray = dol_dir_list($upload_dir, "files", 0, '', '(\.meta|_preview.*\.png), $conf->global->GED_SORT_ORDER ? $conf->global->GED_SORT_ORDER : 'name', SORT_ASC, 1);
+                $filearray = dol_dir_list($upload_dir, "files", 0, '', '(\.meta|_preview.*\.png)', $conf->global->GED_SORT_ORDER ? $conf->global->GED_SORT_ORDER : 'name', SORT_ASC, 1);
                 if (count($filearray)) {
                     $filename = $filearray[0]['name'];
                     $result .= '<div class="floatleft inline-block valignmiddle divphotoref"><div class="photoref"><img class="photo'.$module.'" alt="No photo" border="0" src="'.DOL_URL_ROOT.'/viewimage.php?modulepart='.$module.'&entity='.$conf->entity.'&file='.urlencode($class.'/'.$this->ref.'/'.$filename).'"></div></div>';
