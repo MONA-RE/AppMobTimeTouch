@@ -1,0 +1,67 @@
+.
+├── admin
+│   ├── about.php
+│   └── setup.php
+├── AppMobTimeTouch_tree_file.txt
+├── backport
+│   └── v16
+│       └── core
+│           └── class
+│               └── html.formsetup.class.php
+├── build
+│   └── makepack-appmobtimetouch.conf
+├── ChangeLog.md
+├── class
+│   ├── timeclock_break_class.php
+│   ├── timeclock_config_class.php
+│   ├── timeclock_record_class.php
+│   ├── timeclocktype_class.php
+│   └── weekly_summary_class.php
+├── COPYING
+├── core
+│   ├── actions_appmobtimetouch.php
+│   └── modules
+│       └── modAppMobTimeTouch.class.php
+├── diff.txt
+├── doc
+│   ├── home-php.md
+│   ├── home-tpl.md
+│   ├── rightmenu_tpl.md
+│   ├── tabbar-tpl.md
+│   ├── top-bar-home-tpl.md
+│   └── topbar-tpl.md
+├── home.php
+├── img
+│   ├── object_appmobtimetouch_over.png
+│   └── object_appmobtimetouch.png
+├── index.php
+├── langs
+│   └── en_US
+│       └── appmobtimetouch.lang
+├── lib
+│   └── appmobtimetouch.lib.php
+├── LICENSE
+├── modulebuilder.txt
+├── README.md
+├── sql
+│   ├── dolibarr_allversions.sql
+│   ├── sql_data_default.sql
+│   ├── sql_timeclock_breaks.sql
+│   ├── sql_timeclock_config.sql
+│   ├── sql_timeclock_keys.sql
+│   ├── sql_timeclock_records.sql
+│   ├── sql_timeclock_types.sql
+│   └── sql_timeclock_weekly_summary.sql
+├── test
+│   └── phpunit
+│       └── AppMobTimeTouchFunctionalTest.php
+├── todo.txt
+└── tpl
+    ├── home.tpl
+    └── parts
+        ├── rightmenu.tpl
+        ├── tabbar.tpl
+        ├── topbar-home.tpl
+        └── topbar.tpl
+
+19 directories, 45 files
