@@ -63,7 +63,7 @@ $action = GETPOST('action', 'aZ09');
 $mainmenu = GETPOST('mainmenu', 'aZ09');
 
 // Security check
-if (!$user->rights->appmobtimetouch->timeclock->readall) {
+if (!$user->rights->appmobtimetouch->timeclock->read) {
     accessforbidden($langs->trans('AppmobtimetouchReadRights'));
 }
 
