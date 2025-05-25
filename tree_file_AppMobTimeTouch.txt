@@ -95,7 +95,6 @@
 ├── index.php
 ├── js
 │   ├── lib
-│   │   └── jquery-3.7.1.min.js
 │   └── onsenui.min.js
 ├── langs
 │   └── en_US
@@ -128,4 +127,4 @@
 │       └── topbar.tpl
 └── tree_file_AppMobTimeTouch.txt
 
-31 directories, 97 files
+31 directories, 96 files
