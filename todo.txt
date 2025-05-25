@@ -63,3 +63,59 @@ Classes PHP à créer :
 [x] 4. TimeclockConfig.class.php - Configuration du module
 [x] 5. WeeklySummary.class.php - Résumés hebdomadaires
 [x] 6. ActionsAppMobTimeTouch.class.php - Hooks et actions
+
+
+
+Cas d'usage pour le Time Tracking
+Pages typiques :
+
+Accueil : Statut actuel, boutons Clock In/Out
+Historique : Liste des enregistrements
+Détails : Vue détaillée d'un enregistrement
+Paramètres : Configuration utilisateur
+
+Composants adaptés :
+
+ons-list : Pour l'historique des temps
+ons-button : Pour Clock In/Out
+ons-card : Pour afficher les résumés
+ons-input : Pour les notes et commentaires
+ons-icon : Pour les indicateurs visuels
+
+
+
+une structure de fichiers minimaliste pour votre application mobile de time tracking en m'inspirant des exemples fournis. Voici ma décomposition en plusieurs étapes :
+Étapes de création :
+
+Adapter l'index.php pour AppMobTimeTouch avec la structure OnsenUI
+Créer le home.php pour récupérer les données de time tracking
+Créer les templates :
+
+home.tpl : Page d'accueil avec statut et boutons Clock In/Out
+topbar-home.tpl : Barre de navigation spécifique à l'accueil
+topbar.tpl : Barre de navigation générique
+tabbar.tpl : Navigation en onglets (optionnel pour commencer)
+rightmenu.tpl : Menu latéral
+
+
+Définir la mise en forme pour correspondre à l'exemple joint
+
+Structure proposée :
+appmobtimetouch/
+├── index.php (point d'entrée OnsenUI)
+├── home.php (contrôleur page d'accueil)
+└── tpl/
+    ├── home.tpl (template accueil)
+    └── parts/
+        ├── topbar-home.tpl
+        ├── topbar.tpl
+        ├── tabbar.tpl
+        └── rightmenu.tpl
+Fonctionnalités pour la page d'accueil :
+
+Statut actuel : Affichage si l'utilisateur est "Clocked In" ou "Not Clocked In"
+Boutons Clock In/Out : Interface utilisateur (sans logique métier pour l'instant)
+Design responsive avec OnsenUI adapté mobile
+Navigation : Menu hamburger et structure de base
+
+Souhaitez-vous que je procède à la création de ces fichiers en suivant cette approche ?
