@@ -11,11 +11,11 @@
 │   └── makepack-appmobtimetouch.conf
 ├── ChangeLog.md
 ├── class
-│   ├── timeclock_break_class.php
-│   ├── timeclock_config_class.php
-│   ├── timeclock_record_class.php
-│   ├── timeclocktype_class.php
-│   └── weekly_summary_class.php
+│   ├── timeclockbreak.class.php
+│   ├── timeclockconfig.class.php
+│   ├── timeclockrecord.class.php
+│   ├── timeclocktype.class.php
+│   └── weeklysummary.class.php
 ├── COPYING
 ├── core
 │   ├── actions_appmobtimetouch.php
@@ -54,6 +54,7 @@
 │   │       ├── fa-solid-900.ttf
 │   │       ├── fa-solid-900.woff
 │   │       └── fa-solid-900.woff2
+│   ├── index.css
 │   ├── ionicons
 │   │   ├── css
 │   │   │   ├── ionicons-core.css
@@ -127,4 +128,4 @@
 │       └── topbar.tpl
 └── tree_file_AppMobTimeTouch.txt
 
-31 directories, 96 files
+31 directories, 97 files

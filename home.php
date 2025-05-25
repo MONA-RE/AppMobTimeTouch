@@ -50,9 +50,9 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 
 // Load module specific libraries
 dol_include_once('/appmobtimetouch/lib/appmobtimetouch.lib.php');
-dol_include_once('/appmobtimetouch/class/timeclock_record_class.php');
-dol_include_once('/appmobtimetouch/class/timeclocktype_class.php');
-dol_include_once('/appmobtimetouch/class/weekly_summary_class.php');
+dol_include_once('/appmobtimetouch/class/timeclockrecord.class.php');
+dol_include_once('/appmobtimetouch/class/timeclocktype.class.php');
+dol_include_once('/appmobtimetouch/class/weekly_summary.class.php');
 
 // Load translations
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch", "users", "companies"));
