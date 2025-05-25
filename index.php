@@ -106,8 +106,6 @@ $version = $moduleInstance->version;
     <!-- JavaScript files with version parameter -->
     <script type="text/javascript" src="js/onsenui.min.js?v=<?php echo $version;?>"></script>
     <script type="text/javascript" src="js/jquery-3.5.1.min.js?v=<?php echo $version;?>"></script>
-    <script type="text/javascript" src="js/jquery.validate.js?v=<?php echo $version;?>"></script>
-    <script type="text/javascript" src="js/jquery.serialize-object.min.js?v=<?php echo $version;?>"></script>
 </head>
 
 <body>
