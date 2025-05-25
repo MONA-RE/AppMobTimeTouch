@@ -52,7 +52,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 dol_include_once('/appmobtimetouch/lib/appmobtimetouch.lib.php');
 dol_include_once('/appmobtimetouch/class/timeclockrecord.class.php');
 dol_include_once('/appmobtimetouch/class/timeclocktype.class.php');
-dol_include_once('/appmobtimetouch/class/weekly_summary.class.php');
+dol_include_once('/appmobtimetouch/class/weeklysummary.class.php');
 
 // Load translations
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch", "users", "companies"));
@@ -109,9 +109,6 @@ foreach ($today_records as $record) {
     }
 }
 
-// Get current week summary
-$current_week = WeeklySummary::getCurrentWeek();
-$weekly_summary = $weeklysummary->getWeeklySummaryByUserAndWeek($user->id, $current_week['year'], $current_week['week_number']);
 
 // Get recent records based on view
 $recent_records = array();
