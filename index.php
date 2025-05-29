@@ -105,7 +105,8 @@ $version = $moduleInstance->version;
 
     <!-- JavaScript files with version parameter -->
     <script type="text/javascript" src="js/onsenui.min.js?v=<?php echo $version;?>"></script>
-    
+    <!-- Include navigation functions -->
+    <script type="text/javascript" src="js/navigation.js?v=<?php echo $version;?>"></script> 
 </head>
 
 <body>
@@ -254,9 +255,7 @@ $version = $moduleInstance->version;
         
 
     
-    <!-- Include navigation functions -->
-    <script type="text/javascript" src="js/navigation.js?v=<?php echo $version;?>"></script> 
-    <script type="text/javascript" src="js/index.min.js?ver=<?php echo time();?>"></script> 
+
 
 </body>
 </html>
