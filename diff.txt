@@ -1,944 +1,391 @@
-/**
- * TimeClock API Integration Module
- * Handles all API calls and real-time updates for the mobile interface
+<?php
+/* Copyright (C) 2025 SuperAdmin
+ * Copyright (C) 2001-2005 Rodolphe Quiedeville <rodolphe@quiedeville.org>
+ * Copyright (C) 2004-2015 Laurent Destailleur  <eldy@users.sourceforge.net>
+ * Copyright (C) 2005-2012 Regis Houssin        <regis.houssin@inodbox.com>
+ * Copyright (C) 2015      Jean-François Ferry	<jfefe@aternatik.fr>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
  */
 
-// Global TimeClock API Manager
-window.TimeclockAPI = (function() {
-    'use strict';
+/**
+ *	\file       appmobtimetouch/index.php
+ *	\ingroup    appmobtimetouch
+ *	\brief      Home page of appmobtimetouch mobile application
+ */
+
+// Load Dolibarr environment
+$res = 0;
+// Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
+if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
+    $res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"]."/main.inc.php";
+}
+// Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
+$tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME'];
+$tmp2 = realpath(__FILE__);
+$i = strlen($tmp) - 1;
+$j = strlen($tmp2) - 1;
+while ($i > 0 && $j > 0 && isset($tmp[$i]) && isset($tmp2[$j]) && $tmp[$i] == $tmp2[$j]) {
+    $i--;
+    $j--;
+}
+if (!$res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1))."/main.inc.php")) {
+    $res = @include substr($tmp, 0, ($i + 1))."/main.inc.php";
+}
+if (!$res && $i > 0 && file_exists(dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php")) {
+    $res = @include dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php";
+}
+// Try main.inc.php using relative path
+if (!$res && file_exists("../main.inc.php")) {
+    $res = @include "../main.inc.php";
+}
+if (!$res && file_exists("../../main.inc.php")) {
+    $res = @include "../../main.inc.php";
+}
+if (!$res && file_exists("../../../main.inc.php")) {
+    $res = @include "../../../main.inc.php";
+}
+if (!$res) {
+    die("Include of main fails");
+}
+
+require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
+dol_include_once('/appmobtimetouch/lib/appmobtimetouch.lib.php');
+dol_include_once('/appmobtimetouch/core/modules/modAppMobTimeTouch.class.php');
+
+// Load translation files required by the page
+$langs->loadLangs(array("appmobtimetouch@appmobtimetouch"));
+
+$action = GETPOST('action', 'aZ09');
+$mainmenu = GETPOST('mainmenu', 'aZ09');
+
+// Vérifier si la fonction isModEnabled existe (compatibilité)
+if (!function_exists('isModEnabled')) {
+    function isModEnabled($module)
+    {
+        global $conf;
+        return !empty($conf->$module->enabled);
+    }
+}
+
+// Security check - Vérifier que le module est activé
+if (!isModEnabled('appmobtimetouch')) {
+    accessforbidden('Module not enabled');
+}
+
+// CORRECTION ÉTAPE 1 : Initialisation correcte des droits utilisateur
+// Vérifier que l'objet user existe et est valide
+if (!isset($user) || !is_object($user) || $user->id <= 0) {
+    accessforbidden('User not authenticated');
+}
+
+// Initialiser la structure des droits si elle n'existe pas
+if (!isset($user->rights)) {
+    $user->rights = new stdClass();
+}
+
+if (!isset($user->rights->appmobtimetouch)) {
+    $user->rights->appmobtimetouch = new stdClass();
+}
+
+if (!isset($user->rights->appmobtimetouch->timeclock)) {
+    $user->rights->appmobtimetouch->timeclock = new stdClass();
     
-    // Configuration
-    const CONFIG = {
-        API_BASE_URL: './api/timeclock.php',
-        REFRESH_INTERVAL: 60000, // 1 minute
-        LOCATION_TIMEOUT: 10000, // 10 seconds
-        RETRY_ATTEMPTS: 3,
-        CACHE_DURATION: 300000, // 5 minutes
-        DEBUG: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    };
+    // Initialiser tous les droits à false par défaut
+    $user->rights->appmobtimetouch->timeclock->read = false;
+    $user->rights->appmobtimetouch->timeclock->write = false;
+    $user->rights->appmobtimetouch->timeclock->delete = false;
+    $user->rights->appmobtimetouch->timeclock->readall = false;
+    $user->rights->appmobtimetouch->timeclock->validate = false;
+    $user->rights->appmobtimetouch->timeclock->export = false;
+    $user->rights->appmobtimetouch->timeclock->config = false;
+}
+
+// Vérifier les droits réels de l'utilisateur depuis la base de données
+if (is_object($user) && $user->id > 0) {
+    // Utiliser la fonction standard de Dolibarr pour vérifier les droits
+    $sql = "SELECT COUNT(*) as nb FROM ".MAIN_DB_PREFIX."user_rights as ur";
+    $sql .= " WHERE ur.fk_user = ".((int) $user->id);
+    $sql .= " AND ur.module = 'appmobtimetouch'";
     
-    // State management
-    let state = {
-        isOnline: navigator.onLine,
-        currentStatus: null,
-        updateTimer: null,
-        apiToken: null,
-        csrfToken: null,
-        requestQueue: [],
-        cache: new Map()
-    };
-    
-    // Utility functions
-    const utils = {
-        log: function(message, data = null) {
-            if (CONFIG.DEBUG) {
-                console.log('[TimeclockAPI]', message, data || '');
-            }
-        },
-        
-        error: function(message, error = null) {
-            console.error('[TimeclockAPI]', message, error || '');
-        },
-        
-        formatDuration: function(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            return hours + 'h' + (minutes < 10 ? '0' : '') + minutes;
-        },
-        
-        getCacheKey: function(endpoint, params = {}) {
-            return endpoint + JSON.stringify(params);
-        },
-        
-        isValidResponse: function(response) {
-            return response && typeof response === 'object' && response.hasOwnProperty('success');
-        },
-        
-        showLoading: function(message = 'Loading...') {
-            if (typeof ons !== 'undefined') {
-                ons.notification.toast(message, {timeout: 1000});
-            }
-        },
-        
-        showError: function(message) {
-            if (typeof ons !== 'undefined') {
-                ons.notification.alert(message);
-            } else {
-                alert(message);
-            }
-        },
-        
-        showSuccess: function(message) {
-            if (typeof ons !== 'undefined') {
-                ons.notification.toast(message, {timeout: 2000});
-            }
-        },
-        
-        // Get CSRF token from various sources
-        getCSRFToken: function() {
-            // Try to get from state first
-            if (state.csrfToken) {
-                return state.csrfToken;
-            }
+    $resql = $db->query($sql);
+    if ($resql) {
+        // Si l'utilisateur a des droits spécifiques, les charger
+        $obj = $db->fetch_object($resql);
+        if ($obj && $obj->nb > 0) {
+            // Charger les droits spécifiques depuis la table des droits
+            $sql_rights = "SELECT ur.id_rights FROM ".MAIN_DB_PREFIX."user_rights as ur";
+            $sql_rights .= " WHERE ur.fk_user = ".((int) $user->id);
+            $sql_rights .= " AND ur.module = 'appmobtimetouch'";
             
-            // Try to get from global config
-            if (window.appConfig && window.appConfig.api_token) {
-                state.csrfToken = window.appConfig.api_token;
-                return state.csrfToken;
-            }
-            
-            // Try to get from localStorage
-            if (typeof(Storage) !== "undefined") {
-                const token = localStorage.getItem('api_token');
-                if (token) {
-                    state.csrfToken = token;
-                    return state.csrfToken;
-                }
-            }
-            
-            // Try to get from meta tag
-            const metaToken = document.querySelector('meta[name="csrf-token"]');
-            if (metaToken) {
-                state.csrfToken = metaToken.getAttribute('content');
-                return state.csrfToken;
-            }
-            
-            // Try to get from hidden input
-            const hiddenToken = document.querySelector('input[name="token"]');
-            if (hiddenToken) {
-                state.csrfToken = hiddenToken.value;
-                return state.csrfToken;
-            }
-            
-            // Last resort - try to generate one (this might not always work)
-            if (typeof newToken === 'function') {
-                state.csrfToken = newToken();
-                return state.csrfToken;
-            }
-            
-            utils.log('No CSRF token found');
-            return null;
-        },
-        
-        // Update CSRF token
-        updateCSRFToken: function(token) {
-            if (token) {
-                state.csrfToken = token;
-                // Store in localStorage for persistence
-                if (typeof(Storage) !== "undefined") {
-                    localStorage.setItem('api_token', token);
-                }
-                utils.log('CSRF token updated', token);
-            }
-        }
-    };
-    
-    // HTTP Request handler with retry logic
-    const http = {
-        request: async function(method, endpoint, data = null, options = {}) {
-            const url = CONFIG.API_BASE_URL + '?action=' + endpoint;
-            
-            // Get CSRF token
-            const csrfToken = utils.getCSRFToken();
-            
-            const requestOptions = {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'same-origin',
-                ...options
-            };
-            
-            // Add CSRF token to headers and data
-            if (csrfToken) {
-                requestOptions.headers['X-CSRF-Token'] = csrfToken;
-                requestOptions.headers['X-API-Token'] = csrfToken;
-                
-                // Also add to data for POST requests
-                if (data && method !== 'GET') {
-                    data.token = csrfToken;
-                }
-            }
-            
-            if (data && method !== 'GET') {
-                requestOptions.body = JSON.stringify(data);
-            } else if (data && method === 'GET') {
-                // Add token to URL for GET requests
-                const separator = url.includes('?') ? '&' : '?';
-                const tokenParam = csrfToken ? `${separator}token=${encodeURIComponent(csrfToken)}` : '';
-                url += tokenParam;
-            }
-            
-            utils.log(`${method} request to ${endpoint}`, {
-                url: url,
-                data: data,
-                hasToken: !!csrfToken
-            });
-            
-            try {
-                const response = await fetch(url, requestOptions);
-                
-                // Check if response is JSON
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    // If not JSON, probably an HTML error page
-                    const htmlText = await response.text();
-                    utils.error(`Non-JSON response from ${endpoint}`, {
-                        status: response.status,
-                        statusText: response.statusText,
-                        contentType: contentType,
-                        htmlPreview: htmlText.substring(0, 200)
-                    });
+            $resql_rights = $db->query($sql_rights);
+            if ($resql_rights) {
+                while ($obj_right = $db->fetch_object($resql_rights)) {
+                    $right_id = $obj_right->id_rights;
                     
-                    // Try to extract meaningful error message from HTML
-                    let errorMessage = `HTTP ${response.status}`;
-                    if (htmlText.includes('Access denied') || htmlText.includes('Accès refusé')) {
-                        errorMessage = 'Access denied - Check permissions';
-                    } else if (htmlText.includes('CSRF') || htmlText.includes('token')) {
-                        errorMessage = 'Security token error';
-                    } else if (htmlText.includes('Login') || htmlText.includes('login')) {
-                        errorMessage = 'Authentication required';
+                    // Mapper les IDs de droits aux propriétés
+                    // Ces IDs sont définis dans modAppMobTimeTouch.class.php
+                    switch ($right_id) {
+                        case 13600701: // Read own records
+                            $user->rights->appmobtimetouch->timeclock->read = true;
+                            break;
+                        case 13600702: // Write own records
+                            $user->rights->appmobtimetouch->timeclock->write = true;
+                            break;
+                        case 13600703: // Delete own records
+                            $user->rights->appmobtimetouch->timeclock->delete = true;
+                            break;
+                        case 13600704: // Read all records
+                            $user->rights->appmobtimetouch->timeclock->readall = true;
+                            break;
+                        case 13600705: // Validate records
+                            $user->rights->appmobtimetouch->timeclock->validate = true;
+                            break;
+                        case 13600706: // Export reports
+                            $user->rights->appmobtimetouch->timeclock->export = true;
+                            break;
+                        case 13600707: // Configuration
+                            $user->rights->appmobtimetouch->timeclock->config = true;
+                            break;
                     }
-                    
-                    throw new Error(errorMessage);
                 }
-                
-                const responseData = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${responseData.error || 'Request failed'}`);
-                }
-                
-                // Update CSRF token if provided in response
-                if (responseData.csrf_token) {
-                    utils.updateCSRFToken(responseData.csrf_token);
-                }
-                
-                utils.log(`Response from ${endpoint}`, responseData);
-                return responseData;
-                
-            } catch (error) {
-                utils.error(`Request failed for ${endpoint}`, error);
-                
-                // Queue request for retry if offline
-                if (!state.isOnline) {
-                    this.queueRequest(method, endpoint, data);
-                }
-                
-                throw error;
+                $db->free($resql_rights);
             }
-        },
-        
-        get: function(endpoint, params = {}) {
-            // Add CSRF token to params for GET requests
-            const csrfToken = utils.getCSRFToken();
-            if (csrfToken) {
-                params.token = csrfToken;
-            }
-            
-            const queryString = Object.keys(params).length > 0 ? 
-                '&' + new URLSearchParams(params).toString() : '';
-            return this.request('GET', endpoint + queryString);
-        },
-        
-        post: function(endpoint, data) {
-            return this.request('POST', endpoint, data);
-        },
-        
-        queueRequest: function(method, endpoint, data) {
-            state.requestQueue.push({
-                method,
-                endpoint,
-                data,
-                timestamp: Date.now()
-            });
-            utils.log('Request queued for later execution', {method, endpoint});
-        },
-        
-        processQueue: async function() {
-            if (state.requestQueue.length === 0) return;
-            
-            utils.log('Processing queued requests', state.requestQueue.length);
-            
-            const queue = [...state.requestQueue];
-            state.requestQueue = [];
-            
-            for (const request of queue) {
-                try {
-                    await this.request(request.method, request.endpoint, request.data);
-                } catch (error) {
-                    utils.error('Failed to process queued request', error);
-                }
+        } else {
+            // Si pas de droits spécifiques, vérifier si l'utilisateur est admin
+            if (!empty($user->admin)) {
+                // Les admins ont tous les droits
+                $user->rights->appmobtimetouch->timeclock->read = true;
+                $user->rights->appmobtimetouch->timeclock->write = true;
+                $user->rights->appmobtimetouch->timeclock->delete = true;
+                $user->rights->appmobtimetouch->timeclock->readall = true;
+                $user->rights->appmobtimetouch->timeclock->validate = true;
+                $user->rights->appmobtimetouch->timeclock->export = true;
+                $user->rights->appmobtimetouch->timeclock->config = true;
             }
         }
-    };
+        $db->free($resql);
+    }
+}
+
+// Security check final - Au minimum le droit de lecture est requis
+if (!$user->rights->appmobtimetouch->timeclock->read) {
+    accessforbidden($langs->trans('NotEnoughPermissions'));
+}
+
+$socid = GETPOST('socid', 'int');
+if (isset($user->socid) && $user->socid > 0) {
+    $action = '';
+    $socid = $user->socid;
+}
+
+$max = 5;
+$now = dol_now();
+
+// Get version number from module class for cache busting
+$moduleInstance = new modAppMobTimeTouch($db);
+$version = $moduleInstance->version;
+
+// CORRECTION ÉTAPE 1 : Initialiser les variables par défaut pour les templates
+$is_clocked_in = false;
+$clock_in_time = null;
+$current_duration = 0;
+$active_record = null;
+$today_total_hours = 0;
+$today_total_breaks = 0;
+$weekly_summary = null;
+$recent_records = array();
+$timeclock_types = array();
+$default_type_id = 1;
+$overtime_threshold = 8;
+$overtime_alert = false;
+$errors = array();
+$messages = array();
+
+?>
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="cache-control" content="no-cache, must-revalidate, post-check=0, pre-check=0" />
+    <meta http-equiv="cache-control" content="max-age=0" />
+    <meta http-equiv="expires" content="0" />
+    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+    <meta http-equiv="pragma" content="no-cache" />
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+    <title>AppMobTimeTouch for Dolibarr <?php echo $version;?></title>
     
-    // Cache management
-    const cache = {
-        set: function(key, data) {
-            state.cache.set(key, {
-                data: data,
-                timestamp: Date.now()
-            });
-        },
-        
-        get: function(key) {
-            const cached = state.cache.get(key);
-            if (!cached) return null;
-            
-            const age = Date.now() - cached.timestamp;
-            if (age > CONFIG.CACHE_DURATION) {
-                state.cache.delete(key);
-                return null;
+    <!-- CSS files with version parameter -->
+    <link rel="stylesheet" href="css/onsenui.min.css?v=<?php echo $version;?>">
+    <link rel="stylesheet" href="css/onsen-css-components.min.css?v=<?php echo $version;?>">
+    <link rel="stylesheet" href="css/font_awesome/css/fontawesome.min.css?v=<?php echo $version;?>">
+    <link rel="stylesheet" href="css/index.css?v=<?php echo $version;?>">
+    
+    <!-- Add manifest link -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- JavaScript files with version parameter -->
+    <script type="text/javascript" src="js/onsenui.min.js?v=<?php echo $version;?>"></script>
+    <!-- Include navigation functions -->
+    <script type="text/javascript" src="js/navigation.js?v=<?php echo $version;?>"></script> 
+</head>
+
+<body>
+    <ons-navigator id="myNavigator" page="splitter.html">
+    </ons-navigator>
+
+    <template id="splitter.html">
+        <ons-page>
+            <ons-splitter id="mySplitter">
+                <ons-splitter-side page="rightmenu.html" id="rightmenu" side="right" width="220px" collapse swipeable swipe-target-width="50px">
+                </ons-splitter-side>
+                <ons-splitter-content page="tabbar.html">
+                </ons-splitter-content>
+            </ons-splitter>
+        </ons-page>
+    </template>
+
+    <template id="tabbar.html">
+        <?php include "tpl/parts/tabbar.tpl"; ?>
+    </template>
+
+    <template id="rightmenu.html">
+        <?php include "tpl/parts/rightmenu.tpl"; ?>
+    </template>
+
+    <ons-modal direction="up" id="sablier">
+        <div style="text-align: center;">
+            <p>
+                <ons-icon icon="md-spinner" size="45px" spin></ons-icon>
+            </p>
+            <p id="loadingmessage"><span><?php echo $langs->trans("loadingInProgress"); ?></span></p>
+        </div>
+    </ons-modal>
+
+    <?php
+    //Build complet de l'application via php
+    $dir = "tpl";
+    if ($dh = opendir($dir)) {
+        while (($file = readdir($dh)) !== false) {
+            if ($file == '.' || $file == '..' || $file == 'parts') {
+                continue;
             }
-            
-            return cached.data;
-        },
-        
-        clear: function() {
-            state.cache.clear();
-            utils.log('Cache cleared');
+            echo "<template id=\"" . str_replace(".tpl", "Application", $file) . "\">\n";
+            include $dir . '/' . $file;
+            echo "</template>\n";
         }
-    };
-    
-    // Geolocation handler
-    const geolocation = {
-        getCurrentPosition: function() {
-            return new Promise((resolve, reject) => {
-                if (!navigator.geolocation) {
-                    reject(new Error('Geolocation not supported'));
+        closedir($dh);
+    }
+    ?>
+
+    <script type="text/javascript">
+        // Variables globales pour le time tracking
+        var globalCurrentPage = "homeApplication";
+        var globalMyNavigator = null;
+        var userTimeclockStatus = null; // null, 'clocked_in', 'clocked_out'
+
+        // Configuration globale pour l'application
+        window.appMobTimeTouch = {
+            DOL_URL_ROOT: '<?php echo DOL_URL_ROOT; ?>',
+            version: '<?php echo $version; ?>',
+            user_rights: {
+                read: <?php echo $user->rights->appmobtimetouch->timeclock->read ? 'true' : 'false'; ?>,
+                write: <?php echo $user->rights->appmobtimetouch->timeclock->write ? 'true' : 'false'; ?>,
+                readall: <?php echo $user->rights->appmobtimetouch->timeclock->readall ? 'true' : 'false'; ?>,
+                validate: <?php echo $user->rights->appmobtimetouch->timeclock->validate ? 'true' : 'false'; ?>,
+                export: <?php echo $user->rights->appmobtimetouch->timeclock->export ? 'true' : 'false'; ?>
+            }
+        };
+
+        ons.ready(function () {
+            console.log("ONS ready in AppMobTimeTouch index.php");
+
+            globalCurrentPage = "homeApplication";
+            globalMyNavigator = document.getElementById('myNavigator');
+
+            console.log('AppMobTimeTouch navigator initialized');
+            console.log('User rights:', window.appMobTimeTouch.user_rights);
+
+            let onsRightMenu = document.getElementById('rightmenu');
+            if (onsRightMenu != undefined)
+                onsRightMenu.close();
+
+            //pour gérer les retours sur une page
+            globalMyNavigator.addEventListener('postpop', function (event) {
+                let lapage = event.enterPage.id;
+
+                if (lapage == 'ONSConfig') {
                     return;
                 }
-                
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const result = {
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                            accuracy: position.coords.accuracy,
-                            timestamp: position.timestamp
-                        };
-                        utils.log('Location obtained', result);
-                        resolve(result);
-                    },
-                    (error) => {
-                        let errorMessage = 'Location error';
-                        switch(error.code) {
-                            case error.PERMISSION_DENIED:
-                                errorMessage = 'Location permission denied';
-                                break;
-                            case error.POSITION_UNAVAILABLE:
-                                errorMessage = 'Location unavailable';
-                                break;
-                            case error.TIMEOUT:
-                                errorMessage = 'Location timeout';
-                                break;
-                        }
-                        utils.error(errorMessage, error);
-                        reject(new Error(errorMessage));
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: CONFIG.LOCATION_TIMEOUT,
-                        maximumAge: 300000 // 5 minutes
-                    }
-                );
             });
-        },
-        
-        watchPosition: function(callback) {
-            if (!navigator.geolocation) return null;
-            
-            return navigator.geolocation.watchPosition(
-                callback,
-                (error) => utils.error('Position watch error', error),
-                {
-                    enableHighAccuracy: true,
-                    timeout: CONFIG.LOCATION_TIMEOUT,
-                    maximumAge: 300000
-                }
-            );
-        }
-    };
-    
-    // API Methods
-    const api = {
-        // Get current timeclock status
-        getStatus: async function(useCache = true) {
-            const cacheKey = utils.getCacheKey('status');
-            
-            if (useCache) {
-                const cached = cache.get(cacheKey);
-                if (cached) {
-                    utils.log('Using cached status', cached);
-                    return cached;
-                }
-            }
-            
-            try {
-                const response = await http.get('status');
-                if (utils.isValidResponse(response) && response.success) {
-                    cache.set(cacheKey, response.data);
-                    state.currentStatus = response.data;
-                    return response.data;
-                } else {
-                    throw new Error(response.error || 'Invalid response format');
-                }
-            } catch (error) {
-                utils.error('Failed to get status', error);
-                throw error;
-            }
-        },
-        
-        // Clock in
-        clockIn: async function(data) {
-            utils.log('Clock in request', data);
-            
-            try {
-                // Get location if required and not provided
-                if (window.appConfig && window.appConfig.require_location) {
-                    if (!data.latitude || !data.longitude) {
-                        utils.log('Getting location for clock in');
-                        const position = await geolocation.getCurrentPosition();
-                        data.latitude = position.latitude;
-                        data.longitude = position.longitude;
-                    }
-                }
-                
-                const response = await http.post('clockin', data);
-                
-                if (utils.isValidResponse(response) && response.success) {
-                    utils.log('Clock in successful', response.data);
-                    cache.clear(); // Clear cache to force refresh
-                    
-                    // Update state
-                    state.currentStatus = {
-                        is_clocked_in: true,
-                        clock_in_time: Math.floor(Date.now() / 1000),
-                        active_record: response.data
-                    };
-                    
-                    return response.data;
-                } else {
-                    throw new Error(response.error || 'Clock in failed');
-                }
-            } catch (error) {
-                utils.error('Clock in failed', error);
-                throw error;
-            }
-        },
-        
-        // Clock out
-        clockOut: async function(data = {}) {
-            utils.log('Clock out request', data);
-            
-            try {
-                // Get location if required and not provided
-                if (window.appConfig && window.appConfig.require_location) {
-                    if (!data.latitude || !data.longitude) {
-                        utils.log('Getting location for clock out');
-                        const position = await geolocation.getCurrentPosition();
-                        data.latitude = position.latitude;
-                        data.longitude = position.longitude;
-                    }
-                }
-                
-                const response = await http.post('clockout', data);
-                
-                if (utils.isValidResponse(response) && response.success) {
-                    utils.log('Clock out successful', response.data);
-                    cache.clear(); // Clear cache to force refresh
-                    
-                    // Update state
-                    state.currentStatus = {
-                        is_clocked_in: false,
-                        clock_in_time: null,
-                        active_record: null
-                    };
-                    
-                    return response.data;
-                } else {
-                    throw new Error(response.error || 'Clock out failed');
-                }
-            } catch (error) {
-                utils.error('Clock out failed', error);
-                throw error;
-            }
-        },
-        
-        // Get recent records
-        getRecords: async function(params = {}) {
-            const cacheKey = utils.getCacheKey('records', params);
-            const cached = cache.get(cacheKey);
-            
-            if (cached) {
-                utils.log('Using cached records');
-                return cached;
-            }
-            
-            try {
-                const response = await http.get('records', params);
-                
-                if (utils.isValidResponse(response) && response.success) {
-                    cache.set(cacheKey, response.data);
-                    return response.data;
-                } else {
-                    throw new Error(response.error || 'Failed to get records');
-                }
-            } catch (error) {
-                utils.error('Failed to get records', error);
-                throw error;
-            }
-        },
-        
-        // Get timeclock types
-        getTypes: async function() {
-            const cacheKey = utils.getCacheKey('types');
-            const cached = cache.get(cacheKey);
-            
-            if (cached) {
-                return cached;
-            }
-            
-            try {
-                const response = await http.get('types');
-                
-                if (utils.isValidResponse(response) && response.success) {
-                    cache.set(cacheKey, response.data);
-                    return response.data;
-                } else {
-                    throw new Error(response.error || 'Failed to get types');
-                }
-            } catch (error) {
-                utils.error('Failed to get types', error);
-                throw error;
-            }
-        },
-        
-        // Get today's summary
-        getTodaySummary: async function() {
-            const cacheKey = utils.getCacheKey('today');
-            const cached = cache.get(cacheKey);
-            
-            if (cached) {
-                return cached;
-            }
-            
-            try {
-                const response = await http.get('today');
-                
-                if (utils.isValidResponse(response) && response.success) {
-                    cache.set(cacheKey, response.data);
-                    return response.data;
-                } else {
-                    throw new Error(response.error || 'Failed to get today summary');
-                }
-            } catch (error) {
-                utils.error('Failed to get today summary', error);
-                throw error;
-            }
-        },
-        
-        // Get weekly summary
-        getWeeklySummary: async function() {
-            const cacheKey = utils.getCacheKey('weekly');
-            const cached = cache.get(cacheKey);
-            
-            if (cached) {
-                return cached;
-            }
-            
-            try {
-                const response = await http.get('weekly');
-                
-                if (utils.isValidResponse(response) && response.success) {
-                    cache.set(cacheKey, response.data);
-                    return response.data;
-                } else {
-                    throw new Error(response.error || 'Failed to get weekly summary');
-                }
-            } catch (error) {
-                utils.error('Failed to get weekly summary', error);
-                throw error;
-            }
-        }
-    };
-    
-    // Real-time updates
-    const realtime = {
-        start: function() {
-            if (state.updateTimer) {
-                clearInterval(state.updateTimer);
-            }
-            
-            state.updateTimer = setInterval(async () => {
-                try {
-                    if (state.isOnline) {
-                        await this.updateStatus();
-                    }
-                } catch (error) {
-                    utils.error('Real-time update failed', error);
-                }
-            }, CONFIG.REFRESH_INTERVAL);
-            
-            utils.log('Real-time updates started');
-        },
-        
-        stop: function() {
-            if (state.updateTimer) {
-                clearInterval(state.updateTimer);
-                state.updateTimer = null;
-            }
-            utils.log('Real-time updates stopped');
-        },
-        
-        updateStatus: async function() {
-            try {
-                const status = await api.getStatus(false); // Force fresh data
-                
-                if (status && state.currentStatus) {
-                    // Check if status changed
-                    if (status.is_clocked_in !== state.currentStatus.is_clocked_in) {
-                        utils.log('Status changed, refreshing page');
-                        // Status changed significantly, refresh the page
-                        window.location.reload();
-                    } else if (status.is_clocked_in) {
-                        // Update duration display
-                        this.updateDurationDisplay(status);
-                    }
-                }
-                
-                state.currentStatus = status;
-                
-            } catch (error) {
-                utils.error('Status update failed', error);
-            }
-        },
-        
-        updateDurationDisplay: function(status) {
-            if (!status.is_clocked_in || !status.clock_in_time) return;
-            
-            const now = Math.floor(Date.now() / 1000);
-            const duration = now - status.clock_in_time;
-            const durationText = utils.formatDuration(duration);
-            
-            const durationElement = document.getElementById('current-duration');
-            if (durationElement) {
-                durationElement.textContent = durationText;
-            }
-        }
-    };
-    
-    // Network status monitoring
-    const network = {
-        init: function() {
-            window.addEventListener('online', this.handleOnline.bind(this));
-            window.addEventListener('offline', this.handleOffline.bind(this));
-            
-            // Initial check
-            this.updateStatus();
-        },
-        
-        handleOnline: function() {
-            utils.log('Network online');
-            state.isOnline = true;
-            this.hideOfflineIndicator();
-            
-            // Process queued requests
-            setTimeout(() => {
-                http.processQueue();
-            }, 1000);
-        },
-        
-        handleOffline: function() {
-            utils.log('Network offline');
-            state.isOnline = false;
-            this.showOfflineIndicator();
-        },
-        
-        updateStatus: function() {
-            state.isOnline = navigator.onLine;
-            if (!state.isOnline) {
-                this.showOfflineIndicator();
-            }
-        },
-        
-        showOfflineIndicator: function() {
-            if (document.querySelector('.offline-indicator')) return;
-            
-            const indicator = document.createElement('div');
-            indicator.className = 'offline-indicator';
-            indicator.style.cssText = `
-                position: fixed; 
-                top: 0; 
-                left: 0; 
-                right: 0; 
-                background: #f44336; 
-                color: white; 
-                text-align: center; 
-                padding: 8px; 
-                font-size: 12px; 
-                z-index: 10000;
-                animation: slideDown 0.3s ease;
-            `;
-            indicator.textContent = 'Offline Mode - Actions will be synced when online';
-            document.body.insertBefore(indicator, document.body.firstChild);
-        },
-        
-        hideOfflineIndicator: function() {
-            const indicator = document.querySelector('.offline-indicator');
-            if (indicator) {
-                indicator.style.animation = 'slideUp 0.3s ease';
-                setTimeout(() => {
-                    if (indicator.parentNode) {
-                        indicator.parentNode.removeChild(indicator);
-                    }
-                }, 300);
-            }
-        }
-    };
-    
-    // Enhanced clock in/out functions for the UI
-    const ui = {
-        clockIn: async function(formData) {
-            try {
-                utils.showLoading('Clocking in...');
-                
-                const data = {
-                    timeclock_type_id: formData.timeclock_type_id || 1,
-                    location: formData.location || '',
-                    note: formData.note || ''
-                };
-                
-                // Add coordinates if available
-                if (formData.latitude && formData.longitude) {
-                    data.latitude = parseFloat(formData.latitude);
-                    data.longitude = parseFloat(formData.longitude);
-                }
-                
-                const result = await api.clockIn(data);
-                
-                utils.showSuccess('Successfully clocked in!');
-                
-                // Start real-time updates
-                realtime.start();
-                
-                // Refresh page after short delay
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-                
-                return result;
-                
-            } catch (error) {
-                utils.showError('Clock in failed: ' + error.message);
-                throw error;
-            }
-        },
-        
-        clockOut: async function(formData) {
-            try {
-                utils.showLoading('Clocking out...');
-                
-                const data = {
-                    location: formData.location || '',
-                    note: formData.note || ''
-                };
-                
-                // Add coordinates if available
-                if (formData.latitude && formData.longitude) {
-                    data.latitude = parseFloat(formData.latitude);
-                    data.longitude = parseFloat(formData.longitude);
-                }
-                
-                const result = await api.clockOut(data);
-                
-                utils.showSuccess('Successfully clocked out!');
-                
-                // Stop real-time updates
-                realtime.stop();
-                
-                // Refresh page after short delay
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
-                
-                return result;
-                
-            } catch (error) {
-                utils.showError('Clock out failed: ' + error.message);
-                throw error;
-            }
-        },
-        
-        refreshData: async function() {
-            try {
-                utils.showLoading('Refreshing...');
-                cache.clear();
-                
-                // Get fresh status
-                await api.getStatus(false);
-                
-                // Refresh page
-                window.location.reload();
-                
-            } catch (error) {
-                utils.showError('Refresh failed: ' + error.message);
-            }
-        }
-    };
-    
-    // Initialization
-    const init = function(options = {}) {
-        utils.log('Initializing TimeclockAPI');
-        
-        // Merge options with config
-        Object.assign(CONFIG, options);
-        
-        // Initialize network monitoring
-        network.init();
-        
-        // Set API token if provided
-        if (options.apiToken) {
-            utils.updateCSRFToken(options.apiToken);
-        }
-        
-        // Try to get CSRF token from various sources
-        const token = utils.getCSRFToken();
-        if (token) {
-            utils.log('CSRF token initialized', token);
-        } else {
-            utils.log('Warning: No CSRF token found');
-        }
-        
-        // Start real-time updates if user is clocked in
-        if (window.appConfig && window.appConfig.is_clocked_in) {
-            realtime.start();
-        }
-        
-        // Add CSS animations
-        if (!document.querySelector('#timeclock-animations')) {
-            const style = document.createElement('style');
-            style.id = 'timeclock-animations';
-            style.textContent = `
-                @keyframes slideDown {
-                    from { transform: translateY(-100%); }
-                    to { transform: translateY(0); }
-                }
-                @keyframes slideUp {
-                    from { transform: translateY(0); }
-                    to { transform: translateY(-100%); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-        
-        utils.log('TimeclockAPI initialized successfully');
-    };
-    
-    // Public API
-    return {
-        init: init,
-        api: api,
-        ui: ui,
-        geolocation: geolocation,
-        utils: utils,
-        cache: cache,
-        realtime: realtime,
-        
-        // Direct access to main functions
-        getStatus: api.getStatus,
-        clockIn: ui.clockIn,
-        clockOut: ui.clockOut,
-        refreshData: ui.refreshData,
-        
-        // State information
-        isOnline: () => state.isOnline,
-        getCurrentStatus: () => state.currentStatus,
-        getCSRFToken: utils.getCSRFToken,
-        updateCSRFToken: utils.updateCSRFToken,
-        
-        // Debug helpers
-        debug: {
-            getState: () => state,
-            getConfig: () => CONFIG,
-            clearCache: cache.clear,
-            testLocation: geolocation.getCurrentPosition,
-            testCSRF: utils.getCSRFToken
-        }
-    };
-})();
 
-// Auto-initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize with global config if available
-    const initOptions = {};
-    
-    if (typeof window.appConfig !== 'undefined') {
-        initOptions.apiToken = window.appConfig.api_token;
-        initOptions.DEBUG = window.appConfig.debug || false;
-    }
-    
-    window.TimeclockAPI.init(initOptions);
-});
+            //On nettoie l'historique au lancement de l'appli
+            cleanHistorique();
 
-// Enhanced global functions for the UI
-window.submitClockIn = async function() {
-    const form = document.getElementById('clockInForm');
-    if (!form) return;
-    
-    const formData = new FormData(form);
-    const data = {};
-    for (let [key, value] of formData.entries()) {
-        data[key] = value;
-    }
-    
-    try {
-        await window.TimeclockAPI.clockIn(data);
-        
-        // Hide modal
-        const modal = document.getElementById('clockInModal');
-        if (modal && modal.hide) {
-            modal.hide();
+            //stockage des donnees de base
+            localStoreData("email", "<?php echo $user->email ?>");
+            localStoreData("firstname", "<?php echo $user->firstname ?>");
+            localStoreData("name", "<?php echo $user->lastname ?>");
+            localStoreData("api_server", "<?php echo $_SERVER['SERVER_NAME'] ?>");
+            localStoreData("api_token", "<?php echo newToken() ?>");
+            localStoreData("api_uri", "<?php echo $_SERVER['SCRIPT_NAME'] ?>");
+
+            // Initialiser les données de time tracking
+            initializeTimeclockData();
+        });
+
+        // Fonction pour initialiser les données de time tracking
+        function initializeTimeclockData() {
+            // Pour l'instant, on simule un statut
+            // Dans la vraie version, cela viendra de la base de données
+            userTimeclockStatus = localGetData('timeclock_status') || 'clocked_out';
+            console.log('Current timeclock status:', userTimeclockStatus);
         }
-        
-    } catch (error) {
-        console.error('Clock in failed:', error);
-    }
-};
 
-window.submitClockOut = async function() {
-    const form = document.getElementById('clockOutForm');
-    if (!form) return;
-    
-    const formData = new FormData(form);
-    const data = {};
-    for (let [key, value] of formData.entries()) {
-        data[key] = value;
-    }
-    
-    try {
-        await window.TimeclockAPI.clockOut(data);
-        
-        // Hide modal
-        const modal = document.getElementById('clockOutModal');
-        if (modal && modal.hide) {
-            modal.hide();
+        // Fonction de nettoyage de l'historique (à implémenter)
+        function cleanHistorique() {
+            // Placeholder pour la fonction de nettoyage
+            console.log('Cleaning history...');
         }
-        
-    } catch (error) {
-        console.error('Clock out failed:', error);
-    }
-};
 
-window.refreshTimeclockData = function() {
-    window.TimeclockAPI.refreshData();
-};
+        // Fonctions de stockage local (à implémenter)
+        function localStoreData(key, value) {
+            if (typeof(Storage) !== "undefined") {
+                localStorage.setItem(key, value);
+            }
+        }
 
-// Export for modules if needed
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = window.TimeclockAPI;
-}
+        function localGetData(key) {
+            if (typeof(Storage) !== "undefined") {
+                return localStorage.getItem(key);
+            }
+            return null;
+        }
+
+        // Fonction pour fermer la session
+        function closeSession() {
+            // Fermer le menu latéral
+            document.getElementById('rightmenu').close();
+            // Rediriger vers la déconnexion
+            window.location.href = '<?php echo DOL_URL_ROOT; ?>/user/logout.php';
+        }
+
+        // Fonction pour aller à une page
+        function gotoPage(pageId) {
+            // Fermer le menu latéral
+            document.getElementById('rightmenu').close();
+            
+            // Pour l'instant, juste un log
+            console.log('Going to page:', pageId);
+            
+            // Navigation vers la page (à implémenter)
+            // globalMyNavigator.pushPage(pageId);
+        }
+    </script>
+
+</body>
+</html>

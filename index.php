@@ -62,9 +62,118 @@ $langs->loadLangs(array("appmobtimetouch@appmobtimetouch"));
 $action = GETPOST('action', 'aZ09');
 $mainmenu = GETPOST('mainmenu', 'aZ09');
 
-// Security check
+// Vérifier si la fonction isModEnabled existe (compatibilité)
+if (!function_exists('isModEnabled')) {
+    function isModEnabled($module)
+    {
+        global $conf;
+        return !empty($conf->$module->enabled);
+    }
+}
+
+// Security check - Vérifier que le module est activé
+if (!isModEnabled('appmobtimetouch')) {
+    accessforbidden('Module not enabled');
+}
+
+// CORRECTION ÉTAPE 1 : Initialisation correcte des droits utilisateur
+// Vérifier que l'objet user existe et est valide
+if (!isset($user) || !is_object($user) || $user->id <= 0) {
+    accessforbidden('User not authenticated');
+}
+
+// Initialiser la structure des droits si elle n'existe pas
+if (!isset($user->rights)) {
+    $user->rights = new stdClass();
+}
+
+if (!isset($user->rights->appmobtimetouch)) {
+    $user->rights->appmobtimetouch = new stdClass();
+}
+
+if (!isset($user->rights->appmobtimetouch->timeclock)) {
+    $user->rights->appmobtimetouch->timeclock = new stdClass();
+    
+    // Initialiser tous les droits à false par défaut
+    $user->rights->appmobtimetouch->timeclock->read = false;
+    $user->rights->appmobtimetouch->timeclock->write = false;
+    $user->rights->appmobtimetouch->timeclock->delete = false;
+    $user->rights->appmobtimetouch->timeclock->readall = false;
+    $user->rights->appmobtimetouch->timeclock->validate = false;
+    $user->rights->appmobtimetouch->timeclock->export = false;
+    $user->rights->appmobtimetouch->timeclock->config = false;
+}
+
+// Vérifier les droits réels de l'utilisateur depuis la base de données
+if (is_object($user) && $user->id > 0) {
+    // Utiliser la fonction standard de Dolibarr pour vérifier les droits
+    $sql = "SELECT COUNT(*) as nb FROM ".MAIN_DB_PREFIX."user_rights as ur";
+    $sql .= " WHERE ur.fk_user = ".((int) $user->id);
+    $sql .= " AND ur.module = 'appmobtimetouch'";
+    
+    $resql = $db->query($sql);
+    if ($resql) {
+        // Si l'utilisateur a des droits spécifiques, les charger
+        $obj = $db->fetch_object($resql);
+        if ($obj && $obj->nb > 0) {
+            // Charger les droits spécifiques depuis la table des droits
+            $sql_rights = "SELECT ur.id_rights FROM ".MAIN_DB_PREFIX."user_rights as ur";
+            $sql_rights .= " WHERE ur.fk_user = ".((int) $user->id);
+            $sql_rights .= " AND ur.module = 'appmobtimetouch'";
+            
+            $resql_rights = $db->query($sql_rights);
+            if ($resql_rights) {
+                while ($obj_right = $db->fetch_object($resql_rights)) {
+                    $right_id = $obj_right->id_rights;
+                    
+                    // Mapper les IDs de droits aux propriétés
+                    // Ces IDs sont définis dans modAppMobTimeTouch.class.php
+                    switch ($right_id) {
+                        case 13600701: // Read own records
+                            $user->rights->appmobtimetouch->timeclock->read = true;
+                            break;
+                        case 13600702: // Write own records
+                            $user->rights->appmobtimetouch->timeclock->write = true;
+                            break;
+                        case 13600703: // Delete own records
+                            $user->rights->appmobtimetouch->timeclock->delete = true;
+                            break;
+                        case 13600704: // Read all records
+                            $user->rights->appmobtimetouch->timeclock->readall = true;
+                            break;
+                        case 13600705: // Validate records
+                            $user->rights->appmobtimetouch->timeclock->validate = true;
+                            break;
+                        case 13600706: // Export reports
+                            $user->rights->appmobtimetouch->timeclock->export = true;
+                            break;
+                        case 13600707: // Configuration
+                            $user->rights->appmobtimetouch->timeclock->config = true;
+                            break;
+                    }
+                }
+                $db->free($resql_rights);
+            }
+        } else {
+            // Si pas de droits spécifiques, vérifier si l'utilisateur est admin
+            if (!empty($user->admin)) {
+                // Les admins ont tous les droits
+                $user->rights->appmobtimetouch->timeclock->read = true;
+                $user->rights->appmobtimetouch->timeclock->write = true;
+                $user->rights->appmobtimetouch->timeclock->delete = true;
+                $user->rights->appmobtimetouch->timeclock->readall = true;
+                $user->rights->appmobtimetouch->timeclock->validate = true;
+                $user->rights->appmobtimetouch->timeclock->export = true;
+                $user->rights->appmobtimetouch->timeclock->config = true;
+            }
+        }
+        $db->free($resql);
+    }
+}
+
+// Security check final - Au minimum le droit de lecture est requis
 if (!$user->rights->appmobtimetouch->timeclock->read) {
-    accessforbidden($langs->trans('AppmobtimetouchReadRights'));
+    accessforbidden($langs->trans('NotEnoughPermissions'));
 }
 
 $socid = GETPOST('socid', 'int');
@@ -79,6 +188,22 @@ $now = dol_now();
 // Get version number from module class for cache busting
 $moduleInstance = new modAppMobTimeTouch($db);
 $version = $moduleInstance->version;
+
+// CORRECTION ÉTAPE 1 : Initialiser les variables par défaut pour les templates
+$is_clocked_in = false;
+$clock_in_time = null;
+$current_duration = 0;
+$active_record = null;
+$today_total_hours = 0;
+$today_total_breaks = 0;
+$weekly_summary = null;
+$recent_records = array();
+$timeclock_types = array();
+$default_type_id = 1;
+$overtime_threshold = 8;
+$overtime_alert = false;
+$errors = array();
+$messages = array();
 
 ?>
 <!DOCTYPE html>
@@ -166,7 +291,14 @@ $version = $moduleInstance->version;
         // Configuration globale pour l'application
         window.appMobTimeTouch = {
             DOL_URL_ROOT: '<?php echo DOL_URL_ROOT; ?>',
-            version: '<?php echo $version; ?>'
+            version: '<?php echo $version; ?>',
+            user_rights: {
+                read: <?php echo $user->rights->appmobtimetouch->timeclock->read ? 'true' : 'false'; ?>,
+                write: <?php echo $user->rights->appmobtimetouch->timeclock->write ? 'true' : 'false'; ?>,
+                readall: <?php echo $user->rights->appmobtimetouch->timeclock->readall ? 'true' : 'false'; ?>,
+                validate: <?php echo $user->rights->appmobtimetouch->timeclock->validate ? 'true' : 'false'; ?>,
+                export: <?php echo $user->rights->appmobtimetouch->timeclock->export ? 'true' : 'false'; ?>
+            }
         };
 
         ons.ready(function () {
@@ -176,6 +308,7 @@ $version = $moduleInstance->version;
             globalMyNavigator = document.getElementById('myNavigator');
 
             console.log('AppMobTimeTouch navigator initialized');
+            console.log('User rights:', window.appMobTimeTouch.user_rights);
 
             let onsRightMenu = document.getElementById('rightmenu');
             if (onsRightMenu != undefined)
@@ -252,10 +385,7 @@ $version = $moduleInstance->version;
             // Navigation vers la page (à implémenter)
             // globalMyNavigator.pushPage(pageId);
         }
-        
-
-    
-
+    </script>
 
 </body>
 </html>
