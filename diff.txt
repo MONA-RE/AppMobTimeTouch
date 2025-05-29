@@ -1,88 +1,110 @@
 <?php
-/* Copyright (C) 2025 SuperAdmin
- * Copyright (C) 2001-2005 Rodolphe Quiedeville <rodolphe@quiedeville.org>
- * Copyright (C) 2004-2015 Laurent Destailleur  <eldy@users.sourceforge.net>
- * Copyright (C) 2005-2012 Regis Houssin        <regis.houssin@inodbox.com>
- * Copyright (C) 2015      Jean-François Ferry	<jfefe@aternatik.fr>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- */
-
-/**
- *	\file       appmobtimetouch/index.php
- *	\ingroup    appmobtimetouch
- *	\brief      Home page of appmobtimetouch mobile application
- */
-
 // Load Dolibarr environment
 $res = 0;
 // Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
 if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
-    $res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"]."/main.inc.php";
+	$res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"]."/main.inc.php";
 }
 // Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
-$tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME'];
-$tmp2 = realpath(__FILE__);
-$i = strlen($tmp) - 1;
+$tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME']; 
+$tmp2 = realpath(__FILE__); 
+$i = strlen($tmp) - 1; 
 $j = strlen($tmp2) - 1;
 while ($i > 0 && $j > 0 && isset($tmp[$i]) && isset($tmp2[$j]) && $tmp[$i] == $tmp2[$j]) {
-    $i--;
-    $j--;
+	$i--;
+	$j--;
 }
 if (!$res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1))."/main.inc.php")) {
-    $res = @include substr($tmp, 0, ($i + 1))."/main.inc.php";
+	$res = @include substr($tmp, 0, ($i + 1))."/main.inc.php";
 }
 if (!$res && $i > 0 && file_exists(dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php")) {
-    $res = @include dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php";
+	$res = @include dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php";
 }
 // Try main.inc.php using relative path
 if (!$res && file_exists("../main.inc.php")) {
-    $res = @include "../main.inc.php";
+	$res = @include "../main.inc.php";
 }
 if (!$res && file_exists("../../main.inc.php")) {
-    $res = @include "../../main.inc.php";
+	$res = @include "../../main.inc.php";
 }
 if (!$res && file_exists("../../../main.inc.php")) {
-    $res = @include "../../../main.inc.php";
+	$res = @include "../../../main.inc.php";
 }
 if (!$res) {
-    die("Include of main fails");
+	die("Include of main fails");
 }
-
-require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
-dol_include_once('/appmobtimetouch/lib/appmobtimetouch.lib.php');
-dol_include_once('/appmobtimetouch/core/modules/modAppMobTimeTouch.class.php');
-
-// Load translation files required by the page
-$langs->loadLangs(array("appmobtimetouch@appmobtimetouch"));
-
-$action = GETPOST('action', 'aZ09');
-$mainmenu = GETPOST('mainmenu', 'aZ09');
 
 // Vérifier si la fonction isModEnabled existe (compatibilité)
 if (!function_exists('isModEnabled')) {
-    function isModEnabled($module)
-    {
-        global $conf;
-        return !empty($conf->$module->enabled);
-    }
+	function isModEnabled($module)
+	{
+		global $conf;
+		return !empty($conf->$module->enabled);
+	}
 }
 
-// Security check - Vérifier que le module est activé
+// Load required libraries
+require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/date.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
+
+// Load module specific libraries
+dol_include_once('/appmobtimetouch/lib/appmobtimetouch.lib.php');
+dol_include_once('/appmobtimetouch/class/timeclockrecord.class.php');
+dol_include_once('/appmobtimetouch/class/timeclocktype.class.php');
+dol_include_once('/appmobtimetouch/class/weeklysummary.class.php');
+dol_include_once('/appmobtimetouch/class/timeclockconfig.class.php');
+
+// Load translations
+$langs->loadLangs(array("appmobtimetouch@appmobtimetouch", "users", "companies", "errors"));
+
+// Get parameters
+$action = GETPOST('action', 'aZ09');
+$view = GETPOST('view','int'); // 1 = today, 2 = this week, 3 = all time
+$targetId = "feedMyTimeclock";
+
+// Set default values if not provided
+if (empty($view)) $view = 1;
+
+// Security check - vérifier que le module est activé
 if (!isModEnabled('appmobtimetouch')) {
     accessforbidden('Module not enabled');
 }
 
-// CORRECTION ÉTAPE 1 : Initialisation correcte des droits utilisateur
-// Vérifier que l'objet user existe et est valide
-if (!isset($user) || !is_object($user) || $user->id <= 0) {
-    accessforbidden('User not authenticated');
-}
+// ÉTAPE 3: INITIALISATION COMPLÈTE DES VARIABLES PAR DÉFAUT
+// ============================================================
 
-// Initialiser la structure des droits si elle n'existe pas
+// Variables pour messages et erreurs
+$error = 0;
+$errors = array();
+$message = '';
+$messages = array();
+
+// Variables de base pour le time tracking
+$is_clocked_in = false;
+$clock_in_time = null;
+$current_duration = 0;
+$active_record = null;
+$active_record_id = 0;
+
+// Variables pour les résumés et statistiques
+$today_total_hours = 0;
+$today_total_breaks = 0;
+$weekly_summary = null;
+$recent_records = array();
+
+// Variables pour la configuration
+$timeclock_types = array();
+$default_type_id = 1;
+$require_location = 0;
+$max_hours_per_day = 12;
+$overtime_threshold = 8;
+$overtime_alert = false;
+
+// Variables pour les données JavaScript
+$js_data = array();
+
+// Vérification de la structure des droits utilisateur (comme dans index.php)
 if (!isset($user->rights)) {
     $user->rights = new stdClass();
 }
@@ -104,288 +126,332 @@ if (!isset($user->rights->appmobtimetouch->timeclock)) {
     $user->rights->appmobtimetouch->timeclock->config = false;
 }
 
-// Vérifier les droits réels de l'utilisateur depuis la base de données
-if (is_object($user) && $user->id > 0) {
-    // Utiliser la fonction standard de Dolibarr pour vérifier les droits
-    $sql = "SELECT COUNT(*) as nb FROM ".MAIN_DB_PREFIX."user_rights as ur";
-    $sql .= " WHERE ur.fk_user = ".((int) $user->id);
-    $sql .= " AND ur.module = 'appmobtimetouch'";
-    
-    $resql = $db->query($sql);
-    if ($resql) {
-        // Si l'utilisateur a des droits spécifiques, les charger
-        $obj = $db->fetch_object($resql);
-        if ($obj && $obj->nb > 0) {
-            // Charger les droits spécifiques depuis la table des droits
-            $sql_rights = "SELECT ur.id_rights FROM ".MAIN_DB_PREFIX."user_rights as ur";
-            $sql_rights .= " WHERE ur.fk_user = ".((int) $user->id);
-            $sql_rights .= " AND ur.module = 'appmobtimetouch'";
-            
-            $resql_rights = $db->query($sql_rights);
-            if ($resql_rights) {
-                while ($obj_right = $db->fetch_object($resql_rights)) {
-                    $right_id = $obj_right->id_rights;
-                    
-                    // Mapper les IDs de droits aux propriétés
-                    // Ces IDs sont définis dans modAppMobTimeTouch.class.php
-                    switch ($right_id) {
-                        case 13600701: // Read own records
-                            $user->rights->appmobtimetouch->timeclock->read = true;
-                            break;
-                        case 13600702: // Write own records
-                            $user->rights->appmobtimetouch->timeclock->write = true;
-                            break;
-                        case 13600703: // Delete own records
-                            $user->rights->appmobtimetouch->timeclock->delete = true;
-                            break;
-                        case 13600704: // Read all records
-                            $user->rights->appmobtimetouch->timeclock->readall = true;
-                            break;
-                        case 13600705: // Validate records
-                            $user->rights->appmobtimetouch->timeclock->validate = true;
-                            break;
-                        case 13600706: // Export reports
-                            $user->rights->appmobtimetouch->timeclock->export = true;
-                            break;
-                        case 13600707: // Configuration
-                            $user->rights->appmobtimetouch->timeclock->config = true;
-                            break;
-                    }
-                }
-                $db->free($resql_rights);
-            }
-        } else {
-            // Si pas de droits spécifiques, vérifier si l'utilisateur est admin
-            if (!empty($user->admin)) {
-                // Les admins ont tous les droits
-                $user->rights->appmobtimetouch->timeclock->read = true;
-                $user->rights->appmobtimetouch->timeclock->write = true;
-                $user->rights->appmobtimetouch->timeclock->delete = true;
-                $user->rights->appmobtimetouch->timeclock->readall = true;
-                $user->rights->appmobtimetouch->timeclock->validate = true;
-                $user->rights->appmobtimetouch->timeclock->export = true;
-                $user->rights->appmobtimetouch->timeclock->config = true;
-            }
-        }
-        $db->free($resql);
-    }
-}
-
-// Security check final - Au minimum le droit de lecture est requis
-if (!$user->rights->appmobtimetouch->timeclock->read) {
+// Security check - vérifier les droits
+if (!checkTimeclockPermission($user, 'read')) {
     accessforbidden($langs->trans('NotEnoughPermissions'));
 }
 
-$socid = GETPOST('socid', 'int');
-if (isset($user->socid) && $user->socid > 0) {
-    $action = '';
-    $socid = $user->socid;
+// Handle actions from mobile interface
+if ($action) {
+    if ($action == 'clockin' && checkTimeclockPermission($user, 'write')) {
+        $timeclock_type_id = GETPOST('timeclock_type_id', 'int');
+        $location = GETPOST('location', 'alphanohtml');
+        $latitude = GETPOST('latitude', 'float');
+        $longitude = GETPOST('longitude', 'float');
+        $note = GETPOST('note', 'restricthtml');
+
+        // Validate required location if configured
+        $require_location = getTimeclockConfig($db, 'REQUIRE_LOCATION', 0);
+        if ($require_location && (empty($latitude) || empty($longitude))) {
+            $error++;
+            $errors[] = $langs->trans("LocationRequiredForClockIn");
+        }
+
+        if (!$error) {
+            $timeclockrecord = new TimeclockRecord($db);
+            $result = $timeclockrecord->clockIn($user, $timeclock_type_id, $location, $latitude, $longitude, $note);
+            
+            if ($result > 0) {
+                $messages[] = $langs->trans("ClockInSuccess");
+                // Redirect to avoid resubmission
+                header('Location: '.$_SERVER['PHP_SELF'].'?clockin_success=1');
+                exit;
+            } else {
+                $error++;
+                $errors[] = !empty($timeclockrecord->error) ? $langs->trans($timeclockrecord->error) : $langs->trans("ClockInError");
+            }
+        }
+    }
+
+    if ($action == 'clockout' && checkTimeclockPermission($user, 'write')) {
+        $location = GETPOST('location', 'alphanohtml');
+        $latitude = GETPOST('latitude', 'float');
+        $longitude = GETPOST('longitude', 'float');
+        $note = GETPOST('note', 'restricthtml');
+
+        $timeclockrecord = new TimeclockRecord($db);
+        $result = $timeclockrecord->clockOut($user, $location, $latitude, $longitude, $note);
+        
+        if ($result > 0) {
+            $messages[] = $langs->trans("ClockOutSuccess");
+            // Redirect to avoid resubmission
+            header('Location: '.$_SERVER['PHP_SELF'].'?clockout_success=1');
+            exit;
+        } else {
+            $error++;
+            $errors[] = !empty($timeclockrecord->error) ? $langs->trans($timeclockrecord->error) : $langs->trans("ClockOutError");
+        }
+    }
 }
 
-$max = 5;
-$now = dol_now();
+// Handle success messages from redirects
+if (GETPOST('clockin_success', 'int')) {
+    $messages[] = $langs->trans("ClockInSuccess");
+}
+if (GETPOST('clockout_success', 'int')) {
+    $messages[] = $langs->trans("ClockOutSuccess");
+}
 
-// Get version number from module class for cache busting
-$moduleInstance = new modAppMobTimeTouch($db);
-$version = $moduleInstance->version;
+// ÉTAPE 3: CHARGEMENT SÉCURISÉ DES DONNÉES
+// =========================================
 
-// CORRECTION ÉTAPE 1 : Initialiser les variables par défaut pour les templates
-$is_clocked_in = false;
-$clock_in_time = null;
-$current_duration = 0;
-$active_record = null;
-$today_total_hours = 0;
-$today_total_breaks = 0;
-$weekly_summary = null;
-$recent_records = array();
-$timeclock_types = array();
-$default_type_id = 1;
-$overtime_threshold = 8;
-$overtime_alert = false;
-$errors = array();
-$messages = array();
+try {
+    // Get current user's timeclock status using utility function
+    $timeclock_status = getTimeclockStatus($user->id, $db);
+    $is_clocked_in = $timeclock_status['is_clocked_in'];
+    $active_record_id = $timeclock_status['active_record_id'];
+    $clock_in_time = $timeclock_status['clock_in_time'];
+    $current_duration = $timeclock_status['current_duration'];
 
-?>
-<!DOCTYPE html>
-<html lang="fr">
-
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="cache-control" content="no-cache, must-revalidate, post-check=0, pre-check=0" />
-    <meta http-equiv="cache-control" content="max-age=0" />
-    <meta http-equiv="expires" content="0" />
-    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
-    <meta http-equiv="pragma" content="no-cache" />
-    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-    <title>AppMobTimeTouch for Dolibarr <?php echo $version;?></title>
-    
-    <!-- CSS files with version parameter -->
-    <link rel="stylesheet" href="css/onsenui.min.css?v=<?php echo $version;?>">
-    <link rel="stylesheet" href="css/onsen-css-components.min.css?v=<?php echo $version;?>">
-    <link rel="stylesheet" href="css/font_awesome/css/fontawesome.min.css?v=<?php echo $version;?>">
-    <link rel="stylesheet" href="css/index.css?v=<?php echo $version;?>">
-    
-    <!-- Add manifest link -->
-    <link rel="manifest" href="manifest.json" />
-
-    <!-- JavaScript files with version parameter -->
-    <script type="text/javascript" src="js/onsenui.min.js?v=<?php echo $version;?>"></script>
-    <!-- Include navigation functions -->
-    <script type="text/javascript" src="js/navigation.js?v=<?php echo $version;?>"></script> 
-</head>
-
-<body>
-    <ons-navigator id="myNavigator" page="splitter.html">
-    </ons-navigator>
-
-    <template id="splitter.html">
-        <ons-page>
-            <ons-splitter id="mySplitter">
-                <ons-splitter-side page="rightmenu.html" id="rightmenu" side="right" width="220px" collapse swipeable swipe-target-width="50px">
-                </ons-splitter-side>
-                <ons-splitter-content page="tabbar.html">
-                </ons-splitter-content>
-            </ons-splitter>
-        </ons-page>
-    </template>
-
-    <template id="tabbar.html">
-        <?php include "tpl/parts/tabbar.tpl"; ?>
-    </template>
-
-    <template id="rightmenu.html">
-        <?php include "tpl/parts/rightmenu.tpl"; ?>
-    </template>
-
-    <ons-modal direction="up" id="sablier">
-        <div style="text-align: center;">
-            <p>
-                <ons-icon icon="md-spinner" size="45px" spin></ons-icon>
-            </p>
-            <p id="loadingmessage"><span><?php echo $langs->trans("loadingInProgress"); ?></span></p>
-        </div>
-    </ons-modal>
-
-    <?php
-    //Build complet de l'application via php
-    $dir = "tpl";
-    if ($dh = opendir($dir)) {
-        while (($file = readdir($dh)) !== false) {
-            if ($file == '.' || $file == '..' || $file == 'parts') {
-                continue;
-            }
-            echo "<template id=\"" . str_replace(".tpl", "Application", $file) . "\">\n";
-            include $dir . '/' . $file;
-            echo "</template>\n";
+    // Load active record details if user is clocked in
+    if ($is_clocked_in && $active_record_id > 0) {
+        $active_record = new TimeclockRecord($db);
+        if ($active_record->fetch($active_record_id) <= 0) {
+            // If fetch fails, reset status
+            $is_clocked_in = false;
+            $active_record = null;
+            $active_record_id = 0;
         }
-        closedir($dh);
     }
-    ?>
 
-    <script type="text/javascript">
-        // Variables globales pour le time tracking
-        var globalCurrentPage = "homeApplication";
-        var globalMyNavigator = null;
-        var userTimeclockStatus = null; // null, 'clocked_in', 'clocked_out'
+    // Get today's summary using utility function
+    $today_summary = getTodayWorkSummary($user->id, $db);
+    $today_total_hours = $today_summary['total_hours'];
+    $today_total_breaks = $today_summary['total_breaks'];
 
-        // Configuration globale pour l'application
-        window.appMobTimeTouch = {
-            DOL_URL_ROOT: '<?php echo DOL_URL_ROOT; ?>',
-            version: '<?php echo $version; ?>',
-            user_rights: {
-                read: <?php echo $user->rights->appmobtimetouch->timeclock->read ? 'true' : 'false'; ?>,
-                write: <?php echo $user->rights->appmobtimetouch->timeclock->write ? 'true' : 'false'; ?>,
-                readall: <?php echo $user->rights->appmobtimetouch->timeclock->readall ? 'true' : 'false'; ?>,
-                validate: <?php echo $user->rights->appmobtimetouch->timeclock->validate ? 'true' : 'false'; ?>,
-                export: <?php echo $user->rights->appmobtimetouch->timeclock->export ? 'true' : 'false'; ?>
+    // Add active record duration to today's total
+    if ($is_clocked_in && $current_duration > 0) {
+        $active_duration_hours = $current_duration / 3600; // Convert seconds to hours
+        $today_total_hours += $active_duration_hours;
+    }
+
+    // Get configuration values
+    $overtime_threshold = getTimeclockConfig($db, 'OVERTIME_THRESHOLD', 8);
+    $max_hours_per_day = getTimeclockConfig($db, 'MAX_HOURS_PER_DAY', 12);
+    $require_location = getTimeclockConfig($db, 'REQUIRE_LOCATION', 0);
+
+    // Calculate overtime alert for today
+    $overtime_alert = ($today_total_hours > $overtime_threshold);
+
+    // Get current week summary using utility function
+    $current_week_data = getWeeklySummaryForMobile($user->id, $db);
+    if ($current_week_data) {
+        $weekly_summary = new stdClass();
+        $weekly_summary->year = $current_week_data->year;
+        $weekly_summary->week_number = $current_week_data->week_number;
+        $weekly_summary->total_hours = $current_week_data->total_hours;
+        $weekly_summary->total_breaks = $current_week_data->total_breaks;
+        $weekly_summary->expected_hours = $current_week_data->expected_hours;
+        $weekly_summary->overtime_hours = $current_week_data->overtime_hours;
+        $weekly_summary->days_worked = $current_week_data->days_worked;
+        $weekly_summary->status = $current_week_data->status;
+        
+        // Add method for status display
+        $weekly_summary->getLibStatut = function($mode = 0) use ($current_week_data) {
+            global $langs;
+            $statusLabels = array(
+                0 => $langs->trans('InProgress'),
+                1 => $langs->trans('Completed'),
+                2 => $langs->trans('Validated')
+            );
+            
+            $status = isset($statusLabels[$current_week_data->status]) ? $statusLabels[$current_week_data->status] : $langs->trans('Unknown');
+            
+            if ($mode == 3) {
+                $colors = array(0 => 'orange', 1 => 'green', 2 => 'blue');
+                $color = isset($colors[$current_week_data->status]) ? $colors[$current_week_data->status] : 'gray';
+                return '<span style="color: '.$color.'; font-weight: bold;">'.$status.'</span>';
             }
+            
+            return $status;
         };
+    }
 
-        ons.ready(function () {
-            console.log("ONS ready in AppMobTimeTouch index.php");
+    // Get recent records based on view using utility function
+    $date_start = '';
+    $date_end = date('Y-m-d');
+    $limit = 5;
+    
+    switch ($view) {
+        case 1: // Today
+            $date_start = $date_end;
+            break;
+        case 2: // This week
+            $date_start = date('Y-m-d', strtotime('monday this week'));
+            break;
+        case 3: // All time (last 30 days)
+            $date_start = date('Y-m-d', strtotime('-30 days'));
+            $limit = 10;
+            break;
+        default:
+            $date_start = $date_end;
+            break;
+    }
+    
+    $recent_records_data = getRecentTimeclockRecords($user->id, $db, $limit, $date_start, $date_end);
+    
+    // Convert to objects for template compatibility
+    $recent_records = array();
+    foreach ($recent_records_data as $record_data) {
+        $record = new stdClass();
+        $record->id = $record_data->rowid;
+        $record->ref = $record_data->ref;
+        $record->clock_in_time = $record_data->clock_in_time;
+        $record->clock_out_time = $record_data->clock_out_time;
+        $record->work_duration = $record_data->work_duration;
+        $record->break_duration = $record_data->break_duration;
+        $record->status = $record_data->status;
+        $record->location_in = $record_data->location_in;
+        $record->location_out = $record_data->location_out;
+        $record->note_public = $record_data->note_public;
+        $record->fk_timeclock_type = $record_data->fk_timeclock_type;
+        
+        $recent_records[] = $record;
+    }
 
-            globalCurrentPage = "homeApplication";
-            globalMyNavigator = document.getElementById('myNavigator');
+    // Get available timeclock types using utility function
+    $timeclock_types_data = getTimeclockTypesForMobile($db, true);
+    
+    // Convert to objects for template compatibility
+    $timeclock_types = array();
+    foreach ($timeclock_types_data as $type_data) {
+        $type = new stdClass();
+        $type->id = $type_data['id'];
+        $type->code = $type_data['code'];
+        $type->label = $type_data['label'];
+        $type->color = $type_data['color'];
+        $type->position = $type_data['position'];
+        
+        $timeclock_types[] = $type;
+    }
 
-            console.log('AppMobTimeTouch navigator initialized');
-            console.log('User rights:', window.appMobTimeTouch.user_rights);
+    // Set default type ID
+    $default_type_id = !empty($timeclock_types) ? $timeclock_types[0]->id : 1;
+    
+    // Try to get configured default type
+    $configured_default = getTimeclockConfig($db, 'DEFAULT_TIMECLOCK_TYPE', 0);
+    if ($configured_default > 0) {
+        foreach ($timeclock_types as $type) {
+            if ($type->id == $configured_default) {
+                $default_type_id = $configured_default;
+                break;
+            }
+        }
+    }
 
-            let onsRightMenu = document.getElementById('rightmenu');
-            if (onsRightMenu != undefined)
-                onsRightMenu.close();
+} catch (Exception $e) {
+    // Log error and set safe defaults
+    logTimeclockActivity('Error loading data', $e->getMessage(), $user->id);
+    $error++;
+    $errors[] = $langs->trans("ErrorLoadingData");
+}
 
-            //pour gérer les retours sur une page
-            globalMyNavigator.addEventListener('postpop', function (event) {
-                let lapage = event.enterPage.id;
+// ÉTAPE 3: PRÉPARATION DES DONNÉES JAVASCRIPT SÉCURISÉES
+// =======================================================
 
-                if (lapage == 'ONSConfig') {
-                    return;
+$js_data = array(
+    'is_clocked_in' => $is_clocked_in,
+    'clock_in_time' => $clock_in_time,
+    'require_location' => $require_location,
+    'default_type_id' => $default_type_id,
+    'max_hours_per_day' => $max_hours_per_day,
+    'overtime_threshold' => $overtime_threshold,
+    'api_token' => newToken(),
+    'user_id' => $user->id,
+    'version' => '1.0.4' // Version du module
+);
+
+// ÉTAPE 3: FONCTIONS HELPER POUR LE TEMPLATE
+// ===========================================
+
+// Fonction helper pour convertir les secondes en format lisible (déjà dans lib)
+// Réimportation pour s'assurer qu'elle est disponible
+if (!function_exists('convertSecondsToReadableTime')) {
+    /**
+     * Convert seconds to readable time format
+     * 
+     * @param int $seconds Number of seconds
+     * @return string Formatted time string
+     */
+    function convertSecondsToReadableTime($seconds) {
+        if ($seconds <= 0) return '0h00';
+        
+        $hours = floor($seconds / 3600);
+        $minutes = floor(($seconds % 3600) / 60);
+        
+        return sprintf('%dh%02d', $hours, $minutes);
+    }
+}
+
+// Additional helper function for duration formatting
+if (!function_exists('formatDuration')) {
+    /**
+     * Format duration in minutes to readable format
+     * 
+     * @param int $minutes Duration in minutes
+     * @return string Formatted duration
+     */
+    function formatDuration($minutes) {
+        if ($minutes <= 0) return '0h00';
+        
+        $hours = floor($minutes / 60);
+        $mins = $minutes % 60;
+        
+        return sprintf('%dh%02d', $hours, $mins);
+    }
+}
+
+// Helper function to create TimeclockType objects for template
+if (!class_exists('TimeclockType') && !empty($timeclock_types)) {
+    // Create a simple TimeclockType class for template compatibility
+    class TimeclockType {
+        public $id;
+        public $code; 
+        public $label;
+        public $color;
+        
+        public function __construct($data = null) {
+            if ($data) {
+                $this->id = $data->id;
+                $this->code = $data->code;
+                $this->label = $data->label; 
+                $this->color = $data->color;
+            }
+        }
+        
+        public function fetch($id) {
+            global $timeclock_types;
+            foreach ($timeclock_types as $type) {
+                if ($type->id == $id) {
+                    $this->id = $type->id;
+                    $this->code = $type->code;
+                    $this->label = $type->label;
+                    $this->color = $type->color;
+                    return 1;
                 }
-            });
-
-            //On nettoie l'historique au lancement de l'appli
-            cleanHistorique();
-
-            //stockage des donnees de base
-            localStoreData("email", "<?php echo $user->email ?>");
-            localStoreData("firstname", "<?php echo $user->firstname ?>");
-            localStoreData("name", "<?php echo $user->lastname ?>");
-            localStoreData("api_server", "<?php echo $_SERVER['SERVER_NAME'] ?>");
-            localStoreData("api_token", "<?php echo newToken() ?>");
-            localStoreData("api_uri", "<?php echo $_SERVER['SCRIPT_NAME'] ?>");
-
-            // Initialiser les données de time tracking
-            initializeTimeclockData();
-        });
-
-        // Fonction pour initialiser les données de time tracking
-        function initializeTimeclockData() {
-            // Pour l'instant, on simule un statut
-            // Dans la vraie version, cela viendra de la base de données
-            userTimeclockStatus = localGetData('timeclock_status') || 'clocked_out';
-            console.log('Current timeclock status:', userTimeclockStatus);
-        }
-
-        // Fonction de nettoyage de l'historique (à implémenter)
-        function cleanHistorique() {
-            // Placeholder pour la fonction de nettoyage
-            console.log('Cleaning history...');
-        }
-
-        // Fonctions de stockage local (à implémenter)
-        function localStoreData(key, value) {
-            if (typeof(Storage) !== "undefined") {
-                localStorage.setItem(key, value);
             }
+            return 0;
         }
+    }
+}
 
-        function localGetData(key) {
-            if (typeof(Storage) !== "undefined") {
-                return localStorage.getItem(key);
-            }
-            return null;
-        }
+// Set page title
+$title = $langs->trans("TimeTracking");
 
-        // Fonction pour fermer la session
-        function closeSession() {
-            // Fermer le menu latéral
-            document.getElementById('rightmenu').close();
-            // Rediriger vers la déconnexion
-            window.location.href = '<?php echo DOL_URL_ROOT; ?>/user/logout.php';
-        }
+// ÉTAPE 3: VARIABLES DE CONTEXTE POUR LE TEMPLATE
+// ===============================================
 
-        // Fonction pour aller à une page
-        function gotoPage(pageId) {
-            // Fermer le menu latéral
-            document.getElementById('rightmenu').close();
-            
-            // Pour l'instant, juste un log
-            console.log('Going to page:', pageId);
-            
-            // Navigation vers la page (à implémenter)
-            // globalMyNavigator.pushPage(pageId);
-        }
-    </script>
+// S'assurer que toutes les variables nécessaires existent avec des valeurs par défaut
+$num_records = count($recent_records);
+$pending_validation_count = 0; // Placeholder pour le menu
 
-</body>
-</html>
+// Log de l'activité pour debug
+logTimeclockActivity('Home page loaded', array(
+    'is_clocked_in' => $is_clocked_in,
+    'records_count' => $num_records,
+    'user_id' => $user->id
+), $user->id);
+
+// Include template
+include "tpl/home.tpl";
+?>
