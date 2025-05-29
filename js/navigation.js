@@ -1,22 +1,4 @@
-/**
- * Navigation functions for AppMobTimeTouch
- * Functions to navigate to different mobile applications
- */
 
-/**
- * Navigate to AppMobSalesOrders application
- */
-function goToAppmobsalesorders() {
-    // Fermer le menu latéral
-    var rightMenu = document.getElementById('rightmenu');
-    if (rightMenu) {
-        rightMenu.close();
-    }
-    
-    // Rediriger vers le module appmobsalesorders
-    var baseUrl = window.appMobTimeTouch && window.appMobTimeTouch.DOL_URL_ROOT ? window.appMobTimeTouch.DOL_URL_ROOT : '';
-    window.location.href = baseUrl + '/custom/appmobsalesorders/';
-}
 
 /**
  * Navigate to any custom application

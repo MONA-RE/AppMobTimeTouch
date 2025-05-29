@@ -91,7 +91,7 @@
 
     <?php if (!empty($conf->appmobsalesorders->enabled) && $user->rights->appmobsalesorders->order->read_validated): ?>
     <!-- AppMobSalesOrders -->
-    <ons-list-item onclick="goToAppmobsalesorders();" tappable modifier="nodivider">
+    <ons-list-item onclick="goToCustomApp(appmobsalesorders);" tappable modifier="nodivider">
       <div class="left">
         <img src="<?php echo DOL_URL_ROOT; ?>/custom/appmobsalesorders/img/open-box_3286875.png" style="width: 20px; height: 20px;" alt="AppMobSalesOrders">
       </div>
