@@ -5,15 +5,91 @@
  * @param {string} appName - Name of the application
  */
 function goToCustomApp(appName) {
+    console.log('=== DEBUG goToCustomApp ===');
+    console.log('appName parameter:', appName);
+    
     // Fermer le menu latéral
     var rightMenu = document.getElementById('rightmenu');
     if (rightMenu) {
         rightMenu.close();
+        console.log('Right menu closed');
+    } else {
+        console.log('Right menu not found');
     }
     
-    // Rediriger vers l'application custom
-    var baseUrl = window.appMobTimeTouch && window.appMobTimeTouch.DOL_URL_ROOT ? window.appMobTimeTouch.DOL_URL_ROOT : '';
-    window.location.href = baseUrl + '/custom/' + appName + '/';
+    // Debug des variables globales
+    console.log('window.appMobTimeTouch:', window.appMobTimeTouch);
+    
+    if (window.appMobTimeTouch) {
+        console.log('DOL_URL_ROOT from window.appMobTimeTouch:', window.appMobTimeTouch.DOL_URL_ROOT);
+        console.log('version from window.appMobTimeTouch:', window.appMobTimeTouch.version);
+    } else {
+        console.log('ERROR: window.appMobTimeTouch is not defined');
+    }
+    
+    // Obtenir l'URL de base
+    var baseUrl = '';
+    
+    // Méthode 1: Depuis window.appMobTimeTouch
+    if (window.appMobTimeTouch && window.appMobTimeTouch.DOL_URL_ROOT) {
+        baseUrl = window.appMobTimeTouch.DOL_URL_ROOT;
+        console.log('Using baseUrl from appMobTimeTouch:', baseUrl);
+    } 
+    // Méthode 2: Fallback - détection automatique depuis l'URL actuelle
+    else {
+        var currentUrl = window.location.href;
+        console.log('Current URL:', currentUrl);
+        
+        // Extraire le chemin de base depuis l'URL actuelle
+        var pathArray = window.location.pathname.split('/');
+        console.log('Path array:', pathArray);
+        
+        // Chercher 'custom' dans le chemin pour construire la base
+        var customIndex = pathArray.indexOf('custom');
+        if (customIndex > 0) {
+            baseUrl = window.location.protocol + '//' + window.location.host + pathArray.slice(0, customIndex).join('/');
+        } else {
+            // Si on ne trouve pas 'custom', on essaie de détecter htdocs
+            var htdocsIndex = pathArray.indexOf('htdocs');
+            if (htdocsIndex > 0) {
+                baseUrl = window.location.protocol + '//' + window.location.host + pathArray.slice(0, htdocsIndex + 1).join('/');
+            } else {
+                // Fallback ultime
+                baseUrl = window.location.protocol + '//' + window.location.host;
+            }
+        }
+        console.log('Fallback baseUrl detected:', baseUrl);
+    }
+    
+    // Construction de l'URL finale
+    var finalUrl;
+    
+    // Nettoyer l'URL de base (enlever les slashes en fin)
+    baseUrl = baseUrl.replace(/\/+$/, '');
+    console.log('Cleaned baseUrl:', baseUrl);
+    
+    // Construire l'URL finale
+    finalUrl = baseUrl + '/custom/' + appName + '/';
+    console.log('Final URL constructed:', finalUrl);
+    
+    // Validation de l'URL
+    try {
+        var urlObj = new URL(finalUrl);
+        console.log('URL validation successful:', urlObj.href);
+        
+        // Navigation
+        console.log('Navigating to:', finalUrl);
+        window.location.href = finalUrl;
+        
+    } catch (error) {
+        console.error('ERROR: Invalid URL constructed:', finalUrl);
+        console.error('Error details:', error);
+        
+        // Fallback d'urgence
+        var emergencyUrl = window.location.protocol + '//' + window.location.host + '/dev-smta/htdocs/custom/' + appName + '/';
+        console.log('Using emergency URL:', emergencyUrl);
+        window.location.href = emergencyUrl;
+    }
 }
 
 /**
@@ -21,17 +97,65 @@ function goToCustomApp(appName) {
  * @param {string} url - URL to navigate to
  */
 function navigateAndCloseMenu(url) {
+    console.log('=== DEBUG navigateAndCloseMenu ===');
+    console.log('url parameter:', url);
+    
     // Fermer le menu latéral
     var rightMenu = document.getElementById('rightmenu');
     if (rightMenu) {
         rightMenu.close();
+        console.log('Right menu closed');
+    } else {
+        console.log('Right menu not found');
     }
     
     // Navigation
     if (url.startsWith('http')) {
+        console.log('Absolute URL detected, navigating directly to:', url);
         window.location.href = url;
     } else {
-        var baseUrl = window.appMobTimeTouch && window.appMobTimeTouch.DOL_URL_ROOT ? window.appMobTimeTouch.DOL_URL_ROOT : '';
-        window.location.href = baseUrl + '/' + url.replace(/^\/+/, '');
+        var baseUrl = '';
+        
+        if (window.appMobTimeTouch && window.appMobTimeTouch.DOL_URL_ROOT) {
+            baseUrl = window.appMobTimeTouch.DOL_URL_ROOT;
+        } else {
+            baseUrl = window.location.protocol + '//' + window.location.host;
+            console.log('Using fallback baseUrl for navigateAndCloseMenu:', baseUrl);
+        }
+        
+        var finalUrl = baseUrl + '/' + url.replace(/^\/+/, '');
+        console.log('Relative URL converted to:', finalUrl);
+        window.location.href = finalUrl;
     }
+}
+
+/**
+ * Debug function to display current configuration
+ */
+function debugAppConfiguration() {
+    console.log('=== APP CONFIGURATION DEBUG ===');
+    console.log('Current URL:', window.location.href);
+    console.log('Window.appMobTimeTouch:', window.appMobTimeTouch);
+    
+    if (window.appMobTimeTouch) {
+        console.log('DOL_URL_ROOT:', window.appMobTimeTouch.DOL_URL_ROOT);
+        console.log('Version:', window.appMobTimeTouch.version);
+    }
+    
+    console.log('Location protocol:', window.location.protocol);
+    console.log('Location host:', window.location.host);
+    console.log('Location pathname:', window.location.pathname);
+    console.log('Location search:', window.location.search);
+    console.log('================================');
+}
+
+// Fonction utilitaire pour tester la navigation (à appeler depuis la console)
+function testNavigation() {
+    console.log('=== TESTING NAVIGATION ===');
+    debugAppConfiguration();
+    
+    // Test avec différentes valeurs
+    console.log('Testing goToCustomApp with "appmobsalesorders"');
+    // Ne pas exécuter pour éviter la navigation, juste logger
+    console.log('Would navigate to custom app: appmobsalesorders');
 }
