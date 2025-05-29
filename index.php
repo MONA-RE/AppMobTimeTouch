@@ -162,6 +162,12 @@ $version = $moduleInstance->version;
         var globalMyNavigator = null;
         var userTimeclockStatus = null; // null, 'clocked_in', 'clocked_out'
 
+        // Configuration globale pour l'application
+        window.appMobTimeTouch = {
+            DOL_URL_ROOT: '<?php echo DOL_URL_ROOT; ?>',
+            version: '<?php echo $version; ?>'
+        };
+
         ons.ready(function () {
             console.log("ONS ready in AppMobTimeTouch index.php");
 
@@ -247,6 +253,8 @@ $version = $moduleInstance->version;
         }
     </script>
     
+    <!-- Include navigation functions -->
+    <script type="text/javascript" src="js/navigation.js?v=<?php echo $version;?>"></script>
     <script type="text/javascript" src="js/index.min.js?ver=<?php echo time();?>"></script>
 
 </body>

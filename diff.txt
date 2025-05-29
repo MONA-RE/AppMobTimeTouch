@@ -1,318 +1,261 @@
-<ons-page id="ONSHome">
-  <?php include "tpl/parts/topbar-home.tpl"; ?>
-  
-  <ons-pull-hook id="pull-hook">
-    <?php echo $langs->trans("PullToRefresh"); ?>
-  </ons-pull-hook>
-  
-  <!-- Status Card -->
-  <div style="padding: 15px;">
-    <ons-card>
-      <div class="title" style="text-align: center; padding: 10px 0;">
-        <h2><?php echo $langs->trans("TimeclockStatus"); ?></h2>
-      </div>
-      
-      <div class="content" style="text-align: center; padding: 20px;">
-        <?php if ($is_clocked_in): ?>
-          <!-- User is clocked in -->
-          <div class="timeclock-status-active">
-            <ons-icon icon="md-time" size="48px" style="color: #4CAF50;"></ons-icon>
-            <h3 style="color: #4CAF50; margin: 10px 0;">
-              <?php echo $langs->trans("ClockedIn"); ?>
-            </h3>
-            <p style="margin: 5px 0;">
-              <strong><?php echo $langs->trans("Since"); ?>:</strong> 
-              <?php echo dol_print_date($clock_in_time, 'dayhour'); ?>
+<?php
+/* Copyright (C) 2025 SuperAdmin
+ * Copyright (C) 2001-2005 Rodolphe Quiedeville <rodolphe@quiedeville.org>
+ * Copyright (C) 2004-2015 Laurent Destailleur  <eldy@users.sourceforge.net>
+ * Copyright (C) 2005-2012 Regis Houssin        <regis.houssin@inodbox.com>
+ * Copyright (C) 2015      Jean-François Ferry	<jfefe@aternatik.fr>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ */
+
+/**
+ *	\file       appmobtimetouch/index.php
+ *	\ingroup    appmobtimetouch
+ *	\brief      Home page of appmobtimetouch mobile application
+ */
+
+// Load Dolibarr environment
+$res = 0;
+// Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
+if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
+    $res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"]."/main.inc.php";
+}
+// Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
+$tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME'];
+$tmp2 = realpath(__FILE__);
+$i = strlen($tmp) - 1;
+$j = strlen($tmp2) - 1;
+while ($i > 0 && $j > 0 && isset($tmp[$i]) && isset($tmp2[$j]) && $tmp[$i] == $tmp2[$j]) {
+    $i--;
+    $j--;
+}
+if (!$res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1))."/main.inc.php")) {
+    $res = @include substr($tmp, 0, ($i + 1))."/main.inc.php";
+}
+if (!$res && $i > 0 && file_exists(dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php")) {
+    $res = @include dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php";
+}
+// Try main.inc.php using relative path
+if (!$res && file_exists("../main.inc.php")) {
+    $res = @include "../main.inc.php";
+}
+if (!$res && file_exists("../../main.inc.php")) {
+    $res = @include "../../main.inc.php";
+}
+if (!$res && file_exists("../../../main.inc.php")) {
+    $res = @include "../../../main.inc.php";
+}
+if (!$res) {
+    die("Include of main fails");
+}
+
+require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
+dol_include_once('/appmobtimetouch/lib/appmobtimetouch.lib.php');
+dol_include_once('/appmobtimetouch/core/modules/modAppMobTimeTouch.class.php');
+
+// Load translation files required by the page
+$langs->loadLangs(array("appmobtimetouch@appmobtimetouch"));
+
+$action = GETPOST('action', 'aZ09');
+$mainmenu = GETPOST('mainmenu', 'aZ09');
+
+// Security check
+if (!$user->rights->appmobtimetouch->timeclock->read) {
+    accessforbidden($langs->trans('AppmobtimetouchReadRights'));
+}
+
+$socid = GETPOST('socid', 'int');
+if (isset($user->socid) && $user->socid > 0) {
+    $action = '';
+    $socid = $user->socid;
+}
+
+$max = 5;
+$now = dol_now();
+
+// Get version number from module class for cache busting
+$moduleInstance = new modAppMobTimeTouch($db);
+$version = $moduleInstance->version;
+
+?>
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="cache-control" content="no-cache, must-revalidate, post-check=0, pre-check=0" />
+    <meta http-equiv="cache-control" content="max-age=0" />
+    <meta http-equiv="expires" content="0" />
+    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+    <meta http-equiv="pragma" content="no-cache" />
+    <meta name="viewport" content="width=navigator-width, height=navigator-height, initial-scale=1, user-scalable=no">
+    <title>AppMobTimeTouch for Dolibarr <?php echo $version;?></title>
+    
+    <!-- CSS files with version parameter -->
+    <link rel="stylesheet" href="css/onsenui.min.css?v=<?php echo $version;?>">
+    <link rel="stylesheet" href="css/onsen-css-components.min.css?v=<?php echo $version;?>">
+    <link rel="stylesheet" href="css/font_awesome/css/fontawesome.min.css?v=<?php echo $version;?>">
+    <link rel="stylesheet" href="css/index.css?v=<?php echo $version;?>">
+    
+    <!-- Add manifest link -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- JavaScript files with version parameter -->
+    <script type="text/javascript" src="js/onsenui.min.js?v=<?php echo $version;?>"></script>
+    
+</head>
+
+<body>
+    <ons-navigator id="myNavigator" page="splitter.html">
+    </ons-navigator>
+
+    <template id="splitter.html">
+        <ons-page>
+            <ons-splitter id="mySplitter">
+                <ons-splitter-side page="rightmenu.html" id="rightmenu" side="right" width="220px" collapse swipeable swipe-target-width="50px">
+                </ons-splitter-side>
+                <ons-splitter-content page="tabbar.html">
+                </ons-splitter-content>
+            </ons-splitter>
+        </ons-page>
+    </template>
+
+    <template id="tabbar.html">
+        <?php include "tpl/parts/tabbar.tpl"; ?>
+    </template>
+
+    <template id="rightmenu.html">
+        <?php include "tpl/parts/rightmenu.tpl"; ?>
+    </template>
+
+    <ons-modal direction="up" id="sablier">
+        <div style="text-align: center;">
+            <p>
+                <ons-icon icon="md-spinner" size="45px" spin></ons-icon>
             </p>
-            <p style="margin: 5px 0;">
-              <strong><?php echo $langs->trans("Duration"); ?>:</strong>
-              <span id="current-duration"><?php echo convertSecondsToReadableTime($current_duration); ?></span>
-            </p>
-            <?php if ($active_record && !empty($active_record->fk_timeclock_type)): ?>
-              <?php
-              $type = new TimeclockType($db);
-              $type->fetch($active_record->fk_timeclock_type);
-              ?>
-              <p style="margin: 5px 0;">
-                <strong><?php echo $langs->trans("Type"); ?>:</strong>
-                <span style="color: <?php echo $type->color; ?>; font-weight: bold;">
-                  <?php echo $type->label; ?>
-                </span>
-              </p>
-            <?php endif; ?>
-          </div>
-          
-          <!-- Clock Out Button -->
-          <div style="margin-top: 20px;">
-            <ons-button modifier="large" onclick="clockOut()" style="background-color: #f44336; color: white; width: 100%; border-radius: 25px;">
-              <ons-icon icon="md-stop" style="margin-right: 10px;"></ons-icon>
-              <?php echo $langs->trans("ClockOut"); ?>
-            </ons-button>
-          </div>
-          
-        <?php else: ?>
-          <!-- User is not clocked in -->
-          <div class="timeclock-status-inactive">
-            <ons-icon icon="md-pause-circle-outline" size="48px" style="color: #999;"></ons-icon>
-            <h3 style="color: #999; margin: 10px 0;">
-              <?php echo $langs->trans("NotClockedIn"); ?>
-            </h3>
-            <p style="color: #666; margin: 10px 0;">
-              <?php echo $langs->trans("ReadyToStart"); ?>
-            </p>
-          </div>
-          
-          <!-- Clock In Button -->
-          <div style="margin-top: 20px;">
-            <ons-button modifier="large" onclick="clockIn()" style="background-color: #4CAF50; color: white; width: 100%; border-radius: 25px;">
-              <ons-icon icon="md-play-arrow" style="margin-right: 10px;"></ons-icon>
-              <?php echo $langs->trans("ClockIn"); ?>
-            </ons-button>
-          </div>
-          
-        <?php endif; ?>
-      </div>
-    </ons-card>
-  </div>
-  
-  <!-- Today's Summary -->
-  <div style="padding: 0 15px 15px 15px;">
-    <ons-card>
-      <div class="title" style="padding: 10px;">
-        <h3><?php echo $langs->trans("TodaySummary"); ?></h3>
-      </div>
-      <div class="content" style="padding: 0 15px 15px 15px;">
-        <ons-row>
-          <ons-col width="50%">
-            <div style="text-align: center; padding: 10px;">
-              <ons-icon icon="md-access-time" style="color: #2196F3;"></ons-icon>
-              <p style="margin: 5px 0; font-size: 14px; color: #666;">
-                <?php echo $langs->trans("WorkedHours"); ?>
-              </p>
-              <p style="margin: 0; font-size: 18px; font-weight: bold; color: #2196F3;">
-                <?php echo convertSecondsToReadableTime($today_total_hours * 3600); ?>
-              </p>
-            </div>
-          </ons-col>
-          <ons-col width="50%">
-            <div style="text-align: center; padding: 10px;">
-              <ons-icon icon="md-pause" style="color: #FF9800;"></ons-icon>
-              <p style="margin: 5px 0; font-size: 14px; color: #666;">
-                <?php echo $langs->trans("BreakTime"); ?>
-              </p>
-              <p style="margin: 0; font-size: 18px; font-weight: bold; color: #FF9800;">
-                <?php echo convertSecondsToReadableTime($today_total_breaks * 60); ?>
-              </p>
-            </div>
-          </ons-col>
-        </ons-row>
-      </div>
-    </ons-card>
-  </div>
-  
-  <!-- Weekly Summary -->
-  <?php if ($weekly_summary): ?>
-  <div style="padding: 0 15px 15px 15px;">
-    <ons-card>
-      <div class="title" style="padding: 10px;">
-        <h3><?php echo $langs->trans("WeekSummary"); ?> - <?php echo $langs->trans("Week"); ?> <?php echo $weekly_summary->week_number; ?></h3>
-      </div>
-      <div class="content" style="padding: 0 15px 15px 15px;">
-        <ons-row>
-          <ons-col width="33%">
-            <div style="text-align: center; padding: 10px;">
-              <p style="margin: 5px 0; font-size: 12px; color: #666;">
-                <?php echo $langs->trans("TotalHours"); ?>
-              </p>
-              <p style="margin: 0; font-size: 16px; font-weight: bold;">
-                <?php echo convertSecondsToReadableTime($weekly_summary->total_hours * 3600); ?>
-              </p>
-            </div>
-          </ons-col>
-          <ons-col width="33%">
-            <div style="text-align: center; padding: 10px;">
-              <p style="margin: 5px 0; font-size: 12px; color: #666;">
-                <?php echo $langs->trans("DaysWorked"); ?>
-              </p>
-              <p style="margin: 0; font-size: 16px; font-weight: bold;">
-                <?php echo $weekly_summary->days_worked; ?>
-              </p>
-            </div>
-          </ons-col>
-          <ons-col width="33%">
-            <div style="text-align: center; padding: 10px;">
-              <p style="margin: 5px 0; font-size: 12px; color: #666;">
-                <?php echo $langs->trans("Status"); ?>
-              </p>
-              <div style="margin: 0;">
-                <?php echo $weekly_summary->getLibStatut(3); ?>
-              </div>
-            </div>
-          </ons-col>
-        </ons-row>
-        
-        <?php if ($weekly_summary->overtime_hours > 0): ?>
-        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 10px; margin-top: 10px;">
-          <p style="margin: 0; color: #856404; font-size: 14px;">
-            <ons-icon icon="md-warning" style="color: #ffc107;"></ons-icon>
-            <strong><?php echo $langs->trans("OvertimeHours"); ?>:</strong>
-            <?php echo convertSecondsToReadableTime($weekly_summary->overtime_hours * 3600); ?>
-          </p>
+            <p id="loadingmessage"><span><?php echo $langs->trans("loadingInProgress"); ?></span></p>
         </div>
-        <?php endif; ?>
-      </div>
-    </ons-card>
-  </div>
-  <?php endif; ?>
-  
-  <!-- Recent Records -->
-  <?php if (!empty($recent_records)): ?>
-  <div style="padding: 0 15px 15px 15px;">
-    <ons-card>
-      <div class="title" style="padding: 10px;">
-        <h3><?php echo $langs->trans("RecentRecords"); ?></h3>
-      </div>
-      <ons-list style="margin: 0;">
-        <?php 
-        $count = 0;
-        foreach ($recent_records as $record): 
-          if ($count >= 5) break; // Limit to 5 records
-          $count++;
-          
-          // Get type info
-          $type = new TimeclockType($db);
-          $type->fetch($record->fk_timeclock_type);
-          
-          $record_date = dol_print_date($db->jdate($record->clock_in_time), 'day');
-          $clock_in = dol_print_date($db->jdate($record->clock_in_time), 'hour');
-          $clock_out = !empty($record->clock_out_time) ? dol_print_date($db->jdate($record->clock_out_time), 'hour') : '';
-          $duration = !empty($record->work_duration) ? convertSecondsToReadableTime($record->work_duration * 60) : '';
-        ?>
-        <ons-list-item tappable onclick="viewRecord(<?php echo $record->id; ?>)">
-          <div class="left">
-            <div style="width: 8px; height: 40px; background-color: <?php echo $type->color; ?>; border-radius: 4px;"></div>
-          </div>
-          <div class="center">
-            <div style="font-weight: bold; margin-bottom: 2px;">
-              <?php echo $record_date; ?>
-            </div>
-            <div style="font-size: 14px; color: #666; margin-bottom: 2px;">
-              <?php echo $type->label; ?>
-            </div>
-            <div style="font-size: 12px; color: #999;">
-              <?php echo $clock_in; ?>
-              <?php if ($clock_out): ?>
-                - <?php echo $clock_out; ?>
-              <?php else: ?>
-                - <?php echo $langs->trans("InProgress"); ?>
-              <?php endif; ?>
-            </div>
-          </div>
-          <div class="right">
-            <?php if ($duration): ?>
-              <div style="font-weight: bold; color: #4CAF50;">
-                <?php echo $duration; ?>
-              </div>
-            <?php else: ?>
-              <ons-icon icon="md-more-vert" style="color: #999;"></ons-icon>
-            <?php endif; ?>
-          </div>
-        </ons-list-item>
-        <?php endforeach; ?>
-      </ons-list>
-    </ons-card>
-  </div>
-  <?php endif; ?>
-  
-  <script type="text/javascript">
-    var updateDurationTimer = null;
-    
-    ons.ready(function () {
-      // Initialize pull to refresh
-      var pullHook = document.getElementById('pull-hook');
+    </ons-modal>
 
-      pullHook.addEventListener('changestate', function (event) {
-        var message = '';
-        switch (event.state) {
-          case 'initial':
-            message = '<?php echo $langs->trans("PullToRefresh"); ?>';
-            break;
-          case 'preaction':
-            message = '<?php echo $langs->trans("Release"); ?>';
-            break;
-          case 'action':
-            message = '<?php echo $langs->trans("Loading"); ?>...';
-            break;
+    <?php
+    //Build complet de l'application via php
+    $dir = "tpl";
+    if ($dh = opendir($dir)) {
+        while (($file = readdir($dh)) !== false) {
+            if ($file == '.' || $file == '..' || $file == 'parts') {
+                continue;
+            }
+            echo "<template id=\"" . str_replace(".tpl", "Application", $file) . "\">\n";
+            include $dir . '/' . $file;
+            echo "</template>\n";
         }
-        pullHook.innerHTML = message;
-      });
+        closedir($dh);
+    }
+    ?>
 
-      pullHook.onAction = function (done) {
-        // Refresh the page
-        setTimeout(function() {
-          location.reload();
-          done();
-        }, 1000);
-      };
-      
-      <?php if ($is_clocked_in): ?>
-      // Start duration update timer
-      startDurationTimer();
-      <?php endif; ?>
-    });
-    
-    // Function to start updating duration
-    function startDurationTimer() {
-      updateDurationTimer = setInterval(function() {
-        updateCurrentDuration();
-      }, 60000); // Update every minute
-    }
-    
-    // Function to stop duration timer
-    function stopDurationTimer() {
-      if (updateDurationTimer) {
-        clearInterval(updateDurationTimer);
-        updateDurationTimer = null;
-      }
-    }
-    
-    // Function to update current duration display
-    function updateCurrentDuration() {
-      var clockInTime = <?php echo $is_clocked_in ? $clock_in_time : 0; ?>;
-      if (clockInTime > 0) {
-        var now = Math.floor(Date.now() / 1000);
-        var duration = now - clockInTime;
-        var hours = Math.floor(duration / 3600);
-        var minutes = Math.floor((duration % 3600) / 60);
-        
-        var durationText = hours + 'h' + (minutes < 10 ? '0' : '') + minutes;
-        
-        var durationElement = document.getElementById('current-duration');
-        if (durationElement) {
-          durationElement.textContent = durationText;
+    <script type="text/javascript">
+        // Variables globales pour le time tracking
+        var globalCurrentPage = "homeApplication";
+        var globalMyNavigator = null;
+        var userTimeclockStatus = null; // null, 'clocked_in', 'clocked_out'
+
+        // Configuration globale pour l'application
+        window.appMobTimeTouch = {
+            DOL_URL_ROOT: '<?php echo DOL_URL_ROOT; ?>',
+            version: '<?php echo $version; ?>'
+        };
+
+        ons.ready(function () {
+            console.log("ONS ready in AppMobTimeTouch index.php");
+
+            globalCurrentPage = "homeApplication";
+            globalMyNavigator = document.getElementById('myNavigator');
+
+            console.log('AppMobTimeTouch navigator initialized');
+
+            let onsRightMenu = document.getElementById('rightmenu');
+            if (onsRightMenu != undefined)
+                onsRightMenu.close();
+
+            //pour gérer les retours sur une page
+            globalMyNavigator.addEventListener('postpop', function (event) {
+                let lapage = event.enterPage.id;
+
+                if (lapage == 'ONSConfig') {
+                    return;
+                }
+            });
+
+            //On nettoie l'historique au lancement de l'appli
+            cleanHistorique();
+
+            //stockage des donnees de base
+            localStoreData("email", "<?php echo $user->email ?>");
+            localStoreData("firstname", "<?php echo $user->firstname ?>");
+            localStoreData("name", "<?php echo $user->lastname ?>");
+            localStoreData("api_server", "<?php echo $_SERVER['SERVER_NAME'] ?>");
+            localStoreData("api_token", "<?php echo newToken() ?>");
+            localStoreData("api_uri", "<?php echo $_SERVER['SCRIPT_NAME'] ?>");
+
+            // Initialiser les données de time tracking
+            initializeTimeclockData();
+        });
+
+        // Fonction pour initialiser les données de time tracking
+        function initializeTimeclockData() {
+            // Pour l'instant, on simule un statut
+            // Dans la vraie version, cela viendra de la base de données
+            userTimeclockStatus = localGetData('timeclock_status') || 'clocked_out';
+            console.log('Current timeclock status:', userTimeclockStatus);
         }
-      }
-    }
+
+        // Fonction de nettoyage de l'historique (à implémenter)
+        function cleanHistorique() {
+            // Placeholder pour la fonction de nettoyage
+            console.log('Cleaning history...');
+        }
+
+        // Fonctions de stockage local (à implémenter)
+        function localStoreData(key, value) {
+            if (typeof(Storage) !== "undefined") {
+                localStorage.setItem(key, value);
+            }
+        }
+
+        function localGetData(key) {
+            if (typeof(Storage) !== "undefined") {
+                return localStorage.getItem(key);
+            }
+            return null;
+        }
+
+        // Fonction pour fermer la session
+        function closeSession() {
+            // Fermer le menu latéral
+            document.getElementById('rightmenu').close();
+            // Rediriger vers la déconnexion
+            window.location.href = '<?php echo DOL_URL_ROOT; ?>/user/logout.php';
+        }
+
+        // Fonction pour aller à une page
+        function gotoPage(pageId) {
+            // Fermer le menu latéral
+            document.getElementById('rightmenu').close();
+            
+            // Pour l'instant, juste un log
+            console.log('Going to page:', pageId);
+            
+            // Navigation vers la page (à implémenter)
+            // globalMyNavigator.pushPage(pageId);
+        }
+    </script>
     
-    // Clock In function (placeholder)
-    function clockIn() {
-      console.log('Clock In clicked');
-      // TODO: Implement clock in functionality
-      ons.notification.alert('<?php echo $langs->trans("ClockInFunctionality"); ?>');
-    }
-    
-    // Clock Out function (placeholder)
-    function clockOut() {
-      console.log('Clock Out clicked');
-      // TODO: Implement clock out functionality
-      ons.notification.alert('<?php echo $langs->trans("ClockOutFunctionality"); ?>');
-    }
-    
-    // View record function (placeholder)
-    function viewRecord(recordId) {
-      console.log('View record:', recordId);
-      // TODO: Implement view record functionality
-      ons.notification.alert('<?php echo $langs->trans("ViewRecordFunctionality"); ?>: ' + recordId);
-    }
-  </script>
-</ons-page>
+    <!-- Include navigation functions -->
+    <script type="text/javascript" src="js/navigation.js?v=<?php echo $version;?>"></script>
+    <script type="text/javascript" src="js/index.min.js?ver=<?php echo time();?>"></script>
+
+</body>
+</html>

@@ -77,7 +77,31 @@
     </ons-list-item>
     <?php endif; ?>
 
-    <!-- Divider -->
+    <!-- Divider Applications -->
+    <ons-list-item modifier="nodivider" style="height: 1px; background-color: #e0e0e0; margin: 10px 0;"></ons-list-item>
+
+    <!-- Titre Applications -->
+    <ons-list-item modifier="nodivider" style="background-color: #f5f5f5; padding: 5px 15px;">
+      <div class="center">
+        <span style="font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase;">
+          <?php echo $langs->trans("Applications"); ?>
+        </span>
+      </div>
+    </ons-list-item>
+
+    <?php if (!empty($conf->appmobsalesorders->enabled) && $user->rights->appmobsalesorders->order->read_validated): ?>
+    <!-- AppMobSalesOrders -->
+    <ons-list-item onclick="goToAppmobsalesorders();" tappable modifier="nodivider">
+      <div class="left">
+        <img src="<?php echo DOL_URL_ROOT; ?>/custom/appmobsalesorders/img/open-box_3286875.png" style="width: 20px; height: 20px;" alt="AppMobSalesOrders">
+      </div>
+      <div class="center">
+        <span><?php echo $langs->trans("appmobsalesorders"); ?></span>
+      </div>
+    </ons-list-item>
+    <?php endif; ?>
+
+    <!-- Divider Fin Applications -->
     <ons-list-item modifier="nodivider" style="height: 1px; background-color: #e0e0e0; margin: 10px 0;"></ons-list-item>
 
     <!-- Préférences -->
