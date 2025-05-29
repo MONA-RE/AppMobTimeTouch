@@ -1,655 +1,944 @@
-<?php
-/* Copyright (C) 2025 SuperAdmin
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-
 /**
- * \file    api/timeclock.php
- * \ingroup appmobtimetouch
- * \brief   API endpoints for timeclock operations
+ * TimeClock API Integration Module
+ * Handles all API calls and real-time updates for the mobile interface
  */
 
-// Prevent direct access
-if (!defined('NOREQUIREMENU')) define('NOREQUIREMENU', '1');
-if (!defined('NOREQUIREHTML')) define('NOREQUIREHTML', '1');
-if (!defined('NOREQUIREAJAX')) define('NOREQUIREAJAX', '1');
-
-// Load Dolibarr environment
-$res = 0;
-// Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
-if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
-    $res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"]."/main.inc.php";
-}
-// Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
-$tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME'];
-$tmp2 = realpath(__FILE__);
-$i = strlen($tmp) - 1;
-$j = strlen($tmp2) - 1;
-while ($i > 0 && $j > 0 && isset($tmp[$i]) && isset($tmp2[$j]) && $tmp[$i] == $tmp2[$j]) {
-    $i--;
-    $j--;
-}
-if (!$res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1))."/main.inc.php")) {
-    $res = @include substr($tmp, 0, ($i + 1))."/main.inc.php";
-}
-if (!$res && $i > 0 && file_exists(dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php")) {
-    $res = @include dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php";
-}
-// Try main.inc.php using relative path
-if (!$res && file_exists("../../main.inc.php")) {
-    $res = @include "../../main.inc.php";
-}
-if (!$res && file_exists("../../../main.inc.php")) {
-    $res = @include "../../../main.inc.php";
-}
-if (!$res) {
-    die("Include of main fails");
-}
-
-// Load required libraries
-dol_include_once('/appmobtimetouch/class/timeclockrecord.class.php');
-dol_include_once('/appmobtimetouch/class/timeclocktype.class.php');
-dol_include_once('/appmobtimetouch/class/weeklysummary.class.php');
-dol_include_once('/appmobtimetouch/class/timeclockconfig.class.php');
-
-// Load translations
-$langs->loadLangs(array("appmobtimetouch@appmobtimetouch", "errors"));
-
-// Vérifier si la fonction isModEnabled existe (compatibilité)
-if (!function_exists('isModEnabled')) {
-    function isModEnabled($module)
-    {
-        global $conf;
-        return !empty($conf->$module->enabled);
-    }
-}
-
-/**
- * API Response handler
- */
-class TimeclockAPI
-{
-    private $db;
-    private $user;
-    private $langs;
-
-    public function __construct($db, $user, $langs)
-    {
-        $this->db = $db;
-        $this->user = $user;
-        $this->langs = $langs;
-    }
-
-    /**
-     * Send JSON response
-     */
-    private function sendResponse($success, $data = null, $message = '', $error = '', $httpCode = 200)
-    {
-        // Set appropriate headers
-        http_response_code($httpCode);
-        header('Content-Type: application/json; charset=utf-8');
-        header('Cache-Control: no-cache, must-revalidate');
-        header('Pragma: no-cache');
-        
-        $response = array(
-            'success' => $success,
-            'timestamp' => dol_now(),
-            'message' => $message
-        );
-
-        if ($success) {
-            $response['data'] = $data;
-        } else {
-            $response['error'] = $error;
-        }
-
-        echo json_encode($response, JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-
-    /**
-     * Log API activity for debugging
-     */
-    private function logActivity($action, $data = null, $error = null)
-    {
-        $log_message = 'TimeclockAPI: ' . $action;
-        if ($data) {
-            $log_message .= ' - Data: ' . json_encode($data);
-        }
-        if ($error) {
-            $log_message .= ' - Error: ' . $error;
-        }
-        dol_syslog($log_message, LOG_DEBUG);
-    }
-
-    /**
-     * Check CSRF token
-     */
-    private function checkCSRFToken()
-    {
-        // Get token from various sources
-        $token = null;
-        
-        // Check POST data
-        if (isset($_POST['token'])) {
-            $token = $_POST['token'];
-        }
-        
-        // Check GET parameter
-        if (!$token && isset($_GET['token'])) {
-            $token = $_GET['token'];
-        }
-        
-        // Check HTTP headers
-        if (!$token) {
-            $headers = getallheaders();
-            if (isset($headers['X-CSRF-Token'])) {
-                $token = $headers['X-CSRF-Token'];
-            } elseif (isset($headers['X-API-Token'])) {
-                $token = $headers['X-API-Token'];
+// Global TimeClock API Manager
+window.TimeclockAPI = (function() {
+    'use strict';
+    
+    // Configuration
+    const CONFIG = {
+        API_BASE_URL: './api/timeclock.php',
+        REFRESH_INTERVAL: 60000, // 1 minute
+        LOCATION_TIMEOUT: 10000, // 10 seconds
+        RETRY_ATTEMPTS: 3,
+        CACHE_DURATION: 300000, // 5 minutes
+        DEBUG: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    };
+    
+    // State management
+    let state = {
+        isOnline: navigator.onLine,
+        currentStatus: null,
+        updateTimer: null,
+        apiToken: null,
+        csrfToken: null,
+        requestQueue: [],
+        cache: new Map()
+    };
+    
+    // Utility functions
+    const utils = {
+        log: function(message, data = null) {
+            if (CONFIG.DEBUG) {
+                console.log('[TimeclockAPI]', message, data || '');
             }
-        }
+        },
         
-        // Check JSON payload for token
-        if (!$token) {
-            $input = json_decode(file_get_contents('php://input'), true);
-            if ($input && isset($input['token'])) {
-                $token = $input['token'];
+        error: function(message, error = null) {
+            console.error('[TimeclockAPI]', message, error || '');
+        },
+        
+        formatDuration: function(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return hours + 'h' + (minutes < 10 ? '0' : '') + minutes;
+        },
+        
+        getCacheKey: function(endpoint, params = {}) {
+            return endpoint + JSON.stringify(params);
+        },
+        
+        isValidResponse: function(response) {
+            return response && typeof response === 'object' && response.hasOwnProperty('success');
+        },
+        
+        showLoading: function(message = 'Loading...') {
+            if (typeof ons !== 'undefined') {
+                ons.notification.toast(message, {timeout: 1000});
             }
-        }
-
-        $this->logActivity('CSRF Check', array('token_received' => !empty($token)));
-
-        // For development, we can be more flexible with token validation
-        // In production, this should be stricter
-        if (empty($token)) {
-            // Try to generate a new token if none provided (for compatibility)
-            $token = newToken();
-            $this->logActivity('CSRF Token Generated', array('new_token' => $token));
-        }
-
-        // Validate token if provided
-        if (!empty($token)) {
-            // In Dolibarr, we can check the token against the session
-            if (function_exists('checkToken')) {
-                $valid = checkToken($token);
-                if (!$valid) {
-                    $this->logActivity('CSRF Token Invalid', array('token' => $token));
-                    return false;
+        },
+        
+        showError: function(message) {
+            if (typeof ons !== 'undefined') {
+                ons.notification.alert(message);
+            } else {
+                alert(message);
+            }
+        },
+        
+        showSuccess: function(message) {
+            if (typeof ons !== 'undefined') {
+                ons.notification.toast(message, {timeout: 2000});
+            }
+        },
+        
+        // Get CSRF token from various sources
+        getCSRFToken: function() {
+            // Try to get from state first
+            if (state.csrfToken) {
+                return state.csrfToken;
+            }
+            
+            // Try to get from global config
+            if (window.appConfig && window.appConfig.api_token) {
+                state.csrfToken = window.appConfig.api_token;
+                return state.csrfToken;
+            }
+            
+            // Try to get from localStorage
+            if (typeof(Storage) !== "undefined") {
+                const token = localStorage.getItem('api_token');
+                if (token) {
+                    state.csrfToken = token;
+                    return state.csrfToken;
                 }
             }
-        }
-
-        return true;
-    }
-
-    /**
-     * Check user permissions
-     */
-    private function checkPermissions($action = 'read')
-    {
-        $this->logActivity('Permission Check', array('action' => $action, 'user_id' => $this->user->id));
-
-        if (!isModEnabled('appmobtimetouch')) {
-            $this->logActivity('Module Not Enabled');
-            $this->sendResponse(false, null, '', $this->langs->trans('ModuleNotEnabled'), 403);
-        }
-
-        // Check if user object is valid
-        if (empty($this->user) || !is_object($this->user) || $this->user->id <= 0) {
-            $this->logActivity('Invalid User Object');
-            $this->sendResponse(false, null, '', 'Authentication required', 401);
-        }
-
-        switch ($action) {
-            case 'read':
-                if (empty($this->user->rights->appmobtimetouch->timeclock->read)) {
-                    $this->logActivity('No Read Permission');
-                    $this->sendResponse(false, null, '', $this->langs->trans('NotEnoughPermissions'), 403);
-                }
-                break;
-            case 'write':
-                if (empty($this->user->rights->appmobtimetouch->timeclock->write)) {
-                    $this->logActivity('No Write Permission');
-                    $this->sendResponse(false, null, '', $this->langs->trans('NotEnoughPermissions'), 403);
-                }
-                break;
-            case 'readall':
-                if (empty($this->user->rights->appmobtimetouch->timeclock->readall)) {
-                    $this->logActivity('No ReadAll Permission');
-                    $this->sendResponse(false, null, '', $this->langs->trans('NotEnoughPermissions'), 403);
-                }
-                break;
-        }
-
-        $this->logActivity('Permission Check Passed', array('action' => $action));
-    }
-
-    /**
-     * Get current timeclock status
-     */
-    public function getStatus()
-    {
-        $this->checkPermissions('read');
-
-        $timeclockrecord = new TimeclockRecord($this->db);
-        $active_record_id = $timeclockrecord->getActiveRecord($this->user->id);
+            
+            // Try to get from meta tag
+            const metaToken = document.querySelector('meta[name="csrf-token"]');
+            if (metaToken) {
+                state.csrfToken = metaToken.getAttribute('content');
+                return state.csrfToken;
+            }
+            
+            // Try to get from hidden input
+            const hiddenToken = document.querySelector('input[name="token"]');
+            if (hiddenToken) {
+                state.csrfToken = hiddenToken.value;
+                return state.csrfToken;
+            }
+            
+            // Last resort - try to generate one (this might not always work)
+            if (typeof newToken === 'function') {
+                state.csrfToken = newToken();
+                return state.csrfToken;
+            }
+            
+            utils.log('No CSRF token found');
+            return null;
+        },
         
-        $status = array(
-            'is_clocked_in' => false,
-            'active_record' => null,
-            'clock_in_time' => null,
-            'current_duration' => 0,
-            'timeclock_type' => null
-        );
-
-        if ($active_record_id > 0) {
-            $active_record = new TimeclockRecord($this->db);
-            if ($active_record->fetch($active_record_id) > 0) {
-                $status['is_clocked_in'] = true;
-                $status['active_record'] = array(
-                    'id' => $active_record->id,
-                    'ref' => $active_record->ref,
-                    'clock_in_time' => $active_record->clock_in_time,
-                    'location_in' => $active_record->location_in,
-                    'fk_timeclock_type' => $active_record->fk_timeclock_type
+        // Update CSRF token
+        updateCSRFToken: function(token) {
+            if (token) {
+                state.csrfToken = token;
+                // Store in localStorage for persistence
+                if (typeof(Storage) !== "undefined") {
+                    localStorage.setItem('api_token', token);
+                }
+                utils.log('CSRF token updated', token);
+            }
+        }
+    };
+    
+    // HTTP Request handler with retry logic
+    const http = {
+        request: async function(method, endpoint, data = null, options = {}) {
+            const url = CONFIG.API_BASE_URL + '?action=' + endpoint;
+            
+            // Get CSRF token
+            const csrfToken = utils.getCSRFToken();
+            
+            const requestOptions = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                ...options
+            };
+            
+            // Add CSRF token to headers and data
+            if (csrfToken) {
+                requestOptions.headers['X-CSRF-Token'] = csrfToken;
+                requestOptions.headers['X-API-Token'] = csrfToken;
+                
+                // Also add to data for POST requests
+                if (data && method !== 'GET') {
+                    data.token = csrfToken;
+                }
+            }
+            
+            if (data && method !== 'GET') {
+                requestOptions.body = JSON.stringify(data);
+            } else if (data && method === 'GET') {
+                // Add token to URL for GET requests
+                const separator = url.includes('?') ? '&' : '?';
+                const tokenParam = csrfToken ? `${separator}token=${encodeURIComponent(csrfToken)}` : '';
+                url += tokenParam;
+            }
+            
+            utils.log(`${method} request to ${endpoint}`, {
+                url: url,
+                data: data,
+                hasToken: !!csrfToken
+            });
+            
+            try {
+                const response = await fetch(url, requestOptions);
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    // If not JSON, probably an HTML error page
+                    const htmlText = await response.text();
+                    utils.error(`Non-JSON response from ${endpoint}`, {
+                        status: response.status,
+                        statusText: response.statusText,
+                        contentType: contentType,
+                        htmlPreview: htmlText.substring(0, 200)
+                    });
+                    
+                    // Try to extract meaningful error message from HTML
+                    let errorMessage = `HTTP ${response.status}`;
+                    if (htmlText.includes('Access denied') || htmlText.includes('Accès refusé')) {
+                        errorMessage = 'Access denied - Check permissions';
+                    } else if (htmlText.includes('CSRF') || htmlText.includes('token')) {
+                        errorMessage = 'Security token error';
+                    } else if (htmlText.includes('Login') || htmlText.includes('login')) {
+                        errorMessage = 'Authentication required';
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+                
+                const responseData = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${responseData.error || 'Request failed'}`);
+                }
+                
+                // Update CSRF token if provided in response
+                if (responseData.csrf_token) {
+                    utils.updateCSRFToken(responseData.csrf_token);
+                }
+                
+                utils.log(`Response from ${endpoint}`, responseData);
+                return responseData;
+                
+            } catch (error) {
+                utils.error(`Request failed for ${endpoint}`, error);
+                
+                // Queue request for retry if offline
+                if (!state.isOnline) {
+                    this.queueRequest(method, endpoint, data);
+                }
+                
+                throw error;
+            }
+        },
+        
+        get: function(endpoint, params = {}) {
+            // Add CSRF token to params for GET requests
+            const csrfToken = utils.getCSRFToken();
+            if (csrfToken) {
+                params.token = csrfToken;
+            }
+            
+            const queryString = Object.keys(params).length > 0 ? 
+                '&' + new URLSearchParams(params).toString() : '';
+            return this.request('GET', endpoint + queryString);
+        },
+        
+        post: function(endpoint, data) {
+            return this.request('POST', endpoint, data);
+        },
+        
+        queueRequest: function(method, endpoint, data) {
+            state.requestQueue.push({
+                method,
+                endpoint,
+                data,
+                timestamp: Date.now()
+            });
+            utils.log('Request queued for later execution', {method, endpoint});
+        },
+        
+        processQueue: async function() {
+            if (state.requestQueue.length === 0) return;
+            
+            utils.log('Processing queued requests', state.requestQueue.length);
+            
+            const queue = [...state.requestQueue];
+            state.requestQueue = [];
+            
+            for (const request of queue) {
+                try {
+                    await this.request(request.method, request.endpoint, request.data);
+                } catch (error) {
+                    utils.error('Failed to process queued request', error);
+                }
+            }
+        }
+    };
+    
+    // Cache management
+    const cache = {
+        set: function(key, data) {
+            state.cache.set(key, {
+                data: data,
+                timestamp: Date.now()
+            });
+        },
+        
+        get: function(key) {
+            const cached = state.cache.get(key);
+            if (!cached) return null;
+            
+            const age = Date.now() - cached.timestamp;
+            if (age > CONFIG.CACHE_DURATION) {
+                state.cache.delete(key);
+                return null;
+            }
+            
+            return cached.data;
+        },
+        
+        clear: function() {
+            state.cache.clear();
+            utils.log('Cache cleared');
+        }
+    };
+    
+    // Geolocation handler
+    const geolocation = {
+        getCurrentPosition: function() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation not supported'));
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const result = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            timestamp: position.timestamp
+                        };
+                        utils.log('Location obtained', result);
+                        resolve(result);
+                    },
+                    (error) => {
+                        let errorMessage = 'Location error';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMessage = 'Location permission denied';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMessage = 'Location unavailable';
+                                break;
+                            case error.TIMEOUT:
+                                errorMessage = 'Location timeout';
+                                break;
+                        }
+                        utils.error(errorMessage, error);
+                        reject(new Error(errorMessage));
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: CONFIG.LOCATION_TIMEOUT,
+                        maximumAge: 300000 // 5 minutes
+                    }
                 );
-                $status['clock_in_time'] = $this->db->jdate($active_record->clock_in_time);
-                $status['current_duration'] = dol_now() - $status['clock_in_time'];
-
-                // Get timeclock type info
-                if (!empty($active_record->fk_timeclock_type)) {
-                    $type = new TimeclockType($this->db);
-                    if ($type->fetch($active_record->fk_timeclock_type) > 0) {
-                        $status['timeclock_type'] = array(
-                            'id' => $type->id,
-                            'code' => $type->code,
-                            'label' => $type->label,
-                            'color' => $type->color
-                        );
+            });
+        },
+        
+        watchPosition: function(callback) {
+            if (!navigator.geolocation) return null;
+            
+            return navigator.geolocation.watchPosition(
+                callback,
+                (error) => utils.error('Position watch error', error),
+                {
+                    enableHighAccuracy: true,
+                    timeout: CONFIG.LOCATION_TIMEOUT,
+                    maximumAge: 300000
+                }
+            );
+        }
+    };
+    
+    // API Methods
+    const api = {
+        // Get current timeclock status
+        getStatus: async function(useCache = true) {
+            const cacheKey = utils.getCacheKey('status');
+            
+            if (useCache) {
+                const cached = cache.get(cacheKey);
+                if (cached) {
+                    utils.log('Using cached status', cached);
+                    return cached;
+                }
+            }
+            
+            try {
+                const response = await http.get('status');
+                if (utils.isValidResponse(response) && response.success) {
+                    cache.set(cacheKey, response.data);
+                    state.currentStatus = response.data;
+                    return response.data;
+                } else {
+                    throw new Error(response.error || 'Invalid response format');
+                }
+            } catch (error) {
+                utils.error('Failed to get status', error);
+                throw error;
+            }
+        },
+        
+        // Clock in
+        clockIn: async function(data) {
+            utils.log('Clock in request', data);
+            
+            try {
+                // Get location if required and not provided
+                if (window.appConfig && window.appConfig.require_location) {
+                    if (!data.latitude || !data.longitude) {
+                        utils.log('Getting location for clock in');
+                        const position = await geolocation.getCurrentPosition();
+                        data.latitude = position.latitude;
+                        data.longitude = position.longitude;
                     }
                 }
-            }
-        }
-
-        $this->logActivity('Status Retrieved', $status);
-        $this->sendResponse(true, $status, $this->langs->trans('StatusRetrieved'));
-    }
-
-    /**
-     * Clock in
-     */
-    public function clockIn()
-    {
-        $this->logActivity('Clock In Attempt', array('user_id' => $this->user->id));
-        
-        $this->checkPermissions('write');
-
-        // Check CSRF token for write operations
-        if (!$this->checkCSRFToken()) {
-            $this->logActivity('Clock In CSRF Failed');
-            $this->sendResponse(false, null, '', 'Invalid security token', 403);
-        }
-
-        // Get POST data
-        $input = json_decode(file_get_contents('php://input'), true);
-        if (!$input) {
-            $input = $_POST;
-        }
-
-        $this->logActivity('Clock In Input', $input);
-
-        $timeclock_type_id = isset($input['timeclock_type_id']) ? intval($input['timeclock_type_id']) : TimeclockType::getDefaultType($this->db);
-        $location = isset($input['location']) ? trim($input['location']) : '';
-        $latitude = isset($input['latitude']) ? floatval($input['latitude']) : null;
-        $longitude = isset($input['longitude']) ? floatval($input['longitude']) : null;
-        $note = isset($input['note']) ? trim($input['note']) : '';
-
-        // Validate required location if configured
-        $require_location = TimeclockConfig::getValue($this->db, 'REQUIRE_LOCATION', 0);
-        if ($require_location && (empty($latitude) || empty($longitude))) {
-            $this->logActivity('Clock In Location Required');
-            $this->sendResponse(false, null, '', $this->langs->trans('LocationRequiredForClockIn'), 400);
-        }
-
-        // Create timeclock record
-        $timeclockrecord = new TimeclockRecord($this->db);
-        $result = $timeclockrecord->clockIn($this->user, $timeclock_type_id, $location, $latitude, $longitude, $note);
-
-        if ($result > 0) {
-            // Return the created record info
-            $record_data = array(
-                'id' => $result,
-                'clock_in_time' => dol_now(),
-                'location' => $location,
-                'timeclock_type_id' => $timeclock_type_id
-            );
-
-            $this->logActivity('Clock In Success', $record_data);
-            $this->sendResponse(true, $record_data, $this->langs->trans('ClockInSuccess'));
-        } else {
-            $error_msg = !empty($timeclockrecord->error) ? $timeclockrecord->error : $this->langs->trans('ClockInError');
-            $this->logActivity('Clock In Failed', null, $error_msg);
-            $this->sendResponse(false, null, '', $error_msg, 400);
-        }
-    }
-
-    /**
-     * Clock out
-     */
-    public function clockOut()
-    {
-        $this->logActivity('Clock Out Attempt', array('user_id' => $this->user->id));
-        
-        $this->checkPermissions('write');
-
-        // Check CSRF token for write operations
-        if (!$this->checkCSRFToken()) {
-            $this->logActivity('Clock Out CSRF Failed');
-            $this->sendResponse(false, null, '', 'Invalid security token', 403);
-        }
-
-        // Get POST data
-        $input = json_decode(file_get_contents('php://input'), true);
-        if (!$input) {
-            $input = $_POST;
-        }
-
-        $this->logActivity('Clock Out Input', $input);
-
-        $location = isset($input['location']) ? trim($input['location']) : '';
-        $latitude = isset($input['latitude']) ? floatval($input['latitude']) : null;
-        $longitude = isset($input['longitude']) ? floatval($input['longitude']) : null;
-        $note = isset($input['note']) ? trim($input['note']) : '';
-
-        // Clock out
-        $timeclockrecord = new TimeclockRecord($this->db);
-        $result = $timeclockrecord->clockOut($this->user, $location, $latitude, $longitude, $note);
-
-        if ($result > 0) {
-            // Get the updated record info
-            $record_data = array(
-                'clock_out_time' => dol_now(),
-                'location' => $location,
-                'work_duration' => $timeclockrecord->work_duration
-            );
-
-            $this->logActivity('Clock Out Success', $record_data);
-            $this->sendResponse(true, $record_data, $this->langs->trans('ClockOutSuccess'));
-        } else {
-            $error_msg = !empty($timeclockrecord->error) ? $timeclockrecord->error : $this->langs->trans('ClockOutError');
-            $this->logActivity('Clock Out Failed', null, $error_msg);
-            $this->sendResponse(false, null, '', $error_msg, 400);
-        }
-    }
-
-    /**
-     * Get recent records
-     */
-    public function getRecords()
-    {
-        $this->checkPermissions('read');
-
-        $limit = GETPOST('limit', 'int') ?: 10;
-        $date_start = GETPOST('date_start', 'alpha') ?: date('Y-m-d', strtotime('-30 days'));
-        $date_end = GETPOST('date_end', 'alpha') ?: date('Y-m-d');
-
-        // Limit to reasonable values
-        $limit = min($limit, 100);
-
-        $timeclockrecord = new TimeclockRecord($this->db);
-        $records = $timeclockrecord->getRecordsByUserAndDate($this->user->id, $date_start, $date_end);
-
-        $records_data = array();
-        $count = 0;
-
-        foreach ($records as $record) {
-            if ($count >= $limit) break;
-
-            $record_data = array(
-                'id' => $record->id,
-                'ref' => $record->ref,
-                'clock_in_time' => $record->clock_in_time,
-                'clock_out_time' => $record->clock_out_time,
-                'work_duration' => $record->work_duration,
-                'break_duration' => $record->break_duration,
-                'status' => $record->status,
-                'location_in' => $record->location_in,
-                'location_out' => $record->location_out,
-                'note_public' => $record->note_public
-            );
-
-            // Get timeclock type info
-            if (!empty($record->fk_timeclock_type)) {
-                $type = new TimeclockType($this->db);
-                if ($type->fetch($record->fk_timeclock_type) > 0) {
-                    $record_data['timeclock_type'] = array(
-                        'id' => $type->id,
-                        'code' => $type->code,
-                        'label' => $type->label,
-                        'color' => $type->color
-                    );
+                
+                const response = await http.post('clockin', data);
+                
+                if (utils.isValidResponse(response) && response.success) {
+                    utils.log('Clock in successful', response.data);
+                    cache.clear(); // Clear cache to force refresh
+                    
+                    // Update state
+                    state.currentStatus = {
+                        is_clocked_in: true,
+                        clock_in_time: Math.floor(Date.now() / 1000),
+                        active_record: response.data
+                    };
+                    
+                    return response.data;
+                } else {
+                    throw new Error(response.error || 'Clock in failed');
                 }
+            } catch (error) {
+                utils.error('Clock in failed', error);
+                throw error;
             }
-
-            $records_data[] = $record_data;
-            $count++;
-        }
-
-        $response_data = array(
-            'records' => $records_data,
-            'total' => count($records_data),
-            'limit' => $limit,
-            'date_start' => $date_start,
-            'date_end' => $date_end
-        );
-
-        $this->sendResponse(true, $response_data, $this->langs->trans('RecordsRetrieved'));
-    }
-
-    /**
-     * Get available timeclock types
-     */
-    public function getTypes()
-    {
-        $this->checkPermissions('read');
-
-        $types = TimeclockType::getActiveTypes($this->db);
-        $types_data = array();
-
-        foreach ($types as $type) {
-            $types_data[] = array(
-                'id' => $type->id,
-                'code' => $type->code,
-                'label' => $type->label,
-                'color' => $type->color,
-                'position' => $type->position
-            );
-        }
-
-        $this->sendResponse(true, $types_data, $this->langs->trans('TypesRetrieved'));
-    }
-
-    /**
-     * Get today's summary
-     */
-    public function getTodaySummary()
-    {
-        $this->checkPermissions('read');
-
-        $today = date('Y-m-d');
-        $timeclockrecord = new TimeclockRecord($this->db);
-        $records = $timeclockrecord->getRecordsByUserAndDate($this->user->id, $today, $today, 3); // STATUS_COMPLETED
-
-        $summary = array(
-            'date' => $today,
-            'total_hours' => 0,
-            'total_breaks' => 0,
-            'records_count' => count($records)
-        );
-
-        foreach ($records as $record) {
-            if (!empty($record->work_duration)) {
-                $summary['total_hours'] += $record->work_duration / 60; // Convert minutes to hours
-            }
-            if (!empty($record->break_duration)) {
-                $summary['total_breaks'] += $record->break_duration;
-            }
-        }
-
-        $summary['total_hours'] = round($summary['total_hours'], 2);
-        $summary['total_breaks'] = round($summary['total_breaks'] / 60, 2); // Convert to hours
-
-        $this->sendResponse(true, $summary, $this->langs->trans('SummaryRetrieved'));
-    }
-
-    /**
-     * Get weekly summary
-     */
-    public function getWeeklySummary()
-    {
-        $this->checkPermissions('read');
-
-        $current_week = WeeklySummary::getCurrentWeek();
-        $weeklysummary = new WeeklySummary($db);
+        },
         
-        // Try to get existing summary
-        $existing_summary = $weeklysummary->getWeeklySummaryByUserAndWeek(
-            $this->user->id, 
-            $current_week['year'], 
-            $current_week['week_number']
-        );
-
-        if ($existing_summary) {
-            $summary_data = array(
-                'year' => $existing_summary->year,
-                'week_number' => $existing_summary->week_number,
-                'total_hours' => $existing_summary->total_hours,
-                'expected_hours' => $existing_summary->expected_hours,
-                'overtime_hours' => $existing_summary->overtime_hours,
-                'days_worked' => $existing_summary->days_worked,
-                'status' => $existing_summary->status
-            );
-        } else {
-            // Generate summary on the fly if not exists
-            $summary_data = array(
-                'year' => $current_week['year'],
-                'week_number' => $current_week['week_number'],
-                'total_hours' => 0,
-                'expected_hours' => 40, // Default
-                'overtime_hours' => 0,
-                'days_worked' => 0,
-                'status' => 0 // In progress
-            );
+        // Clock out
+        clockOut: async function(data = {}) {
+            utils.log('Clock out request', data);
+            
+            try {
+                // Get location if required and not provided
+                if (window.appConfig && window.appConfig.require_location) {
+                    if (!data.latitude || !data.longitude) {
+                        utils.log('Getting location for clock out');
+                        const position = await geolocation.getCurrentPosition();
+                        data.latitude = position.latitude;
+                        data.longitude = position.longitude;
+                    }
+                }
+                
+                const response = await http.post('clockout', data);
+                
+                if (utils.isValidResponse(response) && response.success) {
+                    utils.log('Clock out successful', response.data);
+                    cache.clear(); // Clear cache to force refresh
+                    
+                    // Update state
+                    state.currentStatus = {
+                        is_clocked_in: false,
+                        clock_in_time: null,
+                        active_record: null
+                    };
+                    
+                    return response.data;
+                } else {
+                    throw new Error(response.error || 'Clock out failed');
+                }
+            } catch (error) {
+                utils.error('Clock out failed', error);
+                throw error;
+            }
+        },
+        
+        // Get recent records
+        getRecords: async function(params = {}) {
+            const cacheKey = utils.getCacheKey('records', params);
+            const cached = cache.get(cacheKey);
+            
+            if (cached) {
+                utils.log('Using cached records');
+                return cached;
+            }
+            
+            try {
+                const response = await http.get('records', params);
+                
+                if (utils.isValidResponse(response) && response.success) {
+                    cache.set(cacheKey, response.data);
+                    return response.data;
+                } else {
+                    throw new Error(response.error || 'Failed to get records');
+                }
+            } catch (error) {
+                utils.error('Failed to get records', error);
+                throw error;
+            }
+        },
+        
+        // Get timeclock types
+        getTypes: async function() {
+            const cacheKey = utils.getCacheKey('types');
+            const cached = cache.get(cacheKey);
+            
+            if (cached) {
+                return cached;
+            }
+            
+            try {
+                const response = await http.get('types');
+                
+                if (utils.isValidResponse(response) && response.success) {
+                    cache.set(cacheKey, response.data);
+                    return response.data;
+                } else {
+                    throw new Error(response.error || 'Failed to get types');
+                }
+            } catch (error) {
+                utils.error('Failed to get types', error);
+                throw error;
+            }
+        },
+        
+        // Get today's summary
+        getTodaySummary: async function() {
+            const cacheKey = utils.getCacheKey('today');
+            const cached = cache.get(cacheKey);
+            
+            if (cached) {
+                return cached;
+            }
+            
+            try {
+                const response = await http.get('today');
+                
+                if (utils.isValidResponse(response) && response.success) {
+                    cache.set(cacheKey, response.data);
+                    return response.data;
+                } else {
+                    throw new Error(response.error || 'Failed to get today summary');
+                }
+            } catch (error) {
+                utils.error('Failed to get today summary', error);
+                throw error;
+            }
+        },
+        
+        // Get weekly summary
+        getWeeklySummary: async function() {
+            const cacheKey = utils.getCacheKey('weekly');
+            const cached = cache.get(cacheKey);
+            
+            if (cached) {
+                return cached;
+            }
+            
+            try {
+                const response = await http.get('weekly');
+                
+                if (utils.isValidResponse(response) && response.success) {
+                    cache.set(cacheKey, response.data);
+                    return response.data;
+                } else {
+                    throw new Error(response.error || 'Failed to get weekly summary');
+                }
+            } catch (error) {
+                utils.error('Failed to get weekly summary', error);
+                throw error;
+            }
         }
-
-        $this->sendResponse(true, $summary_data, $this->langs->trans('WeeklySummaryRetrieved'));
-    }
-}
-
-// Main execution
-try {
-    // Add debug logging
-    dol_syslog('TimeclockAPI: Request received - Method: ' . $_SERVER['REQUEST_METHOD'] . ', URI: ' . $_SERVER['REQUEST_URI'], LOG_DEBUG);
-
-    // Security check
-    if (empty($user) || !is_object($user) || $user->id <= 0) {
-        dol_syslog('TimeclockAPI: Authentication failed', LOG_WARNING);
-        http_response_code(401);
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(array('success' => false, 'error' => 'Authentication required'));
-        exit;
-    }
-
-    dol_syslog('TimeclockAPI: User authenticated - ID: ' . $user->id, LOG_DEBUG);
-
-    // Get request method and action
-    $method = $_SERVER['REQUEST_METHOD'];
-    $action = GETPOST('action', 'alpha');
+    };
     
-    // Parse URL path for RESTful routing
-    $request_uri = $_SERVER['REQUEST_URI'];
-    $path_parts = explode('/', parse_url($request_uri, PHP_URL_PATH));
-    $api_action = end($path_parts);
-
-    dol_syslog('TimeclockAPI: Action requested - ' . ($action ?: $api_action), LOG_DEBUG);
-
-    // Create API instance
-    $api = new TimeclockAPI($db, $user, $langs);
-
-    // Route requests
-    switch ($method) {
-        case 'GET':
-            switch ($action ?: $api_action) {
-                case 'status':
-                    $api->getStatus();
-                    break;
-                case 'records':
-                    $api->getRecords();
-                    break;
-                case 'types':
-                    $api->getTypes();
-                    break;
-                case 'today':
-                    $api->getTodaySummary();
-                    break;
-                case 'weekly':
-                    $api->getWeeklySummary();
-                    break;
-                default:
-                    dol_syslog('TimeclockAPI: Endpoint not found - ' . ($action ?: $api_action), LOG_WARNING);
-                    http_response_code(404);
-                    header('Content-Type: application/json; charset=utf-8');
-                    echo json_encode(array('success' => false, 'error' => 'Endpoint not found'));
-                    break;
+    // Real-time updates
+    const realtime = {
+        start: function() {
+            if (state.updateTimer) {
+                clearInterval(state.updateTimer);
             }
-            break;
-
-        case 'POST':
-            switch ($action ?: $api_action) {
-                case 'clockin':
-                    $api->clockIn();
-                    break;
-                case 'clockout':
-                    $api->clockOut();
-                    break;
-                default:
-                    dol_syslog('TimeclockAPI: POST endpoint not found - ' . ($action ?: $api_action), LOG_WARNING);
-                    http_response_code(404);
-                    header('Content-Type: application/json; charset=utf-8');
-                    echo json_encode(array('success' => false, 'error' => 'Endpoint not found'));
-                    break;
+            
+            state.updateTimer = setInterval(async () => {
+                try {
+                    if (state.isOnline) {
+                        await this.updateStatus();
+                    }
+                } catch (error) {
+                    utils.error('Real-time update failed', error);
+                }
+            }, CONFIG.REFRESH_INTERVAL);
+            
+            utils.log('Real-time updates started');
+        },
+        
+        stop: function() {
+            if (state.updateTimer) {
+                clearInterval(state.updateTimer);
+                state.updateTimer = null;
             }
-            break;
+            utils.log('Real-time updates stopped');
+        },
+        
+        updateStatus: async function() {
+            try {
+                const status = await api.getStatus(false); // Force fresh data
+                
+                if (status && state.currentStatus) {
+                    // Check if status changed
+                    if (status.is_clocked_in !== state.currentStatus.is_clocked_in) {
+                        utils.log('Status changed, refreshing page');
+                        // Status changed significantly, refresh the page
+                        window.location.reload();
+                    } else if (status.is_clocked_in) {
+                        // Update duration display
+                        this.updateDurationDisplay(status);
+                    }
+                }
+                
+                state.currentStatus = status;
+                
+            } catch (error) {
+                utils.error('Status update failed', error);
+            }
+        },
+        
+        updateDurationDisplay: function(status) {
+            if (!status.is_clocked_in || !status.clock_in_time) return;
+            
+            const now = Math.floor(Date.now() / 1000);
+            const duration = now - status.clock_in_time;
+            const durationText = utils.formatDuration(duration);
+            
+            const durationElement = document.getElementById('current-duration');
+            if (durationElement) {
+                durationElement.textContent = durationText;
+            }
+        }
+    };
+    
+    // Network status monitoring
+    const network = {
+        init: function() {
+            window.addEventListener('online', this.handleOnline.bind(this));
+            window.addEventListener('offline', this.handleOffline.bind(this));
+            
+            // Initial check
+            this.updateStatus();
+        },
+        
+        handleOnline: function() {
+            utils.log('Network online');
+            state.isOnline = true;
+            this.hideOfflineIndicator();
+            
+            // Process queued requests
+            setTimeout(() => {
+                http.processQueue();
+            }, 1000);
+        },
+        
+        handleOffline: function() {
+            utils.log('Network offline');
+            state.isOnline = false;
+            this.showOfflineIndicator();
+        },
+        
+        updateStatus: function() {
+            state.isOnline = navigator.onLine;
+            if (!state.isOnline) {
+                this.showOfflineIndicator();
+            }
+        },
+        
+        showOfflineIndicator: function() {
+            if (document.querySelector('.offline-indicator')) return;
+            
+            const indicator = document.createElement('div');
+            indicator.className = 'offline-indicator';
+            indicator.style.cssText = `
+                position: fixed; 
+                top: 0; 
+                left: 0; 
+                right: 0; 
+                background: #f44336; 
+                color: white; 
+                text-align: center; 
+                padding: 8px; 
+                font-size: 12px; 
+                z-index: 10000;
+                animation: slideDown 0.3s ease;
+            `;
+            indicator.textContent = 'Offline Mode - Actions will be synced when online';
+            document.body.insertBefore(indicator, document.body.firstChild);
+        },
+        
+        hideOfflineIndicator: function() {
+            const indicator = document.querySelector('.offline-indicator');
+            if (indicator) {
+                indicator.style.animation = 'slideUp 0.3s ease';
+                setTimeout(() => {
+                    if (indicator.parentNode) {
+                        indicator.parentNode.removeChild(indicator);
+                    }
+                }, 300);
+            }
+        }
+    };
+    
+    // Enhanced clock in/out functions for the UI
+    const ui = {
+        clockIn: async function(formData) {
+            try {
+                utils.showLoading('Clocking in...');
+                
+                const data = {
+                    timeclock_type_id: formData.timeclock_type_id || 1,
+                    location: formData.location || '',
+                    note: formData.note || ''
+                };
+                
+                // Add coordinates if available
+                if (formData.latitude && formData.longitude) {
+                    data.latitude = parseFloat(formData.latitude);
+                    data.longitude = parseFloat(formData.longitude);
+                }
+                
+                const result = await api.clockIn(data);
+                
+                utils.showSuccess('Successfully clocked in!');
+                
+                // Start real-time updates
+                realtime.start();
+                
+                // Refresh page after short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+                return result;
+                
+            } catch (error) {
+                utils.showError('Clock in failed: ' + error.message);
+                throw error;
+            }
+        },
+        
+        clockOut: async function(formData) {
+            try {
+                utils.showLoading('Clocking out...');
+                
+                const data = {
+                    location: formData.location || '',
+                    note: formData.note || ''
+                };
+                
+                // Add coordinates if available
+                if (formData.latitude && formData.longitude) {
+                    data.latitude = parseFloat(formData.latitude);
+                    data.longitude = parseFloat(formData.longitude);
+                }
+                
+                const result = await api.clockOut(data);
+                
+                utils.showSuccess('Successfully clocked out!');
+                
+                // Stop real-time updates
+                realtime.stop();
+                
+                // Refresh page after short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+                return result;
+                
+            } catch (error) {
+                utils.showError('Clock out failed: ' + error.message);
+                throw error;
+            }
+        },
+        
+        refreshData: async function() {
+            try {
+                utils.showLoading('Refreshing...');
+                cache.clear();
+                
+                // Get fresh status
+                await api.getStatus(false);
+                
+                // Refresh page
+                window.location.reload();
+                
+            } catch (error) {
+                utils.showError('Refresh failed: ' + error.message);
+            }
+        }
+    };
+    
+    // Initialization
+    const init = function(options = {}) {
+        utils.log('Initializing TimeclockAPI');
+        
+        // Merge options with config
+        Object.assign(CONFIG, options);
+        
+        // Initialize network monitoring
+        network.init();
+        
+        // Set API token if provided
+        if (options.apiToken) {
+            utils.updateCSRFToken(options.apiToken);
+        }
+        
+        // Try to get CSRF token from various sources
+        const token = utils.getCSRFToken();
+        if (token) {
+            utils.log('CSRF token initialized', token);
+        } else {
+            utils.log('Warning: No CSRF token found');
+        }
+        
+        // Start real-time updates if user is clocked in
+        if (window.appConfig && window.appConfig.is_clocked_in) {
+            realtime.start();
+        }
+        
+        // Add CSS animations
+        if (!document.querySelector('#timeclock-animations')) {
+            const style = document.createElement('style');
+            style.id = 'timeclock-animations';
+            style.textContent = `
+                @keyframes slideDown {
+                    from { transform: translateY(-100%); }
+                    to { transform: translateY(0); }
+                }
+                @keyframes slideUp {
+                    from { transform: translateY(0); }
+                    to { transform: translateY(-100%); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        utils.log('TimeclockAPI initialized successfully');
+    };
+    
+    // Public API
+    return {
+        init: init,
+        api: api,
+        ui: ui,
+        geolocation: geolocation,
+        utils: utils,
+        cache: cache,
+        realtime: realtime,
+        
+        // Direct access to main functions
+        getStatus: api.getStatus,
+        clockIn: ui.clockIn,
+        clockOut: ui.clockOut,
+        refreshData: ui.refreshData,
+        
+        // State information
+        isOnline: () => state.isOnline,
+        getCurrentStatus: () => state.currentStatus,
+        getCSRFToken: utils.getCSRFToken,
+        updateCSRFToken: utils.updateCSRFToken,
+        
+        // Debug helpers
+        debug: {
+            getState: () => state,
+            getConfig: () => CONFIG,
+            clearCache: cache.clear,
+            testLocation: geolocation.getCurrentPosition,
+            testCSRF: utils.getCSRFToken
+        }
+    };
+})();
 
-        default:
-            dol_syslog('TimeclockAPI: Method not allowed - ' . $method, LOG_WARNING);
-            http_response_code(405);
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(array('success' => false, 'error' => 'Method not allowed'));
-            break;
+// Auto-initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize with global config if available
+    const initOptions = {};
+    
+    if (typeof window.appConfig !== 'undefined') {
+        initOptions.apiToken = window.appConfig.api_token;
+        initOptions.DEBUG = window.appConfig.debug || false;
     }
+    
+    window.TimeclockAPI.init(initOptions);
+});
 
-} catch (Exception $e) {
-    dol_syslog('TimeClock API Error: ' . $e->getMessage(), LOG_ERR);
-    error_log('TimeClock API Error: ' . $e->getMessage());
-    http_response_code(500);
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(array(
-        'success' => false, 
-        'error' => 'Internal server error',
-        'message' => $e->getMessage()
-    ));
+// Enhanced global functions for the UI
+window.submitClockIn = async function() {
+    const form = document.getElementById('clockInForm');
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    const data = {};
+    for (let [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    
+    try {
+        await window.TimeclockAPI.clockIn(data);
+        
+        // Hide modal
+        const modal = document.getElementById('clockInModal');
+        if (modal && modal.hide) {
+            modal.hide();
+        }
+        
+    } catch (error) {
+        console.error('Clock in failed:', error);
+    }
+};
+
+window.submitClockOut = async function() {
+    const form = document.getElementById('clockOutForm');
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    const data = {};
+    for (let [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    
+    try {
+        await window.TimeclockAPI.clockOut(data);
+        
+        // Hide modal
+        const modal = document.getElementById('clockOutModal');
+        if (modal && modal.hide) {
+            modal.hide();
+        }
+        
+    } catch (error) {
+        console.error('Clock out failed:', error);
+    }
+};
+
+window.refreshTimeclockData = function() {
+    window.TimeclockAPI.refreshData();
+};
+
+// Export for modules if needed
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = window.TimeclockAPI;
 }

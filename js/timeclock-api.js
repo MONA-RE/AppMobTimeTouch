@@ -23,6 +23,7 @@ window.TimeclockAPI = (function() {
         currentStatus: null,
         updateTimer: null,
         apiToken: null,
+        csrfToken: null,
         requestQueue: [],
         cache: new Map()
     };
@@ -71,6 +72,64 @@ window.TimeclockAPI = (function() {
             if (typeof ons !== 'undefined') {
                 ons.notification.toast(message, {timeout: 2000});
             }
+        },
+        
+        // Get CSRF token from various sources
+        getCSRFToken: function() {
+            // Try to get from state first
+            if (state.csrfToken) {
+                return state.csrfToken;
+            }
+            
+            // Try to get from global config
+            if (window.appConfig && window.appConfig.api_token) {
+                state.csrfToken = window.appConfig.api_token;
+                return state.csrfToken;
+            }
+            
+            // Try to get from localStorage
+            if (typeof(Storage) !== "undefined") {
+                const token = localStorage.getItem('api_token');
+                if (token) {
+                    state.csrfToken = token;
+                    return state.csrfToken;
+                }
+            }
+            
+            // Try to get from meta tag
+            const metaToken = document.querySelector('meta[name="csrf-token"]');
+            if (metaToken) {
+                state.csrfToken = metaToken.getAttribute('content');
+                return state.csrfToken;
+            }
+            
+            // Try to get from hidden input
+            const hiddenToken = document.querySelector('input[name="token"]');
+            if (hiddenToken) {
+                state.csrfToken = hiddenToken.value;
+                return state.csrfToken;
+            }
+            
+            // Last resort - try to generate one (this might not always work)
+            if (typeof newToken === 'function') {
+                state.csrfToken = newToken();
+                return state.csrfToken;
+            }
+            
+            utils.log('No CSRF token found');
+            return null;
+        },
+        
+        // Update CSRF token
+        updateCSRFToken: function(token) {
+            if (token) {
+                state.csrfToken = token;
+                // Store in localStorage for persistence
+                if (typeof(Storage) !== "undefined") {
+                    localStorage.setItem('api_token', token);
+                }
+                utils.log('CSRF token updated', token);
+            }
         }
     };
     
@@ -78,6 +137,10 @@ window.TimeclockAPI = (function() {
     const http = {
         request: async function(method, endpoint, data = null, options = {}) {
             const url = CONFIG.API_BASE_URL + '?action=' + endpoint;
+            
+            // Get CSRF token
+            const csrfToken = utils.getCSRFToken();
+            
             const requestOptions = {
                 method: method,
                 headers: {
@@ -89,23 +152,69 @@ window.TimeclockAPI = (function() {
                 ...options
             };
             
+            // Add CSRF token to headers and data
+            if (csrfToken) {
+                requestOptions.headers['X-CSRF-Token'] = csrfToken;
+                requestOptions.headers['X-API-Token'] = csrfToken;
+                
+                // Also add to data for POST requests
+            if (data && method !== 'GET') {
+                    data.token = csrfToken;
+                }
+            }
+            
             if (data && method !== 'GET') {
                 requestOptions.body = JSON.stringify(data);
+            } else if (data && method === 'GET') {
+                // Add token to URL for GET requests
+                const separator = url.includes('?') ? '&' : '?';
+                const tokenParam = csrfToken ? `${separator}token=${encodeURIComponent(csrfToken)}` : '';
+                url += tokenParam;
             }
             
-            // Add token if available
-            if (state.apiToken) {
-                requestOptions.headers['X-API-Token'] = state.apiToken;
-            }
-            
-            utils.log(`${method} request to ${endpoint}`, data);
+            utils.log(`${method} request to ${endpoint}`, {
+                url: url,
+                data: data,
+                hasToken: !!csrfToken
+            });
             
             try {
                 const response = await fetch(url, requestOptions);
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    // If not JSON, probably an HTML error page
+                    const htmlText = await response.text();
+                    utils.error(`Non-JSON response from ${endpoint}`, {
+                        status: response.status,
+                        statusText: response.statusText,
+                        contentType: contentType,
+                        htmlPreview: htmlText.substring(0, 200)
+                    });
+                    
+                    // Try to extract meaningful error message from HTML
+                    let errorMessage = `HTTP ${response.status}`;
+                    if (htmlText.includes('Access denied') || htmlText.includes('Accès refusé')) {
+                        errorMessage = 'Access denied - Check permissions';
+                    } else if (htmlText.includes('CSRF') || htmlText.includes('token')) {
+                        errorMessage = 'Security token error';
+                    } else if (htmlText.includes('Login') || htmlText.includes('login')) {
+                        errorMessage = 'Authentication required';
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+                
                 const responseData = await response.json();
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${responseData.error || 'Request failed'}`);
+                }
+                
+                // Update CSRF token if provided in response
+                if (responseData.csrf_token) {
+                    utils.updateCSRFToken(responseData.csrf_token);
                 }
                 
                 utils.log(`Response from ${endpoint}`, responseData);
@@ -124,6 +233,12 @@ window.TimeclockAPI = (function() {
         },
         
         get: function(endpoint, params = {}) {
+            // Add CSRF token to params for GET requests
+            const csrfToken = utils.getCSRFToken();
+            if (csrfToken) {
+                params.token = csrfToken;
+            }
+            
             const queryString = Object.keys(params).length > 0 ? 
                 '&' + new URLSearchParams(params).toString() : '';
             return this.request('GET', endpoint + queryString);
@@ -688,7 +803,15 @@ window.TimeclockAPI = (function() {
         
         // Set API token if provided
         if (options.apiToken) {
-            state.apiToken = options.apiToken;
+            utils.updateCSRFToken(options.apiToken);
+        }
+        
+        // Try to get CSRF token from various sources
+        const token = utils.getCSRFToken();
+        if (token) {
+            utils.log('CSRF token initialized', token);
+        } else {
+            utils.log('Warning: No CSRF token found');
         }
         
         // Start real-time updates if user is clocked in
@@ -735,13 +858,16 @@ window.TimeclockAPI = (function() {
         // State information
         isOnline: () => state.isOnline,
         getCurrentStatus: () => state.currentStatus,
+        getCSRFToken: utils.getCSRFToken,
+        updateCSRFToken: utils.updateCSRFToken,
         
         // Debug helpers
         debug: {
             getState: () => state,
             getConfig: () => CONFIG,
             clearCache: cache.clear,
-            testLocation: geolocation.getCurrentPosition
+            testLocation: geolocation.getCurrentPosition,
+            testCSRF: utils.getCSRFToken
         }
     };
 })();
