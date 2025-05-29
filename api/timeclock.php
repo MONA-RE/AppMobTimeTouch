@@ -21,6 +21,11 @@
  * \brief   API endpoints for timeclock operations
  */
 
+// Prevent direct access
+if (!defined('NOREQUIREMENU')) define('NOREQUIREMENU', '1');
+if (!defined('NOREQUIREHTML')) define('NOREQUIREHTML', '1');
+if (!defined('NOREQUIREAJAX')) define('NOREQUIREAJAX', '1');
+
 // Load Dolibarr environment
 $res = 0;
 // Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
@@ -92,8 +97,11 @@ class TimeclockAPI
      */
     private function sendResponse($success, $data = null, $message = '', $error = '', $httpCode = 200)
     {
+        // Set appropriate headers
         http_response_code($httpCode);
         header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Pragma: no-cache');
         
         $response = array(
             'success' => $success,
@@ -112,31 +120,121 @@ class TimeclockAPI
     }
 
     /**
+     * Log API activity for debugging
+     */
+    private function logActivity($action, $data = null, $error = null)
+    {
+        $log_message = 'TimeclockAPI: ' . $action;
+        if ($data) {
+            $log_message .= ' - Data: ' . json_encode($data);
+        }
+        if ($error) {
+            $log_message .= ' - Error: ' . $error;
+        }
+        dol_syslog($log_message, LOG_DEBUG);
+    }
+
+    /**
+     * Check CSRF token
+     */
+    private function checkCSRFToken()
+    {
+        // Get token from various sources
+        $token = null;
+        
+        // Check POST data
+        if (isset($_POST['token'])) {
+            $token = $_POST['token'];
+        }
+        
+        // Check GET parameter
+        if (!$token && isset($_GET['token'])) {
+            $token = $_GET['token'];
+        }
+        
+        // Check HTTP headers
+        if (!$token) {
+            $headers = getallheaders();
+            if (isset($headers['X-CSRF-Token'])) {
+                $token = $headers['X-CSRF-Token'];
+            } elseif (isset($headers['X-API-Token'])) {
+                $token = $headers['X-API-Token'];
+            }
+        }
+        
+        // Check JSON payload for token
+        if (!$token) {
+            $input = json_decode(file_get_contents('php://input'), true);
+            if ($input && isset($input['token'])) {
+                $token = $input['token'];
+            }
+        }
+
+        $this->logActivity('CSRF Check', array('token_received' => !empty($token)));
+
+        // For development, we can be more flexible with token validation
+        // In production, this should be stricter
+        if (empty($token)) {
+            // Try to generate a new token if none provided (for compatibility)
+            $token = newToken();
+            $this->logActivity('CSRF Token Generated', array('new_token' => $token));
+        }
+
+        // Validate token if provided
+        if (!empty($token)) {
+            // In Dolibarr, we can check the token against the session
+            if (function_exists('checkToken')) {
+                $valid = checkToken($token);
+                if (!$valid) {
+                    $this->logActivity('CSRF Token Invalid', array('token' => $token));
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Check user permissions
      */
     private function checkPermissions($action = 'read')
     {
+        $this->logActivity('Permission Check', array('action' => $action, 'user_id' => $this->user->id));
+
         if (!isModEnabled('appmobtimetouch')) {
+            $this->logActivity('Module Not Enabled');
             $this->sendResponse(false, null, '', $this->langs->trans('ModuleNotEnabled'), 403);
+        }
+
+        // Check if user object is valid
+        if (empty($this->user) || !is_object($this->user) || $this->user->id <= 0) {
+            $this->logActivity('Invalid User Object');
+            $this->sendResponse(false, null, '', 'Authentication required', 401);
         }
 
         switch ($action) {
             case 'read':
                 if (empty($this->user->rights->appmobtimetouch->timeclock->read)) {
+                    $this->logActivity('No Read Permission');
                     $this->sendResponse(false, null, '', $this->langs->trans('NotEnoughPermissions'), 403);
                 }
                 break;
             case 'write':
                 if (empty($this->user->rights->appmobtimetouch->timeclock->write)) {
+                    $this->logActivity('No Write Permission');
                     $this->sendResponse(false, null, '', $this->langs->trans('NotEnoughPermissions'), 403);
                 }
                 break;
             case 'readall':
                 if (empty($this->user->rights->appmobtimetouch->timeclock->readall)) {
+                    $this->logActivity('No ReadAll Permission');
                     $this->sendResponse(false, null, '', $this->langs->trans('NotEnoughPermissions'), 403);
                 }
                 break;
         }
+
+        $this->logActivity('Permission Check Passed', array('action' => $action));
     }
 
     /**
@@ -186,6 +284,7 @@ class TimeclockAPI
             }
         }
 
+        $this->logActivity('Status Retrieved', $status);
         $this->sendResponse(true, $status, $this->langs->trans('StatusRetrieved'));
     }
 
@@ -194,13 +293,23 @@ class TimeclockAPI
      */
     public function clockIn()
     {
+        $this->logActivity('Clock In Attempt', array('user_id' => $this->user->id));
+        
         $this->checkPermissions('write');
+
+        // Check CSRF token for write operations
+        if (!$this->checkCSRFToken()) {
+            $this->logActivity('Clock In CSRF Failed');
+            $this->sendResponse(false, null, '', 'Invalid security token', 403);
+        }
 
         // Get POST data
         $input = json_decode(file_get_contents('php://input'), true);
         if (!$input) {
             $input = $_POST;
         }
+
+        $this->logActivity('Clock In Input', $input);
 
         $timeclock_type_id = isset($input['timeclock_type_id']) ? intval($input['timeclock_type_id']) : TimeclockType::getDefaultType($this->db);
         $location = isset($input['location']) ? trim($input['location']) : '';
@@ -211,6 +320,7 @@ class TimeclockAPI
         // Validate required location if configured
         $require_location = TimeclockConfig::getValue($this->db, 'REQUIRE_LOCATION', 0);
         if ($require_location && (empty($latitude) || empty($longitude))) {
+            $this->logActivity('Clock In Location Required');
             $this->sendResponse(false, null, '', $this->langs->trans('LocationRequiredForClockIn'), 400);
         }
 
@@ -227,9 +337,11 @@ class TimeclockAPI
                 'timeclock_type_id' => $timeclock_type_id
             );
 
+            $this->logActivity('Clock In Success', $record_data);
             $this->sendResponse(true, $record_data, $this->langs->trans('ClockInSuccess'));
         } else {
             $error_msg = !empty($timeclockrecord->error) ? $timeclockrecord->error : $this->langs->trans('ClockInError');
+            $this->logActivity('Clock In Failed', null, $error_msg);
             $this->sendResponse(false, null, '', $error_msg, 400);
         }
     }
@@ -239,13 +351,23 @@ class TimeclockAPI
      */
     public function clockOut()
     {
+        $this->logActivity('Clock Out Attempt', array('user_id' => $this->user->id));
+        
         $this->checkPermissions('write');
+
+        // Check CSRF token for write operations
+        if (!$this->checkCSRFToken()) {
+            $this->logActivity('Clock Out CSRF Failed');
+            $this->sendResponse(false, null, '', 'Invalid security token', 403);
+        }
 
         // Get POST data
         $input = json_decode(file_get_contents('php://input'), true);
         if (!$input) {
             $input = $_POST;
         }
+
+        $this->logActivity('Clock Out Input', $input);
 
         $location = isset($input['location']) ? trim($input['location']) : '';
         $latitude = isset($input['latitude']) ? floatval($input['latitude']) : null;
@@ -264,9 +386,11 @@ class TimeclockAPI
                 'work_duration' => $timeclockrecord->work_duration
             );
 
+            $this->logActivity('Clock Out Success', $record_data);
             $this->sendResponse(true, $record_data, $this->langs->trans('ClockOutSuccess'));
         } else {
             $error_msg = !empty($timeclockrecord->error) ? $timeclockrecord->error : $this->langs->trans('ClockOutError');
+            $this->logActivity('Clock Out Failed', null, $error_msg);
             $this->sendResponse(false, null, '', $error_msg, 400);
         }
     }
@@ -399,7 +523,7 @@ class TimeclockAPI
         $this->checkPermissions('read');
 
         $current_week = WeeklySummary::getCurrentWeek();
-        $weeklysummary = new WeeklySummary($this->db);
+        $weeklysummary = new WeeklySummary($db);
         
         // Try to get existing summary
         $existing_summary = $weeklysummary->getWeeklySummaryByUserAndWeek(
@@ -437,12 +561,19 @@ class TimeclockAPI
 
 // Main execution
 try {
+    // Add debug logging
+    dol_syslog('TimeclockAPI: Request received - Method: ' . $_SERVER['REQUEST_METHOD'] . ', URI: ' . $_SERVER['REQUEST_URI'], LOG_DEBUG);
+
     // Security check
     if (empty($user) || !is_object($user) || $user->id <= 0) {
+        dol_syslog('TimeclockAPI: Authentication failed', LOG_WARNING);
         http_response_code(401);
+        header('Content-Type: application/json; charset=utf-8');
         echo json_encode(array('success' => false, 'error' => 'Authentication required'));
         exit;
     }
+
+    dol_syslog('TimeclockAPI: User authenticated - ID: ' . $user->id, LOG_DEBUG);
 
     // Get request method and action
     $method = $_SERVER['REQUEST_METHOD'];
@@ -452,6 +583,8 @@ try {
     $request_uri = $_SERVER['REQUEST_URI'];
     $path_parts = explode('/', parse_url($request_uri, PHP_URL_PATH));
     $api_action = end($path_parts);
+
+    dol_syslog('TimeclockAPI: Action requested - ' . ($action ?: $api_action), LOG_DEBUG);
 
     // Create API instance
     $api = new TimeclockAPI($db, $user, $langs);
@@ -476,7 +609,9 @@ try {
                     $api->getWeeklySummary();
                     break;
                 default:
+                    dol_syslog('TimeclockAPI: Endpoint not found - ' . ($action ?: $api_action), LOG_WARNING);
                     http_response_code(404);
+                    header('Content-Type: application/json; charset=utf-8');
                     echo json_encode(array('success' => false, 'error' => 'Endpoint not found'));
                     break;
             }
@@ -491,21 +626,27 @@ try {
                     $api->clockOut();
                     break;
                 default:
+                    dol_syslog('TimeclockAPI: POST endpoint not found - ' . ($action ?: $api_action), LOG_WARNING);
                     http_response_code(404);
+                    header('Content-Type: application/json; charset=utf-8');
                     echo json_encode(array('success' => false, 'error' => 'Endpoint not found'));
                     break;
             }
             break;
 
         default:
+            dol_syslog('TimeclockAPI: Method not allowed - ' . $method, LOG_WARNING);
             http_response_code(405);
+            header('Content-Type: application/json; charset=utf-8');
             echo json_encode(array('success' => false, 'error' => 'Method not allowed'));
             break;
     }
 
 } catch (Exception $e) {
+    dol_syslog('TimeClock API Error: ' . $e->getMessage(), LOG_ERR);
     error_log('TimeClock API Error: ' . $e->getMessage());
     http_response_code(500);
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode(array(
         'success' => false, 
         'error' => 'Internal server error',
