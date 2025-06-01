@@ -158,8 +158,16 @@ if ($active_record_id > 0) {
     $active_record = new TimeclockRecord($db);
     if ($active_record->fetch($active_record_id) > 0) {
         $is_clocked_in = true;
+        // CORRECTION: Conversion correcte de la date DB en timestamp
         $clock_in_time = $db->jdate($active_record->clock_in_time);
+        // Vérifier que $clock_in_time est bien un timestamp entier
+        if (!empty($clock_in_time) && is_numeric($clock_in_time)) {
         $current_duration = dol_now() - $clock_in_time;
+        } else {
+            // Fallback si la conversion échoue
+            $current_duration = 0;
+            dol_syslog("Warning: Unable to convert clock_in_time to timestamp: " . $active_record->clock_in_time, LOG_WARNING);
+        }
     }
 }
 
@@ -170,16 +178,16 @@ $today_total_hours = 0;
 $today_total_breaks = 0;
 
 foreach ($today_records as $record) {
-    if (!empty($record->work_duration)) {
+    if (!empty($record->work_duration) && is_numeric($record->work_duration)) {
         $today_total_hours += $record->work_duration / 60; // Convert minutes to hours
     }
-    if (!empty($record->break_duration)) {
+    if (!empty($record->break_duration) && is_numeric($record->break_duration)) {
         $today_total_breaks += $record->break_duration;
     }
 }
 
 // Add active record duration to today's total
-if ($is_clocked_in) {
+if ($is_clocked_in && $current_duration > 0) {
     $active_duration_hours = $current_duration / 3600; // Convert seconds to hours
     $today_total_hours += $active_duration_hours;
 }
@@ -220,17 +228,21 @@ if ($resql && $db->num_rows($resql)) {
     $days_worked = array();
     
     foreach ($week_records as $record) {
-        if (!empty($record->work_duration)) {
+        if (!empty($record->work_duration) && is_numeric($record->work_duration)) {
             $weekly_total_hours += $record->work_duration / 60;
         }
-        if (!empty($record->break_duration)) {
+        if (!empty($record->break_duration) && is_numeric($record->break_duration)) {
             $weekly_total_breaks += $record->break_duration;
         }
         
-        $work_date = date('Y-m-d', $db->jdate($record->clock_in_time));
+        // CORRECTION: Conversion correcte pour la date de travail
+        $work_date_timestamp = $db->jdate($record->clock_in_time);
+        if (!empty($work_date_timestamp)) {
+            $work_date = date('Y-m-d', $work_date_timestamp);
         if (!in_array($work_date, $days_worked)) {
             $days_worked[] = $work_date;
         }
+    }
     }
     
     // Add today's active time if it's in current week
@@ -288,23 +300,28 @@ if ($today_total_hours > $overtime_threshold) {
     $overtime_alert = true;
 }
 
-// Prepare JavaScript data
+// Prepare JavaScript data with proper type conversion
 $js_data = array(
     'is_clocked_in' => $is_clocked_in,
-    'clock_in_time' => $clock_in_time,
+    'clock_in_time' => $clock_in_time, // Already converted to timestamp
     'require_location' => $require_location,
     'default_type_id' => $default_type_id,
     'max_hours_per_day' => $max_hours_per_day,
     'overtime_threshold' => $overtime_threshold,
     'api_token' => newToken(),
-    'user_id' => $user->id
+    'user_id' => $user->id,
+    'version' => $version // Add version for debugging
 );
 
 // Fonction helper pour convertir les secondes en format lisible
 if (!function_exists('convertSecondsToReadableTime')) {
     function convertSecondsToReadableTime($seconds) {
-        if ($seconds <= 0) return '0h00';
+        // CORRECTION: S'assurer que $seconds est numérique
+        if (!is_numeric($seconds) || $seconds <= 0) {
+            return '0h00';
+        }
         
+        $seconds = (int) $seconds; // Cast explicite en entier
         $hours = floor($seconds / 3600);
         $minutes = floor(($seconds % 3600) / 60);
         
@@ -315,8 +332,12 @@ if (!function_exists('convertSecondsToReadableTime')) {
 // Additional helper function for duration formatting
 if (!function_exists('formatDuration')) {
     function formatDuration($minutes) {
-        if ($minutes <= 0) return '0h00';
+        // CORRECTION: S'assurer que $minutes est numérique
+        if (!is_numeric($minutes) || $minutes <= 0) {
+            return '0h00';
+        }
         
+        $minutes = (int) $minutes; // Cast explicite en entier
         $hours = floor($minutes / 60);
         $mins = $minutes % 60;
         
