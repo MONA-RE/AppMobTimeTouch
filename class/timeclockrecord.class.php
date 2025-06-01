@@ -901,22 +901,25 @@ class TimeclockRecord extends CommonObject
     public function clockIn($user, $timeclock_type_id = 1, $location = '', $latitude = null, $longitude = null, $note = '')
     {
         global $conf;
-
+    
         // Check if user already has an active record
         $active_record = $this->getActiveRecord($user->id);
         if ($active_record > 0) {
             $this->error = 'UserAlreadyClockedIn';
             return -1;
         }
-
+    
         $now = dol_now();
-
-    // Initialize record with all required fields
+    
+        // Initialize record with all required fields
         $this->fk_user = $user->id;
-    $this->fk_user_creat = $user->id;  // Add creator
-    $this->entity = $conf->entity;     // Add entity
-    $this->datec = $this->db->idate($now);  // CORRECTION: Initialize datec properly
-    $this->clock_in_time = $this->db->idate($now);  // Keep existing format
+        $this->fk_user_creat = $user->id;
+        $this->entity = $conf->entity;
+        $this->datec = $this->db->idate($now);
+        
+        // CORRECTION: S'assurer que clock_in_time est au bon format
+        $this->clock_in_time = $this->db->idate($now);
+        
         $this->fk_timeclock_type = $timeclock_type_id;
         $this->status = self::STATUS_IN_PROGRESS;
         $this->location_in = $location;
@@ -926,16 +929,19 @@ class TimeclockRecord extends CommonObject
         $this->note_public = $note;
         $this->break_duration = 0;
     
-    // Auto-generate reference if not set
-    if (empty($this->ref)) {
-        $this->ref = '(PROV)';
-    }
-
+        // Auto-generate reference if not set
+        if (empty($this->ref)) {
+            $this->ref = '(PROV)';
+        }
+    
+        dol_syslog("TimeclockRecord::clockIn - Clocking in user " . $user->id . " at " . $this->clock_in_time, LOG_INFO);
+    
         $result = $this->create($user);
-
+    
         if ($result > 0) {
             return $this->id;
         } else {
+            dol_syslog("TimeclockRecord::clockIn - Failed to create record: " . $this->error, LOG_ERROR);
             return $result;
         }
     }
