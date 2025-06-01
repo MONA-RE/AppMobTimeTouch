@@ -958,31 +958,49 @@ class TimeclockRecord extends CommonObject
             $this->error = 'NoActiveClock';
             return -1;
         }
-
+    
         if ($this->fetch($active_record_id) <= 0) {
             return -1;
         }
-
+    
         $now = dol_now();
-
-    // Update record with modification info
-    $this->fk_user_modif = $user->id;  // CORRECTION: Add modifier
+    
+        // Update record with modification info
+        $this->fk_user_modif = $user->id;
+        
+        // CORRECTION: S'assurer que clock_out_time est au bon format pour la base
         $this->clock_out_time = $this->db->idate($now);
+        
         $this->status = self::STATUS_COMPLETED;
         $this->location_out = $location;
         $this->latitude_out = $latitude;
         $this->longitude_out = $longitude;
         $this->ip_address_out = getUserRemoteIP();
     
-    // Handle note properly
+        // Handle note properly
         if (!empty($note)) {
-        $this->note_public .= (!empty($this->note_public) ? "\n" : '') . $note;  // CORRECTION: Fixed syntax
+            $this->note_public .= (!empty($this->note_public) ? "\n" : '') . $note;
         }
-
-        // Calculate work duration
-        $this->calculateWorkDuration();
-
-        return $this->update($user);
+    
+        // CORRECTION: Validation avant le calcul de durée
+        dol_syslog("TimeclockRecord::clockOut - Before calculateWorkDuration - clock_in_time: " . $this->clock_in_time . ", clock_out_time: " . $this->clock_out_time, LOG_DEBUG);
+        
+        // Calculate work duration avec gestion d'erreur
+        $duration_result = $this->calculateWorkDuration();
+        
+        if ($duration_result === false) {
+            dol_syslog("TimeclockRecord::clockOut - Failed to calculate work duration", LOG_ERROR);
+            // Ne pas bloquer le clock out, mais signaler le problème
+            $this->work_duration = 0;
+        }
+    
+        $update_result = $this->update($user);
+        
+        if ($update_result > 0) {
+            dol_syslog("TimeclockRecord::clockOut - Successfully clocked out user " . $user->id . " with work duration: " . $this->work_duration . " minutes", LOG_INFO);
+        }
+        
+        return $update_result;
     }
 
     /**
