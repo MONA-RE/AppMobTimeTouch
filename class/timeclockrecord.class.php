@@ -1079,6 +1079,57 @@ class TimeclockRecord extends CommonObject
         }
     }
 
+
+    /**
+     * Convert various timestamp formats to Unix timestamp
+     *
+     * @param mixed $datetime DateTime value (string, timestamp, or database format)
+     * @return int|false Unix timestamp or false on failure
+     */
+    private function convertToTimestamp($datetime)
+    {
+        if (empty($datetime)) {
+            return false;
+        }
+        
+        // Si c'est déjà un timestamp numérique valide
+        if (is_numeric($datetime)) {
+            $timestamp = (int) $datetime;
+            // Vérifier que c'est un timestamp raisonnable (après 2000, avant 2100)
+            if ($timestamp > 946684800 && $timestamp < 4102444800) {
+                return $timestamp;
+            }
+        }
+        
+        // Si c'est une chaîne, essayer la conversion via jdate
+        if (is_string($datetime)) {
+            try {
+                // Utiliser la méthode jdate de Dolibarr
+                $timestamp = $this->db->jdate($datetime);
+                
+                // Validation du résultat
+                if (is_numeric($timestamp)) {
+                    $timestamp = (int) $timestamp;
+                    if ($timestamp > 946684800 && $timestamp < 4102444800) {
+                        return $timestamp;
+                    }
+                }
+                
+                // Fallback: essayer strtotime si jdate échoue
+                $timestamp = strtotime($datetime);
+                if ($timestamp !== false && $timestamp > 946684800 && $timestamp < 4102444800) {
+                    return $timestamp;
+                }
+                
+            } catch (Exception $e) {
+                dol_syslog("TimeclockRecord::convertToTimestamp - Exception converting datetime: " . $e->getMessage(), LOG_ERROR);
+            }
+        }
+        
+        dol_syslog("TimeclockRecord::convertToTimestamp - Failed to convert datetime: " . print_r($datetime, true), LOG_ERROR);
+        return false;
+    }
+
     /**
      * Add a break to the timeclock record
      *
