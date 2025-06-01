@@ -1,0 +1,62 @@
+/**
+ * Calculate work duration based on clock in/out times and breaks
+ *
+ * @return int Work duration in minutes
+ */
+public function calculateWorkDuration()
+{
+    // Vérifier que les heures de début et fin sont définies
+    if (empty($this->clock_in_time) || empty($this->clock_out_time)) {
+        $this->work_duration = null;
+        dol_syslog("TimeclockRecord::calculateWorkDuration - Missing clock_in_time or clock_out_time", LOG_WARNING);
+        return 0;
+    }
+
+    try {
+        // Conversion sécurisée des timestamps
+        $clock_in = $this->convertToTimestamp($this->clock_in_time);
+        $clock_out = $this->convertToTimestamp($this->clock_out_time);
+        
+        // Validation que les conversions ont réussi
+        if ($clock_in === false || $clock_out === false) {
+            $this->work_duration = null;
+            dol_syslog("TimeclockRecord::calculateWorkDuration - Failed to convert timestamps", LOG_ERROR);
+            return 0;
+        }
+        
+        // Validation que clock_out est après clock_in
+        if ($clock_out <= $clock_in) {
+            $this->work_duration = 0;
+            dol_syslog("TimeclockRecord::calculateWorkDuration - Clock out time is before or equal to clock in time", LOG_WARNING);
+            return 0;
+        }
+        
+        // Calcul de la durée totale en minutes
+        $total_minutes = ($clock_out - $clock_in) / 60;
+        
+        // Validation et conversion du break_duration
+        $break_duration = 0;
+        if (!empty($this->break_duration)) {
+            if (is_numeric($this->break_duration)) {
+                $break_duration = (int) $this->break_duration;
+            } else {
+                dol_syslog("TimeclockRecord::calculateWorkDuration - Invalid break_duration: " . $this->break_duration, LOG_WARNING);
+            }
+        }
+        
+        // Calcul de la durée de travail effective
+        $work_minutes = $total_minutes - $break_duration;
+        
+        // S'assurer que la durée n'est pas négative
+        $this->work_duration = max(0, round($work_minutes));
+        
+        dol_syslog("TimeclockRecord::calculateWorkDuration - Calculated work duration: " . $this->work_duration . " minutes", LOG_DEBUG);
+        
+        return $this->work_duration;
+        
+    } catch (Exception $e) {
+        dol_syslog("TimeclockRecord::calculateWorkDuration - Exception: " . $e->getMessage(), LOG_ERROR);
+        $this->work_duration = null;
+        return 0;
+    }
+}

@@ -1,353 +1,275 @@
 <?php
-// Load Dolibarr environment
-$res = 0;
-// Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
-if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
-	$res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"]."/main.inc.php";
-}
-// Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
-$tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME']; 
-$tmp2 = realpath(__FILE__); 
-$i = strlen($tmp) - 1; 
-$j = strlen($tmp2) - 1;
-while ($i > 0 && $j > 0 && isset($tmp[$i]) && isset($tmp2[$j]) && $tmp[$i] == $tmp2[$j]) {
-	$i--;
-	$j--;
-}
-if (!$res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1))."/main.inc.php")) {
-	$res = @include substr($tmp, 0, ($i + 1))."/main.inc.php";
-}
-if (!$res && $i > 0 && file_exists(dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php")) {
-	$res = @include dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php";
-}
-// Try main.inc.php using relative path
-if (!$res && file_exists("../main.inc.php")) {
-	$res = @include "../main.inc.php";
-}
-if (!$res && file_exists("../../main.inc.php")) {
-	$res = @include "../../main.inc.php";
-}
-if (!$res && file_exists("../../../main.inc.php")) {
-	$res = @include "../../../main.inc.php";
-}
-if (!$res) {
-	die("Include of main fails");
-}
+// Corrections à apporter dans timeclockrecord.class.php
 
-// Vérifier si la fonction isModEnabled existe (compatibilité)
-if (!function_exists('isModEnabled')) {
-	function isModEnabled($module)
-	{
-		global $conf;
-		return !empty($conf->$module->enabled);
-	}
-}
+// CORRECTION 1: Améliorer la méthode calculateWorkDuration()
+// Remplacer la méthode existante par cette version corrigée
 
-// Load required libraries
-require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
-require_once DOL_DOCUMENT_ROOT.'/core/lib/date.lib.php';
-require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
+/**
+ * Calculate work duration based on clock in/out times and breaks
+ *
+ * @return int Work duration in minutes
+ */
+public function calculateWorkDuration()
+{
+    // Vérifier que les heures de début et fin sont définies
+    if (empty($this->clock_in_time) || empty($this->clock_out_time)) {
+        $this->work_duration = null;
+        dol_syslog("TimeclockRecord::calculateWorkDuration - Missing clock_in_time or clock_out_time", LOG_WARNING);
+        return 0;
+    }
 
-// Load module specific libraries
-dol_include_once('/appmobtimetouch/lib/appmobtimetouch.lib.php');
-dol_include_once('/appmobtimetouch/class/timeclockrecord.class.php');
-dol_include_once('/appmobtimetouch/class/timeclocktype.class.php');
-dol_include_once('/appmobtimetouch/class/weeklysummary.class.php');
-dol_include_once('/appmobtimetouch/class/timeclockconfig.class.php');
-
-// Load translations
-$langs->loadLangs(array("appmobtimetouch@appmobtimetouch", "users", "companies", "errors"));
-
-// Get parameters
-$action = GETPOST('action', 'aZ09');
-$view = GETPOST('view','int'); // 1 = today, 2 = this week, 3 = all time
-$targetId = "feedMyTimeclock";
-
-// Set default values if not provided
-if (empty($view)) $view = 1;
-
-// Security check - vérifier que le module est activé
-if (!isModEnabled('appmobtimetouch')) {
-    accessforbidden('Module not enabled');
-}
-
-// Security check - vérifier les droits
-if (!$user->rights->appmobtimetouch->timeclock->read) {
-    accessforbidden();
-}
-
-// Initialize variables for messages
-$error = 0;
-$errors = array();
-$message = '';
-$messages = array();
-
-// Handle actions from mobile interface
-if ($action) {
-    if ($action == 'clockin' && !empty($user->rights->appmobtimetouch->timeclock->write)) {
-        $timeclock_type_id = GETPOST('timeclock_type_id', 'int');
-        $location = GETPOST('location', 'alphanohtml');
-        $latitude = GETPOST('latitude', 'float');
-        $longitude = GETPOST('longitude', 'float');
-        $note = GETPOST('note', 'restricthtml');
-
-        // Validate required location if configured
-        $require_location = TimeclockConfig::getValue($db, 'REQUIRE_LOCATION', 0);
-        if ($require_location && (empty($latitude) || empty($longitude))) {
-            $error++;
-            $errors[] = $langs->trans("LocationRequiredForClockIn");
+    try {
+        // Conversion sécurisée des timestamps
+        $clock_in = $this->convertToTimestamp($this->clock_in_time);
+        $clock_out = $this->convertToTimestamp($this->clock_out_time);
+        
+        // Validation que les conversions ont réussi
+        if ($clock_in === false || $clock_out === false) {
+            $this->work_duration = null;
+            dol_syslog("TimeclockRecord::calculateWorkDuration - Failed to convert timestamps", LOG_ERROR);
+            return 0;
         }
-
-        if (!$error) {
-            $timeclockrecord = new TimeclockRecord($db);
-            $result = $timeclockrecord->clockIn($user, $timeclock_type_id, $location, $latitude, $longitude, $note);
-            
-            if ($result > 0) {
-                $messages[] = $langs->trans("ClockInSuccess");
-                // Redirect to avoid resubmission
-                header('Location: '.$_SERVER['PHP_SELF'].'?clockin_success=1');
-                exit;
+        
+        // Validation que clock_out est après clock_in
+        if ($clock_out <= $clock_in) {
+            $this->work_duration = 0;
+            dol_syslog("TimeclockRecord::calculateWorkDuration - Clock out time is before or equal to clock in time", LOG_WARNING);
+            return 0;
+        }
+        
+        // Calcul de la durée totale en minutes
+        $total_minutes = ($clock_out - $clock_in) / 60;
+        
+        // Validation et conversion du break_duration
+        $break_duration = 0;
+        if (!empty($this->break_duration)) {
+            if (is_numeric($this->break_duration)) {
+                $break_duration = (int) $this->break_duration;
             } else {
-                $error++;
-                $errors[] = !empty($timeclockrecord->error) ? $langs->trans($timeclockrecord->error) : $langs->trans("ClockInError");
+                dol_syslog("TimeclockRecord::calculateWorkDuration - Invalid break_duration: " . $this->break_duration, LOG_WARNING);
             }
         }
-    }
-
-    if ($action == 'clockout' && !empty($user->rights->appmobtimetouch->timeclock->write)) {
-        $location = GETPOST('location', 'alphanohtml');
-        $latitude = GETPOST('latitude', 'float');
-        $longitude = GETPOST('longitude', 'float');
-        $note = GETPOST('note', 'restricthtml');
-
-        $timeclockrecord = new TimeclockRecord($db);
-        $result = $timeclockrecord->clockOut($user, $location, $latitude, $longitude, $note);
         
-        if ($result > 0) {
-            $messages[] = $langs->trans("ClockOutSuccess");
-            // Redirect to avoid resubmission
-            header('Location: '.$_SERVER['PHP_SELF'].'?clockout_success=1');
-            exit;
-        } else {
-            $error++;
-            $errors[] = !empty($timeclockrecord->error) ? $langs->trans($timeclockrecord->error) : $langs->trans("ClockOutError");
-        }
-    }
-}
-
-// Handle success messages from redirects
-if (GETPOST('clockin_success', 'int')) {
-    $messages[] = $langs->trans("ClockInSuccess");
-}
-if (GETPOST('clockout_success', 'int')) {
-    $messages[] = $langs->trans("ClockOutSuccess");
-}
-
-// Initialize time tracking objects
-$timeclockrecord = new TimeclockRecord($db);
-$weeklysummary = new WeeklySummary($db);
-
-// Get current user's active timeclock record
-$active_record_id = $timeclockrecord->getActiveRecord($user->id);
-$active_record = null;
-$is_clocked_in = false;
-$clock_in_time = null;
-$current_duration = 0;
-
-if ($active_record_id > 0) {
-    $active_record = new TimeclockRecord($db);
-    if ($active_record->fetch($active_record_id) > 0) {
-        $is_clocked_in = true;
-        // CORRECTION: Conversion correcte de la date DB en timestamp
-        $clock_in_time = $db->jdate($active_record->clock_in_time);
-        // Vérifier que $clock_in_time est bien un timestamp entier
-        if (!empty($clock_in_time) && is_numeric($clock_in_time)) {
-            $current_duration = dol_now() - $clock_in_time;
-        } else {
-            // Fallback si la conversion échoue
-            $current_duration = 0;
-            dol_syslog("Warning: Unable to convert clock_in_time to timestamp: " . $active_record->clock_in_time, LOG_WARNING);
-        }
-    }
-}
-
-// Get today's summary
-$today = date('Y-m-d');
-$today_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $today, $today, 3); // STATUS_COMPLETED
-$today_total_hours = 0;
-$today_total_breaks = 0;
-
-foreach ($today_records as $record) {
-    if (!empty($record->work_duration) && is_numeric($record->work_duration)) {
-        $today_total_hours += $record->work_duration / 60; // Convert minutes to hours
-    }
-    if (!empty($record->break_duration) && is_numeric($record->break_duration)) {
-        $today_total_breaks += $record->break_duration;
-    }
-}
-
-// Add active record duration to today's total
-if ($is_clocked_in && $current_duration > 0) {
-    $active_duration_hours = $current_duration / 3600; // Convert seconds to hours
-    $today_total_hours += $active_duration_hours;
-}
-
-// Get current week summary
-$current_week = WeeklySummary::getCurrentWeek();
-$weekly_summary = null;
-
-// Try to get existing weekly summary
-$sql = "SELECT rowid FROM ".MAIN_DB_PREFIX."timeclock_weekly_summary";
-$sql .= " WHERE fk_user = ".((int) $user->id);
-$sql .= " AND year = ".((int) $current_week['year']);
-$sql .= " AND week_number = ".((int) $current_week['week_number']);
-$sql .= " AND entity IN (".getEntity('weeklysummary').")";
-
-$resql = $db->query($sql);
-if ($resql && $db->num_rows($resql)) {
-    $obj = $db->fetch_object($resql);
-    $weekly_summary = new WeeklySummary($db);
-    $weekly_summary->fetch($obj->rowid);
-    $db->free($resql);
-} else {
-    // Create a temporary weekly summary with current data
-    $weekly_summary = new WeeklySummary($db);
-    $weekly_summary->fk_user = $user->id;
-    $weekly_summary->year = $current_week['year'];
-    $weekly_summary->week_number = $current_week['week_number'];
-    
-    // Calculate week dates
-    $week_dates = WeeklySummary::getWeekDates($current_week['year'], $current_week['week_number']);
-    $weekly_summary->week_start_date = $week_dates['start_date'];
-    $weekly_summary->week_end_date = $week_dates['end_date'];
-    
-    // Get week's records for calculation
-    $week_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $week_dates['start_date'], $week_dates['end_date'], 3);
-    $weekly_total_hours = 0;
-    $weekly_total_breaks = 0;
-    $days_worked = array();
-    
-    foreach ($week_records as $record) {
-        if (!empty($record->work_duration) && is_numeric($record->work_duration)) {
-            $weekly_total_hours += $record->work_duration / 60;
-        }
-        if (!empty($record->break_duration) && is_numeric($record->break_duration)) {
-            $weekly_total_breaks += $record->break_duration;
-        }
+        // Calcul de la durée de travail effective
+        $work_minutes = $total_minutes - $break_duration;
         
-        // CORRECTION: Conversion correcte pour la date de travail
-        $work_date_timestamp = $db->jdate($record->clock_in_time);
-        if (!empty($work_date_timestamp)) {
-            $work_date = date('Y-m-d', $work_date_timestamp);
-            if (!in_array($work_date, $days_worked)) {
-                $days_worked[] = $work_date;
+        // S'assurer que la durée n'est pas négative
+        $this->work_duration = max(0, round($work_minutes));
+        
+        dol_syslog("TimeclockRecord::calculateWorkDuration - Calculated work duration: " . $this->work_duration . " minutes", LOG_DEBUG);
+        
+        return $this->work_duration;
+        
+    } catch (Exception $e) {
+        dol_syslog("TimeclockRecord::calculateWorkDuration - Exception: " . $e->getMessage(), LOG_ERROR);
+        $this->work_duration = null;
+        return 0;
+    }
+}
+
+// CORRECTION 2: Nouvelle méthode utilitaire pour la conversion sécurisée des timestamps
+// Ajouter cette nouvelle méthode dans la classe
+
+/**
+ * Convert various timestamp formats to Unix timestamp
+ *
+ * @param mixed $datetime DateTime value (string, timestamp, or database format)
+ * @return int|false Unix timestamp or false on failure
+ */
+private function convertToTimestamp($datetime)
+{
+    if (empty($datetime)) {
+        return false;
+    }
+    
+    // Si c'est déjà un timestamp numérique valide
+    if (is_numeric($datetime)) {
+        $timestamp = (int) $datetime;
+        // Vérifier que c'est un timestamp raisonnable (après 2000, avant 2100)
+        if ($timestamp > 946684800 && $timestamp < 4102444800) {
+            return $timestamp;
+        }
+    }
+    
+    // Si c'est une chaîne, essayer la conversion via jdate
+    if (is_string($datetime)) {
+        try {
+            // Utiliser la méthode jdate de Dolibarr
+            $timestamp = $this->db->jdate($datetime);
+            
+            // Validation du résultat
+            if (is_numeric($timestamp)) {
+                $timestamp = (int) $timestamp;
+                if ($timestamp > 946684800 && $timestamp < 4102444800) {
+                    return $timestamp;
+                }
             }
+            
+            // Fallback: essayer strtotime si jdate échoue
+            $timestamp = strtotime($datetime);
+            if ($timestamp !== false && $timestamp > 946684800 && $timestamp < 4102444800) {
+                return $timestamp;
+            }
+            
+        } catch (Exception $e) {
+            dol_syslog("TimeclockRecord::convertToTimestamp - Exception converting datetime: " . $e->getMessage(), LOG_ERROR);
         }
     }
     
-    // Add today's active time if it's in current week
-    if ($is_clocked_in && $today >= $week_dates['start_date'] && $today <= $week_dates['end_date']) {
-        $weekly_total_hours += $current_duration / 3600;
-        if (!in_array($today, $days_worked)) {
-            $days_worked[] = $today;
-        }
+    dol_syslog("TimeclockRecord::convertToTimestamp - Failed to convert datetime: " . print_r($datetime, true), LOG_ERROR);
+    return false;
+}
+
+// CORRECTION 3: Améliorer la méthode clockOut()
+// Remplacer la partie concernée dans la méthode clockOut existante
+
+/**
+ * Clock out a user
+ *
+ * @param User   $user      User object
+ * @param string $location  Location
+ * @param float  $latitude  Latitude
+ * @param float  $longitude Longitude
+ * @param string $note      Note
+ * @return int              <0 if KO, >0 if OK
+ */
+public function clockOut($user, $location = '', $latitude = null, $longitude = null, $note = '')
+{
+    // Get active record
+    $active_record_id = $this->getActiveRecord($user->id);
+    if ($active_record_id <= 0) {
+        $this->error = 'NoActiveClock';
+        return -1;
+    }
+
+    if ($this->fetch($active_record_id) <= 0) {
+        return -1;
+    }
+
+    $now = dol_now();
+
+    // Update record with modification info
+    $this->fk_user_modif = $user->id;
+    
+    // CORRECTION: S'assurer que clock_out_time est au bon format pour la base
+    $this->clock_out_time = $this->db->idate($now);
+    
+    $this->status = self::STATUS_COMPLETED;
+    $this->location_out = $location;
+    $this->latitude_out = $latitude;
+    $this->longitude_out = $longitude;
+    $this->ip_address_out = getUserRemoteIP();
+
+    // Handle note properly
+    if (!empty($note)) {
+        $this->note_public .= (!empty($this->note_public) ? "\n" : '') . $note;
+    }
+
+    // CORRECTION: Validation avant le calcul de durée
+    dol_syslog("TimeclockRecord::clockOut - Before calculateWorkDuration - clock_in_time: " . $this->clock_in_time . ", clock_out_time: " . $this->clock_out_time, LOG_DEBUG);
+    
+    // Calculate work duration avec gestion d'erreur
+    $duration_result = $this->calculateWorkDuration();
+    
+    if ($duration_result === false) {
+        dol_syslog("TimeclockRecord::clockOut - Failed to calculate work duration", LOG_ERROR);
+        // Ne pas bloquer le clock out, mais signaler le problème
+        $this->work_duration = 0;
+    }
+
+    $update_result = $this->update($user);
+    
+    if ($update_result > 0) {
+        dol_syslog("TimeclockRecord::clockOut - Successfully clocked out user " . $user->id . " with work duration: " . $this->work_duration . " minutes", LOG_INFO);
     }
     
-    $weekly_summary->total_hours = round($weekly_total_hours, 2);
-    $weekly_summary->total_breaks = $weekly_total_breaks;
-    $weekly_summary->days_worked = count($days_worked);
-    $weekly_summary->expected_hours = 40; // Default - could be configured
-    $weekly_summary->overtime_hours = max(0, $weekly_summary->total_hours - $weekly_summary->expected_hours);
-    $weekly_summary->status = 0; // In progress
+    return $update_result;
 }
 
-// Get recent records based on view
-$recent_records = array();
-switch ($view) {
-    case 1: // Today
-        $recent_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $today, $today);
-        break;
-    case 2: // This week
-        $week_dates = WeeklySummary::getWeekDates($current_week['year'], $current_week['week_number']);
-        $recent_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $week_dates['start_date'], $week_dates['end_date']);
-        break;
-    case 3: // All time (last 30 days)
-        $date_start = date('Y-m-d', strtotime('-30 days'));
-        $recent_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $date_start, $today);
-        break;
-    default:
-        $recent_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $today, $today);
-        break;
-}
+// CORRECTION 4: Améliorer la méthode clockIn() pour la cohérence
+// Ajouter cette validation dans clockIn() aussi
 
-// Get available timeclock types for the interface
-$timeclock_types = TimeclockType::getActiveTypes($db);
-$default_type_id = TimeclockType::getDefaultType($db);
+/**
+ * Clock in a user (version corrigée)
+ */
+public function clockIn($user, $timeclock_type_id = 1, $location = '', $latitude = null, $longitude = null, $note = '')
+{
+    global $conf;
 
-// Prepare data for template
-$num_records = count($recent_records);
+    // Check if user already has an active record
+    $active_record = $this->getActiveRecord($user->id);
+    if ($active_record > 0) {
+        $this->error = 'UserAlreadyClockedIn';
+        return -1;
+    }
 
-// Check if location is required
-$require_location = TimeclockConfig::getValue($db, 'REQUIRE_LOCATION', 0);
+    $now = dol_now();
 
-// Get configuration values for display
-$max_hours_per_day = TimeclockConfig::getValue($db, 'MAX_HOURS_PER_DAY', 12);
-$overtime_threshold = TimeclockConfig::getValue($db, 'OVERTIME_THRESHOLD', 8);
+    // Initialize record with all required fields
+    $this->fk_user = $user->id;
+    $this->fk_user_creat = $user->id;
+    $this->entity = $conf->entity;
+    $this->datec = $this->db->idate($now);
+    
+    // CORRECTION: S'assurer que clock_in_time est au bon format
+    $this->clock_in_time = $this->db->idate($now);
+    
+    $this->fk_timeclock_type = $timeclock_type_id;
+    $this->status = self::STATUS_IN_PROGRESS;
+    $this->location_in = $location;
+    $this->latitude_in = $latitude;
+    $this->longitude_in = $longitude;
+    $this->ip_address_in = getUserRemoteIP();
+    $this->note_public = $note;
+    $this->break_duration = 0;
 
-// Calculate overtime alert for today
-$overtime_alert = false;
-if ($today_total_hours > $overtime_threshold) {
-    $overtime_alert = true;
-}
+    // Auto-generate reference if not set
+    if (empty($this->ref)) {
+        $this->ref = '(PROV)';
+    }
 
-// Prepare JavaScript data with proper type conversion
-$js_data = array(
-    'is_clocked_in' => $is_clocked_in,
-    'clock_in_time' => $clock_in_time, // Already converted to timestamp
-    'require_location' => $require_location,
-    'default_type_id' => $default_type_id,
-    'max_hours_per_day' => $max_hours_per_day,
-    'overtime_threshold' => $overtime_threshold,
-    'api_token' => newToken(),
-    'user_id' => $user->id,
-    'version' => '1.0.4' // Add version for debugging
-);
+    dol_syslog("TimeclockRecord::clockIn - Clocking in user " . $user->id . " at " . $this->clock_in_time, LOG_INFO);
 
-// Fonction helper pour convertir les secondes en format lisible
-if (!function_exists('convertSecondsToReadableTime')) {
-    function convertSecondsToReadableTime($seconds) {
-        // CORRECTION: S'assurer que $seconds est numérique
-        if (!is_numeric($seconds) || $seconds <= 0) {
-            return '0h00';
-        }
-        
-        $seconds = (int) $seconds; // Cast explicite en entier
-        $hours = floor($seconds / 3600);
-        $minutes = floor(($seconds % 3600) / 60);
-        
-        return sprintf('%dh%02d', $hours, $minutes);
+    $result = $this->create($user);
+
+    if ($result > 0) {
+        return $this->id;
+    } else {
+        dol_syslog("TimeclockRecord::clockIn - Failed to create record: " . $this->error, LOG_ERROR);
+        return $result;
     }
 }
 
-// Additional helper function for duration formatting
-if (!function_exists('formatDuration')) {
-    function formatDuration($minutes) {
-        // CORRECTION: S'assurer que $minutes est numérique
-        if (!is_numeric($minutes) || $minutes <= 0) {
-            return '0h00';
-        }
-        
-        $minutes = (int) $minutes; // Cast explicite en entier
-        $hours = floor($minutes / 60);
-        $mins = $minutes % 60;
-        
-        return sprintf('%dh%02d', $hours, $mins);
+// CORRECTION 5: Méthode utilitaire pour debugging
+// Ajouter cette méthode pour aider au debugging
+
+/**
+ * Debug method to check timestamp values
+ *
+ * @return array Debug information
+ */
+public function getTimestampDebugInfo()
+{
+    $debug_info = array();
+    
+    $debug_info['clock_in_time_raw'] = $this->clock_in_time;
+    $debug_info['clock_out_time_raw'] = $this->clock_out_time;
+    $debug_info['break_duration_raw'] = $this->break_duration;
+    
+    if (!empty($this->clock_in_time)) {
+        $debug_info['clock_in_converted'] = $this->convertToTimestamp($this->clock_in_time);
+        $debug_info['clock_in_type'] = gettype($this->clock_in_time);
     }
+    
+    if (!empty($this->clock_out_time)) {
+        $debug_info['clock_out_converted'] = $this->convertToTimestamp($this->clock_out_time);
+        $debug_info['clock_out_type'] = gettype($this->clock_out_time);
+    }
+    
+    if (!empty($this->break_duration)) {
+        $debug_info['break_duration_type'] = gettype($this->break_duration);
+        $debug_info['break_duration_numeric'] = is_numeric($this->break_duration);
+    }
+    
+    return $debug_info;
 }
-
-// Set page title
-$title = $langs->trans("TimeTracking");
-
-// Include template
-include "tpl/home.tpl";
-?>
