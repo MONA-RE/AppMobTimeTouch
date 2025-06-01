@@ -162,6 +162,18 @@ class TimeclockRecord extends CommonObject
             $this->fields['entity']['enabled'] = 0;
         }
 
+    // CORRECTION: S'assurer que les champs obligatoires sont correctement définis
+    // Vérifier que datec est bien marqué comme obligatoire mais géré automatiquement
+    if (isset($this->fields['datec'])) {
+        $this->fields['datec']['notnull'] = 1;
+        $this->fields['datec']['visible'] = 0;  // Caché car géré automatiquement
+    }
+    
+    // S'assurer que entity est défini avec une valeur par défaut
+    if (isset($this->fields['entity'])) {
+        $this->fields['entity']['default'] = !empty($conf->entity) ? $conf->entity : 1;
+    }
+
         // Example to show how to set values of fields definition dynamically
         /*if ($user->rights->appmobtimetouch->timeclock->read) {
             $this->fields['myfield']['visible'] = 1;
@@ -197,6 +209,32 @@ class TimeclockRecord extends CommonObject
     public function create(User $user, $notrigger = false)
     {
         global $conf;
+
+    // CORRECTION: Initialiser les champs obligatoires avant l'appel à createCommon
+    $now = dol_now();
+    
+    // S'assurer que tous les champs obligatoires sont définis
+    if (empty($this->datec)) {
+        $this->datec = $this->db->idate($now);
+    }
+    
+    if (empty($this->entity)) {
+        $this->entity = $conf->entity;
+    }
+    
+    if (empty($this->fk_user_creat)) {
+        $this->fk_user_creat = $user->id;
+    }
+    
+    // S'assurer que clock_in_time est défini pour les nouveaux enregistrements
+    if (empty($this->clock_in_time)) {
+        $this->clock_in_time = $this->db->idate($now);
+    }
+    
+    // Référence temporaire si vide
+    if (empty($this->ref)) {
+        $this->ref = '(PROV)';
+    }
 
         $resultcreate = $this->createCommon($user, $notrigger);
 
@@ -873,9 +911,12 @@ class TimeclockRecord extends CommonObject
 
         $now = dol_now();
 
-        // Initialize record
+    // Initialize record with all required fields
         $this->fk_user = $user->id;
-        $this->clock_in_time = $this->db->idate($now);
+    $this->fk_user_creat = $user->id;  // Add creator
+    $this->entity = $conf->entity;     // Add entity
+    $this->datec = $this->db->idate($now);  // CORRECTION: Initialize datec properly
+    $this->clock_in_time = $this->db->idate($now);  // Keep existing format
         $this->fk_timeclock_type = $timeclock_type_id;
         $this->status = self::STATUS_IN_PROGRESS;
         $this->location_in = $location;
@@ -884,6 +925,11 @@ class TimeclockRecord extends CommonObject
         $this->ip_address_in = getUserRemoteIP();
         $this->note_public = $note;
         $this->break_duration = 0;
+    
+    // Auto-generate reference if not set
+    if (empty($this->ref)) {
+        $this->ref = '(PROV)';
+    }
 
         $result = $this->create($user);
 
@@ -919,15 +965,18 @@ class TimeclockRecord extends CommonObject
 
         $now = dol_now();
 
-        // Update record
+    // Update record with modification info
+    $this->fk_user_modif = $user->id;  // CORRECTION: Add modifier
         $this->clock_out_time = $this->db->idate($now);
         $this->status = self::STATUS_COMPLETED;
         $this->location_out = $location;
         $this->latitude_out = $latitude;
         $this->longitude_out = $longitude;
         $this->ip_address_out = getUserRemoteIP();
+    
+    // Handle note properly
         if (!empty($note)) {
-            $this->note_public .= (!empty($this->note_public) ? '\n' : '') . $note;
+        $this->note_public .= (!empty($this->note_public) ? "\n" : '') . $note;  // CORRECTION: Fixed syntax
         }
 
         // Calculate work duration
