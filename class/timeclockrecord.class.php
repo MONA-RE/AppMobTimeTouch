@@ -1393,4 +1393,38 @@ class TimeclockRecord extends CommonObject
 
         return $result;
     }
+
+
+
+    /**
+     * Debug method to check timestamp values
+     *
+     * @return array Debug information
+     */
+    public function getTimestampDebugInfo()
+    {
+        $debug_info = array();
+        
+        $debug_info['clock_in_time_raw'] = $this->clock_in_time;
+        $debug_info['clock_out_time_raw'] = $this->clock_out_time;
+        $debug_info['break_duration_raw'] = $this->break_duration;
+        
+        if (!empty($this->clock_in_time)) {
+            $debug_info['clock_in_converted'] = $this->convertToTimestamp($this->clock_in_time);
+            $debug_info['clock_in_type'] = gettype($this->clock_in_time);
+        }
+        
+        if (!empty($this->clock_out_time)) {
+            $debug_info['clock_out_converted'] = $this->convertToTimestamp($this->clock_out_time);
+            $debug_info['clock_out_type'] = gettype($this->clock_out_time);
+        }
+        
+        if (!empty($this->break_duration)) {
+            $debug_info['break_duration_type'] = gettype($this->break_duration);
+            $debug_info['break_duration_numeric'] = is_numeric($this->break_duration);
+        }
+        
+        return $debug_info;
+    }
+
 }
