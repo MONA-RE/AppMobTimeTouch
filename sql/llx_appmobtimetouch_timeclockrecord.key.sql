@@ -22,3 +22,11 @@ ALTER TABLE llx_timeclock_records ADD INDEX idx_timeclock_records_status (status
 ALTER TABLE llx_timeclock_records ADD INDEX idx_timeclock_records_date (clock_in_time);
 ALTER TABLE llx_timeclock_records ADD INDEX idx_timeclock_records_entity (entity);
 ALTER TABLE llx_timeclock_records ADD INDEX idx_timeclock_records_type (fk_timeclock_type);
+
+
+-- Foreign key constraints
+ALTER TABLE llx_timeclock_records ADD CONSTRAINT fk_timeclock_records_user FOREIGN KEY (fk_user) REFERENCES llx_user (rowid);
+ALTER TABLE llx_timeclock_records ADD CONSTRAINT fk_timeclock_records_user_creat FOREIGN KEY (fk_user_creat) REFERENCES llx_user (rowid);
+ALTER TABLE llx_timeclock_records ADD CONSTRAINT fk_timeclock_records_user_modif FOREIGN KEY (fk_user_modif) REFERENCES llx_user (rowid);
+ALTER TABLE llx_timeclock_records ADD CONSTRAINT fk_timeclock_records_type FOREIGN KEY (fk_timeclock_type) REFERENCES llx_timeclock_types (rowid);
+ALTER TABLE llx_timeclock_records ADD CONSTRAINT fk_timeclock_records_validated_by FOREIGN KEY (validated_by) REFERENCES llx_user (rowid);
