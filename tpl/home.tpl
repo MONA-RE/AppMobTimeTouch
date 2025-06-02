@@ -576,15 +576,22 @@
       }
     }
     
-    // Show Clock In Modal
     function showClockInModal() {
-      var modal = document.getElementById('clockInModal');
-      modal.show();
-      
-      // Get GPS location if required
-      if (appConfig.require_location) {
-        getCurrentPosition('in');
-      }
+        const modal = document.getElementById('clockInModal');
+        modal.show();
+        
+        // Initialiser la sélection des types
+        setTimeout(function() {
+            initializeTimeclockTypeSelection();
+        }, 100);
+        
+        // Get GPS location if required
+        if (appConfig && appConfig.require_location) {
+            getCurrentPosition('in');
+        } else {
+            // Mettre à jour le statut GPS comme "prêt"
+            updateGPSStatus('ready', '<?php echo $langs->trans("ReadyToStart"); ?>');
+        }
     }
     
     // Show Clock Out Modal  
@@ -598,56 +605,53 @@
       }
     }
     
-    // Get current GPS position
+
     function getCurrentPosition(type) {
-      var statusElement = document.getElementById('gps-status' + (type === 'out' ? '-out' : ''));
-      
-      if (navigator.geolocation) {
-        statusElement.innerHTML = '<ons-icon icon="md-gps-fixed" spin></ons-icon> <?php echo $langs->trans("GettingLocation"); ?>...';
+        const statusElement = document.getElementById('gps-status' + (type === 'out' ? '-out' : ''));
         
-        navigator.geolocation.getCurrentPosition(
-          function(position) {
-            var lat = position.coords.latitude;
-            var lon = position.coords.longitude;
-            var accuracy = Math.round(position.coords.accuracy);
-            
-            document.getElementById('clock' + type + '_latitude').value = lat;
-            document.getElementById('clock' + type + '_longitude').value = lon;
-            
-            statusElement.innerHTML = '<ons-icon icon="md-gps-fixed" style="color: #4CAF50;"></ons-icon> <?php echo $langs->trans("LocationFound"); ?> (±' + accuracy + 'm)';
-            statusElement.style.color = '#4CAF50';
-          },
-          function(error) {
-            var errorMsg = '';
-            switch(error.code) {
-              case error.PERMISSION_DENIED:
-                errorMsg = '<?php echo $langs->trans("LocationPermissionDenied"); ?>';
-                break;
-              case error.POSITION_UNAVAILABLE:
-                errorMsg = '<?php echo $langs->trans("LocationUnavailable"); ?>';
-                break;
-              case error.TIMEOUT:
-                errorMsg = '<?php echo $langs->trans("LocationTimeout"); ?>';
-                break;
-              default:
-                errorMsg = '<?php echo $langs->trans("LocationError"); ?>';
-                break;
-            }
-            statusElement.innerHTML = '<ons-icon icon="md-gps-off" style="color: #f44336;"></ons-icon> ' + errorMsg;
-            statusElement.style.color = '#f44336';
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 300000
-          }
-        );
-      } else {
-        statusElement.innerHTML = '<ons-icon icon="md-gps-off" style="color: #f44336;"></ons-icon> <?php echo $langs->trans("LocationNotSupported"); ?>';
-        statusElement.style.color = '#f44336';
-      }
+        updateGPSStatus('loading', '<?php echo $langs->trans("GettingLocation"); ?>...');
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    var lat = position.coords.latitude;
+                    var lon = position.coords.longitude;
+                    var accuracy = Math.round(position.coords.accuracy);
+                    
+                    document.getElementById('clock' + type + '_latitude').value = lat;
+                    document.getElementById('clock' + type + '_longitude').value = lon;
+                    
+                    updateGPSStatus('success', '<?php echo $langs->trans("LocationFound"); ?> (±' + accuracy + 'm)');
+                },
+                function(error) {
+                    var errorMsg = '';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = '<?php echo $langs->trans("LocationPermissionDenied"); ?>';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = '<?php echo $langs->trans("LocationUnavailable"); ?>';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = '<?php echo $langs->trans("LocationTimeout"); ?>';
+                            break;
+                        default:
+                            errorMsg = '<?php echo $langs->trans("LocationError"); ?>';
+                            break;
+                    }
+                    updateGPSStatus('error', errorMsg);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 300000
+                }
+            );
+        } else {
+            updateGPSStatus('error', '<?php echo $langs->trans("LocationNotSupported"); ?>');
+        }
     }
-    
+
     // Submit Clock In (uses API)
     function submitClockIn() {
       // Validate required location
@@ -931,5 +935,228 @@
         }, 30000);
       }
     }
+
+        /**
+     * Sélectionner un type de pointage
+     * @param {number} typeId - ID du type de pointage
+     * @param {string} typeLabel - Libellé du type
+     * @param {string} typeColor - Couleur du type
+     */
+     function selectTimeclockType(typeId, typeLabel, typeColor) {
+        console.log('Selecting timeclock type:', typeId, typeLabel, typeColor);
+        
+        // Mettre à jour le champ caché
+        const hiddenInput = document.getElementById('selected_timeclock_type');
+        if (hiddenInput) {
+            hiddenInput.value = typeId;
+        }
+        
+        // Supprimer la sélection de tous les éléments
+        const allItems = document.querySelectorAll('.timeclock-type-item');
+        allItems.forEach(function(item) {
+            item.classList.remove('selected');
+            item.style.backgroundColor = '';
+            item.style.borderLeft = '';
+            
+            // Masquer l'icône de validation
+            const icon = item.querySelector('.type-selected-icon');
+            if (icon) {
+                icon.style.display = 'none';
+            }
+        });
+        
+        // Marquer l'élément sélectionné
+        const selectedItem = document.querySelector(`[data-type-id="${typeId}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('selected');
+            selectedItem.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+            selectedItem.style.borderLeft = '4px solid ' + typeColor;
+            
+            // Afficher l'icône de validation
+            const icon = selectedItem.querySelector('.type-selected-icon');
+            if (icon) {
+                icon.style.display = 'block';
+                icon.style.color = typeColor;
+            }
+            
+            // Animation de feedback
+            selectedItem.style.transform = 'scale(0.98)';
+            setTimeout(function() {
+                selectedItem.style.transform = 'scale(1)';
+            }, 150);
+        }
+        
+        // Feedback visuel avec vibration (si supporté)
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
+        }
+        
+        // Feedback sonore léger (optionnel)
+        playSelectionSound();
+        
+        console.log('Timeclock type selected:', typeId);
+    }
+    
+    /**
+     * Jouer un son de sélection discret
+     */
+     function playSelectionSound() {
+        try {
+            // Créer un son très court et discret
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        } catch (e) {
+            // Ignorer les erreurs de son (pas critique)
+        }
+    }
+    
+    /**
+     * Initialiser la sélection des types de pointage
+     */
+     function initializeTimeclockTypeSelection() {
+        console.log('Initializing timeclock type selection');
+        
+        // Ajouter les styles CSS pour les transitions
+        if (!document.querySelector('#timeclock-type-styles')) {
+            const style = document.createElement('style');
+            style.id = 'timeclock-type-styles';
+            style.textContent = `
+                .timeclock-type-item {
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                }
+                
+                .timeclock-type-item:hover {
+                    background-color: rgba(76, 175, 80, 0.05) !important;
+                }
+                
+                .timeclock-type-item.selected {
+                    background-color: rgba(76, 175, 80, 0.1) !important;
+                    transform: translateX(2px);
+                }
+                
+                .timeclock-type-item:active {
+                    transform: scale(0.98);
+                }
+                
+                .type-selected-icon {
+                    transition: all 0.3s ease;
+                }
+                
+                /* Animation d'entrée pour le modal */
+                #clockInModal .modal__content {
+                    animation: slideInUp 0.3s ease-out;
+                }
+                
+                @keyframes slideInUp {
+                    from {
+                        transform: translateY(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateY(0);
+                        opacity: 1;
+                    }
+                }
+                
+                /* Styles pour les champs de saisie */
+                input:focus, textarea:focus {
+                    outline: none;
+                    box-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
+                    transform: translateY(-1px);
+                    transition: all 0.3s ease;
+                }
+                
+                /* Style pour le statut GPS */
+                #gps-status.success {
+                    background: rgba(76, 175, 80, 0.1);
+                    border: 1px solid rgba(76, 175, 80, 0.3);
+                    color: #2e7d32;
+                }
+                
+                #gps-status.error {
+                    background: rgba(244, 67, 54, 0.1);
+                    border: 1px solid rgba(244, 67, 54, 0.3);
+                    color: #c62828;
+                }
+                
+                #gps-status.loading {
+                    background: rgba(255, 152, 0, 0.1);
+                    border: 1px solid rgba(255, 152, 0, 0.3);
+                    color: #ef6c00;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Marquer le type par défaut comme sélectionné au chargement
+        const defaultTypeId = document.getElementById('selected_timeclock_type').value;
+        if (defaultTypeId) {
+            const defaultItem = document.querySelector(`[data-type-id="${defaultTypeId}"]`);
+            if (defaultItem) {
+                // Récupérer la couleur depuis l'élément
+                const colorElement = defaultItem.querySelector('[style*="background-color"]');
+                const typeColor = colorElement ? colorElement.style.backgroundColor : '#4CAF50';
+                const typeLabel = defaultItem.querySelector('.center div').textContent.trim();
+                
+                selectTimeclockType(parseInt(defaultTypeId), typeLabel, typeColor);
+            }
+        }
+    }
+
+
+    /**
+     * Mettre à jour le statut GPS avec un style approprié
+     */
+     function updateGPSStatus(status, message) {
+        const gpsStatus = document.getElementById('gps-status');
+        const gpsStatusText = document.getElementById('gps-status-text');
+        
+        if (gpsStatus && gpsStatusText) {
+            // Supprimer les classes existantes
+            gpsStatus.classList.remove('success', 'error', 'loading');
+            
+            // Ajouter la classe appropriée
+            gpsStatus.classList.add(status);
+            
+            // Mettre à jour le texte
+            gpsStatusText.textContent = message;
+            
+            // Ajouter une icône appropriée
+            let icon = 'md-gps-fixed';
+            switch (status) {
+                case 'success':
+                    icon = 'md-gps-fixed';
+                    break;
+                case 'error':
+                    icon = 'md-gps-off';
+                    break;
+                case 'loading':
+                    icon = 'md-gps-not-fixed';
+                    break;
+                default:
+                    icon = 'md-gps-fixed';
+            }
+            
+            const iconElement = gpsStatus.querySelector('ons-icon');
+            if (iconElement) {
+                iconElement.setAttribute('icon', icon);
+            }
+        }
+    }
+
+
+
   </script>
 </ons-page>
