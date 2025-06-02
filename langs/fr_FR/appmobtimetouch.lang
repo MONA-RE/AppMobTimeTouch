@@ -19,13 +19,13 @@
 # Générique
 #
 
-# Libellé du module 'ModuleAppMobTimeTouchName'
+# Libellé du module ModuleAppMobTimeTouchName
 ModuleAppMobTimeTouchName = AppMobTimeTouch
-# Description du module 'ModuleAppMobTimeTouchDesc'
+# Description du module ModuleAppMobTimeTouchDesc
 ModuleAppMobTimeTouchDesc = Application mobile de gestion du temps et des présences
 
 #
-# Page d'administration
+# Page dadministration
 #
 AppMobTimeTouchSetup = Configuration AppMobTimeTouch
 Settings = Paramètres
@@ -39,17 +39,17 @@ APPMOBTIMETOUCH_MYPARAM2Tooltip=Infobulle de mon paramètre 2
 # Page À propos
 #
 About = À propos
-AppMobTimeTouchAbout = À propos d'AppMobTimeTouch
-AppMobTimeTouchAboutPage = Page à propos d'AppMobTimeTouch
+AppMobTimeTouchAbout = À propos dAppMobTimeTouch
+AppMobTimeTouchAboutPage = Page à propos dAppMobTimeTouch
 
 #
-# Page d'exemple
+# Page dexemple
 #
 AppMobTimeTouchArea = Accueil AppMobTimeTouch
 MyPageName = Nom de ma page
 
 #
-# Widget d'exemple
+# Widget dexemple
 #
 MyWidget = Mon widget
 MyWidgetDescription = Description de mon widget
@@ -61,16 +61,16 @@ TimeTracking = Gestion du temps
 TimeclockStatus = Statut pointeuse
 ClockedIn = Pointé
 NotClockedIn = Non pointé
-ClockIn = Pointer l'entrée
+ClockIn = Pointer lentrée
 ClockOut = Pointer la sortie
 ClockInOut = Pointage
-Today = Aujourd'hui
+Today = Aujourdhui
 MyTimeTracking = Mon suivi de temps
 MyRecords = Mes enregistrements
 TimeManagement = Gestion des temps
 MyTimeclockRecords = Mes enregistrements de temps
 WeeklySummaries = Résumés hebdomadaires
-TeamManagement = Gestion d'équipe
+TeamManagement = Gestion déquipe
 Validation = Validation
 Reports = Rapports
 AllRecords = Tous les enregistrements
@@ -85,14 +85,14 @@ TimeclockTypeLabel = Libellé du type
 TimeclockTypeColor = Couleur du type
 TimeclockTypeCodeTooltip = Code unique du type de pointage
 TimeclockTypeLabelTooltip = Libellé affiché du type de pointage
-TimeclockTypeColorTooltip = Couleur d'affichage du type de pointage
+TimeclockTypeColorTooltip = Couleur daffichage du type de pointage
 
 #
 # Enregistrements de temps
 #
 TimeclockRecord = Enregistrement de temps
 TimeclockRecords = Enregistrements de temps
-ClockInTime = Heure d'entrée
+ClockInTime = Heure dentrée
 ClockOutTime = Heure de sortie
 WorkDuration = Durée de travail
 BreakDuration = Durée de pause
@@ -106,7 +106,7 @@ Duration = Durée
 Status = Statut
 Type = Type
 Location = Lieu
-LocationIn = Lieu d'entrée
+LocationIn = Lieu dentrée
 LocationOut = Lieu de sortie
 Note = Note
 EnterLocation = Saisir le lieu
@@ -125,9 +125,9 @@ Cancelled = Annulé
 #
 # Messages de succès
 #
-ClockInSuccess = Pointage d'entrée réussi
+ClockInSuccess = Pointage dentrée réussi
 ClockOutSuccess = Pointage de sortie réussi
-TimeclockClockInSuccess = Pointage d'entrée effectué avec succès
+TimeclockClockInSuccess = Pointage dentrée effectué avec succès
 TimeclockClockOutSuccess = Pointage de sortie effectué avec succès
 TimeclockBreakStartSuccess = Pause démarrée avec succès
 TimeclockBreakEndSuccess = Pause terminée avec succès
@@ -138,29 +138,29 @@ SummaryRetrieved = Résumé récupéré
 WeeklySummaryRetrieved = Résumé hebdomadaire récupéré
 
 #
-# Messages d'erreur
+# Messages derreur
 #
-ClockInError = Erreur lors du pointage d'entrée
+ClockInError = Erreur lors du pointage dentrée
 ClockOutError = Erreur lors du pointage de sortie
 NoActiveClock = Aucun pointage actif trouvé
 NoActiveTimeclockRecord = Aucun enregistrement de temps actif
-UserAlreadyHasActiveRecord = L'utilisateur a déjà un enregistrement actif
-UserAlreadyClockedIn = L'utilisateur est déjà pointé
-MaxHoursPerDayExceeded = Nombre maximum d'heures par jour dépassé (%s)
+UserAlreadyHasActiveRecord = Lutilisateur a déjà un enregistrement actif
+UserAlreadyClockedIn = Lutilisateur est déjà pointé
+MaxHoursPerDayExceeded = Nombre maximum dheures par jour dépassé (%s)
 LocationRequiredForClockIn = La localisation est requise pour pointer
 LocationPermissionDenied = Permission de localisation refusée
 LocationUnavailable = Localisation non disponible
 LocationTimeout = Délai de localisation dépassé
 LocationError = Erreur de localisation
 LocationNotSupported = Localisation non supportée par ce navigateur
-LocationRequiredForClockIn = La localisation GPS est requise pour pointer l'entrée
-LocationPermissionRequired = L'autorisation de localisation est requise
+LocationRequiredForClockIn = La localisation GPS est requise pour pointer lentrée
+LocationPermissionRequired = Lautorisation de localisation est requise
 BreakNotFound = Pause non trouvée
 NotEnoughPermissions = Permissions insuffisantes
 AccessDeniedToThisRecord = Accès refusé à cet enregistrement
 AccessDeniedToThisSummary = Accès refusé à ce résumé
 AccessDeniedToThisBreak = Accès refusé à cette pause
-CannotDeleteOtherUserRecord = Impossible de supprimer l'enregistrement d'un autre utilisateur
+CannotDeleteOtherUserRecord = Impossible de supprimer lenregistrement dun autre utilisateur
 CannotDeleteValidatedRecord = Impossible de supprimer un enregistrement validé
 ModuleNotEnabled = Module non activé
 
@@ -173,7 +173,7 @@ Loading = Chargement
 loadingInProgress = Chargement en cours
 GettingLocation = Récupération de la position
 LocationFound = Position trouvée
-TodaySummary = Résumé d'aujourd'hui
+TodaySummary = Résumé daujourdhui
 WorkedHours = Heures travaillées
 BreakTime = Temps de pause
 DailyTarget = Objectif quotidien
@@ -184,7 +184,7 @@ RecentRecords = Enregistrements récents
 ViewAllRecords = Voir tous les enregistrements
 ViewMyRecords = Voir mes enregistrements
 NoWeeklySummaryYet = Aucun résumé hebdomadaire pour le moment
-RecordDetails = Détails de l'enregistrement
+RecordDetails = Détails de lenregistrement
 ConfirmClockOut = Confirmer la sortie ?
 Cancel = Annuler
 OfflineMode = Mode hors ligne
@@ -193,7 +193,7 @@ closeSession = Fermer la session
 about = À propos
 Preferences = Préférences
 Applications = Applications
-installApp = Installer l'app
+installApp = Installer lapp
 enablePWA = Activer PWA
 
 #
@@ -202,11 +202,11 @@ enablePWA = Activer PWA
 AutoBreakMinutes = Minutes de pause automatique
 MaxHoursDay = Heures maximum par jour
 RequireLocation = Exiger la localisation
-AllowManualEdit = Autoriser l'édition manuelle
+AllowManualEdit = Autoriser lédition manuelle
 DefaultTimeclockType = Type de pointage par défaut
 ValidationRequired = Validation requise
-OVERTIME_THRESHOLD = Seuil d'heures supplémentaires
-WEEKLY_HOURS_THRESHOLD = Seuil hebdomadaire d'heures supplémentaires
+OVERTIME_THRESHOLD = Seuil dheures supplémentaires
+WEEKLY_HOURS_THRESHOLD = Seuil hebdomadaire dheures supplémentaires
 AUTO_CLOCK_OUT_HOURS = Sortie automatique après X heures
 BREAK_REMINDER_MINUTES = Rappel de pause après X minutes
 ALLOW_FUTURE_CLOCKIN = Autoriser le pointage futur
@@ -242,18 +242,18 @@ Management = Gestion
 GlobalTimeTracking = Gestion globale du temps
 ActiveUsers = Utilisateurs actifs
 TimeClockManagement = Gestion de la pointeuse
-ValidateTimeclockRecord = Valider l'enregistrement de temps
-ViewUserTimeTracking = Voir le suivi de temps de l'utilisateur
+ValidateTimeclockRecord = Valider lenregistrement de temps
+ViewUserTimeTracking = Voir le suivi de temps de lutilisateur
 
 #
 # Aide et infobulles
 #
-UserHelp = Utilisateur concerné par l'enregistrement
-ClockInTimeHelp = Date et heure de pointage d'entrée
+UserHelp = Utilisateur concerné par lenregistrement
+ClockInTimeHelp = Date et heure de pointage dentrée
 ClockOutTimeHelp = Date et heure de pointage de sortie
 BreakDurationMinutesHelp = Durée totale des pauses en minutes
 WorkDurationMinutesHelp = Durée de travail calculée en minutes
-LocationInHelp = Lieu de pointage d'entrée
+LocationInHelp = Lieu de pointage dentrée
 LocationOutHelp = Lieu de pointage de sortie
 TimeclockTypeHelp = Type de pointage (bureau, télétravail, mission, etc.)
 
@@ -268,10 +268,10 @@ GenerateWeeklySummaries = Générer les résumés hebdomadaires
 # Alertes et notifications
 #
 PendingValidation = En attente de validation
-NoRecordsToday = Aucun enregistrement aujourd'hui
+NoRecordsToday = Aucun enregistrement aujourdhui
 NoRecordsThisWeek = Aucun enregistrement cette semaine
-CompletedToday = Terminé aujourd'hui
-InProgressToday = En cours aujourd'hui
+CompletedToday = Terminé aujourdhui
+InProgressToday = En cours aujourdhui
 
 #
 # Formulaires
@@ -349,19 +349,19 @@ LastMonth = Mois dernier
 #
 # Validation et approbation
 #
-PendingApproval = En attente d'approbation
+PendingApproval = En attente dapprobation
 Approved = Approuvé
 Rejected = Rejeté
 ApprovalRequired = Approbation requise
 ValidatedBy = Validé par
 ValidatedDate = Date de validation
-ApprovalWorkflow = Workflow d'approbation
+ApprovalWorkflow = Workflow dapprobation
 
 #
 # Statistiques
 #
 Statistics = Statistiques
-AverageHoursPerDay = Moyenne d'heures par jour
+AverageHoursPerDay = Moyenne dheures par jour
 TotalHoursThisMonth = Total des heures ce mois
 AverageBreakTime = Temps de pause moyen
 ProductivityIndex = Indice de productivité
@@ -371,16 +371,16 @@ AttendanceRate = Taux de présence
 # Configuration avancée
 #
 AdvancedSettings = Paramètres avancés
-AutomationRules = Règles d'automatisation
+AutomationRules = Règles dautomatisation
 NotificationSettings = Paramètres de notification
 GeofencingSettings = Paramètres de géolocalisation
 SecuritySettings = Paramètres de sécurité
-IntegrationSettings = Paramètres d'intégration
+IntegrationSettings = Paramètres dintégration
 
 #
-# Messages de l'API
+# Messages de lAPI
 #
-APIError = Erreur de l'API
+APIError = Erreur de lAPI
 ConnectionError = Erreur de connexion
 DataSyncError = Erreur de synchronisation des données
 TokenExpired = Jeton de sécurité expiré
@@ -403,4 +403,4 @@ AccessibilityMode = Mode accessibilité
 HighContrast = Contraste élevé
 LargeText = Texte agrandi
 VoiceControl = Contrôle vocal
-ScreenReader = Lecteur d'écran
+ScreenReader = Lecteur décran
