@@ -461,9 +461,10 @@
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <div style="flex: 1; min-width: 120px;">
             <div style="font-size: 12px; color: #666; margin-bottom: 2px;"><?php echo $langs->trans("Since"); ?></div>
-            <div style="font-weight: 500; color: #333;"><?php echo dol_print_date($clock_in_time, 'hour'); ?></div>
+            <div style="font-weight: 500; color: #333;"><?php echo dol_print_date($clock_in_time, 'hour', 'tzuser'); ?></div>
           </div>
           
+
           <div style="flex: 1; min-width: 120px;">
             <div style="font-size: 12px; color: #666; margin-bottom: 2px;"><?php echo $langs->trans("Duration"); ?></div>
             <div style="font-weight: bold; color: #4CAF50; font-size: 16px;" id="session-duration">
