@@ -49,7 +49,7 @@
             </h3>
             <p style="margin: 5px 0;">
               <strong><?php echo $langs->trans("Since"); ?>:</strong> 
-              <?php echo dol_print_date($clock_in_time, 'dayhour'); ?>
+              <?php echo dol_print_date($clock_in_time, 'dayhour', 'tzuser'); ?>  
             </p>
             <p style="margin: 5px 0;">
               <strong><?php echo $langs->trans("Duration"); ?>:</strong>
