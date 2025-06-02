@@ -34,6 +34,9 @@ if (!$res) {
 	die("Include of main fails");
 }
 
+// DEBUG: Log du début de home.php
+dol_syslog("HOME.PHP DEBUG: Starting home.php execution", LOG_DEBUG);
+
 // Vérifier si la fonction isModEnabled existe (compatibilité)
 if (!function_exists('isModEnabled')) {
 	function isModEnabled($module)
@@ -63,18 +66,26 @@ $action = GETPOST('action', 'aZ09');
 $view = GETPOST('view','int'); // 1 = today, 2 = this week, 3 = all time
 $targetId = "feedMyTimeclock";
 
+// DEBUG: Log des paramètres
+dol_syslog("HOME.PHP DEBUG: Action = " . $action . ", View = " . $view, LOG_DEBUG);
+
 // Set default values if not provided
 if (empty($view)) $view = 1;
 
 // Security check - vérifier que le module est activé
 if (!isModEnabled('appmobtimetouch')) {
+    dol_syslog("HOME.PHP DEBUG: Module not enabled", LOG_WARNING);
     accessforbidden('Module not enabled');
 }
 
 // Security check - vérifier les droits
 if (!$user->rights->appmobtimetouch->timeclock->read) {
+    dol_syslog("HOME.PHP DEBUG: User has no read rights", LOG_WARNING);
     accessforbidden();
 }
+
+// DEBUG: Log des droits utilisateur
+dol_syslog("HOME.PHP DEBUG: User ID = " . $user->id . ", Read rights = " . ($user->rights->appmobtimetouch->timeclock->read ? 'true' : 'false'), LOG_DEBUG);
 
 // Initialize variables for messages
 $error = 0;
@@ -84,6 +95,8 @@ $messages = array();
 
 // Handle actions from mobile interface
 if ($action) {
+    dol_syslog("HOME.PHP DEBUG: Processing action: " . $action, LOG_DEBUG);
+    
     if ($action == 'clockin' && !empty($user->rights->appmobtimetouch->timeclock->write)) {
         $timeclock_type_id = GETPOST('timeclock_type_id', 'int');
         $location = GETPOST('location', 'alphanohtml');
@@ -91,25 +104,32 @@ if ($action) {
         $longitude = GETPOST('longitude', 'float');
         $note = GETPOST('note', 'restricthtml');
 
+        dol_syslog("HOME.PHP DEBUG: Clock-in parameters - Type: " . $timeclock_type_id . ", Location: " . $location, LOG_DEBUG);
+
         // Validate required location if configured
         $require_location = TimeclockConfig::getValue($db, 'REQUIRE_LOCATION', 0);
         if ($require_location && (empty($latitude) || empty($longitude))) {
             $error++;
             $errors[] = $langs->trans("LocationRequiredForClockIn");
+            dol_syslog("HOME.PHP DEBUG: Location required but not provided", LOG_WARNING);
         }
 
         if (!$error) {
             $timeclockrecord = new TimeclockRecord($db);
             $result = $timeclockrecord->clockIn($user, $timeclock_type_id, $location, $latitude, $longitude, $note);
             
+            dol_syslog("HOME.PHP DEBUG: Clock-in result: " . $result, LOG_DEBUG);
+            
             if ($result > 0) {
                 $messages[] = $langs->trans("ClockInSuccess");
+                dol_syslog("HOME.PHP DEBUG: Clock-in success, redirecting", LOG_DEBUG);
                 // Redirect to avoid resubmission
                 header('Location: '.$_SERVER['PHP_SELF'].'?clockin_success=1');
                 exit;
             } else {
                 $error++;
                 $errors[] = !empty($timeclockrecord->error) ? $langs->trans($timeclockrecord->error) : $langs->trans("ClockInError");
+                dol_syslog("HOME.PHP DEBUG: Clock-in failed - Error: " . $timeclockrecord->error, LOG_ERROR);
             }
         }
     }
@@ -120,17 +140,23 @@ if ($action) {
         $longitude = GETPOST('longitude', 'float');
         $note = GETPOST('note', 'restricthtml');
 
+        dol_syslog("HOME.PHP DEBUG: Clock-out parameters - Location: " . $location, LOG_DEBUG);
+
         $timeclockrecord = new TimeclockRecord($db);
         $result = $timeclockrecord->clockOut($user, $location, $latitude, $longitude, $note);
         
+        dol_syslog("HOME.PHP DEBUG: Clock-out result: " . $result, LOG_DEBUG);
+        
         if ($result > 0) {
             $messages[] = $langs->trans("ClockOutSuccess");
+            dol_syslog("HOME.PHP DEBUG: Clock-out success, redirecting", LOG_DEBUG);
             // Redirect to avoid resubmission
             header('Location: '.$_SERVER['PHP_SELF'].'?clockout_success=1');
             exit;
         } else {
             $error++;
             $errors[] = !empty($timeclockrecord->error) ? $langs->trans($timeclockrecord->error) : $langs->trans("ClockOutError");
+            dol_syslog("HOME.PHP DEBUG: Clock-out failed - Error: " . $timeclockrecord->error, LOG_ERROR);
         }
     }
 }
@@ -138,14 +164,18 @@ if ($action) {
 // Handle success messages from redirects
 if (GETPOST('clockin_success', 'int')) {
     $messages[] = $langs->trans("ClockInSuccess");
+    dol_syslog("HOME.PHP DEBUG: Clock-in success message displayed", LOG_DEBUG);
 }
 if (GETPOST('clockout_success', 'int')) {
     $messages[] = $langs->trans("ClockOutSuccess");
+    dol_syslog("HOME.PHP DEBUG: Clock-out success message displayed", LOG_DEBUG);
 }
 
 // Initialize time tracking objects
 $timeclockrecord = new TimeclockRecord($db);
 $weeklysummary = new WeeklySummary($db);
+
+dol_syslog("HOME.PHP DEBUG: Time tracking objects initialized", LOG_DEBUG);
 
 // Get current user's active timeclock record
 $active_record_id = $timeclockrecord->getActiveRecord($user->id);
@@ -154,21 +184,85 @@ $is_clocked_in = false;
 $clock_in_time = null;
 $current_duration = 0;
 
+dol_syslog("HOME.PHP DEBUG: Active record ID: " . $active_record_id, LOG_DEBUG);
+
 if ($active_record_id > 0) {
+    dol_syslog("HOME.PHP DEBUG: Found active record, fetching details", LOG_DEBUG);
+    
     $active_record = new TimeclockRecord($db);
     if ($active_record->fetch($active_record_id) > 0) {
+        dol_syslog("HOME.PHP DEBUG: Active record fetched successfully", LOG_DEBUG);
+        dol_syslog("HOME.PHP DEBUG: Raw clock_in_time from DB: " . $active_record->clock_in_time, LOG_DEBUG);
+        
         $is_clocked_in = true;
-        // CORRECTION: Conversion correcte de la date DB en timestamp
-        $clock_in_time = $db->jdate($active_record->clock_in_time);
-        // Vérifier que $clock_in_time est bien un timestamp entier
-        if (!empty($clock_in_time) && is_numeric($clock_in_time)) {
-        $current_duration = dol_now() - $clock_in_time;
+        
+        // CORRECTION: Gestion intelligente du timestamp selon le format
+        $raw_timestamp = $active_record->clock_in_time;
+        
+        // Méthode 1: Vérifier si c'est déjà un timestamp Unix valide
+        if (is_numeric($raw_timestamp) && $raw_timestamp > 946684800 && $raw_timestamp < 4102444800) {
+            // C'est déjà un timestamp Unix valide (entre 2000 et 2100)
+            $clock_in_time = (int) $raw_timestamp;
+            dol_syslog("HOME.PHP DEBUG: Raw value is already a valid Unix timestamp: " . $clock_in_time, LOG_DEBUG);
         } else {
-            // Fallback si la conversion échoue
-            $current_duration = 0;
-            dol_syslog("Warning: Unable to convert clock_in_time to timestamp: " . $active_record->clock_in_time, LOG_WARNING);
+            // Méthode 2: Essayer la conversion jdate pour les formats de date Dolibarr
+            $clock_in_time = $db->jdate($raw_timestamp);
+            dol_syslog("HOME.PHP DEBUG: Converted with jdate: " . $clock_in_time, LOG_DEBUG);
+            
+            // Méthode 3: Fallback avec strtotime si jdate échoue
+            if (empty($clock_in_time) || !is_numeric($clock_in_time)) {
+                $clock_in_time = strtotime($raw_timestamp);
+                dol_syslog("HOME.PHP DEBUG: Fallback conversion with strtotime: " . $clock_in_time, LOG_DEBUG);
+        
+                // Validation du résultat strtotime
+                if ($clock_in_time === false || $clock_in_time <= 0) {
+                    $clock_in_time = null;
+                    dol_syslog("HOME.PHP DEBUG: All conversion methods failed", LOG_ERROR);
+                }
+            }
         }
+        
+        dol_syslog("HOME.PHP DEBUG: Final clock_in_time: " . $clock_in_time, LOG_DEBUG);
+        dol_syslog("HOME.PHP DEBUG: Type of clock_in_time: " . gettype($clock_in_time), LOG_DEBUG);
+        
+        // Calcul de la durée si on a un timestamp valide
+        if (!empty($clock_in_time) && is_numeric($clock_in_time) && $clock_in_time > 0) {
+            $current_timestamp = dol_now();
+            $current_duration = $current_timestamp - $clock_in_time;
+            
+            dol_syslog("HOME.PHP DEBUG: Current timestamp: " . $current_timestamp, LOG_DEBUG);
+            dol_syslog("HOME.PHP DEBUG: Clock in timestamp: " . $clock_in_time, LOG_DEBUG);
+            dol_syslog("HOME.PHP DEBUG: Current duration calculated: " . $current_duration . " seconds", LOG_DEBUG);
+            
+            // Validation que la durée est raisonnable (pas plus de 24h et pas négative)
+            if ($current_duration < 0) {
+                dol_syslog("HOME.PHP DEBUG: Warning: Negative duration detected, clock_in_time seems to be in the future", LOG_WARNING);
+                $current_duration = 0;
+            } elseif ($current_duration > 86400) {
+                dol_syslog("HOME.PHP DEBUG: Warning: Duration over 24 hours (" . ($current_duration/3600) . "h), possible data issue", LOG_WARNING);
+            }
+        } else {
+            $current_duration = 0;
+            dol_syslog("HOME.PHP DEBUG: Unable to calculate duration - invalid clock_in_time", LOG_WARNING);
+}
+    } else {
+        dol_syslog("HOME.PHP DEBUG: Failed to fetch active record details", LOG_ERROR);
     }
+} else {
+    dol_syslog("HOME.PHP DEBUG: No active record found for user", LOG_DEBUG);
+}
+
+// DEBUG: Log des variables finales pour l'affichage
+dol_syslog("HOME.PHP DEBUG: Final values - is_clocked_in: " . ($is_clocked_in ? 'true' : 'false'), LOG_DEBUG);
+dol_syslog("HOME.PHP DEBUG: Final values - clock_in_time: " . $clock_in_time, LOG_DEBUG);
+dol_syslog("HOME.PHP DEBUG: Final values - current_duration: " . $current_duration, LOG_DEBUG);
+
+// Test de la fonction convertSecondsToReadableTime
+if ($current_duration > 0) {
+    $duration_readable = convertSecondsToReadableTime($current_duration);
+    dol_syslog("HOME.PHP DEBUG: Duration readable: " . $duration_readable, LOG_DEBUG);
+} else {
+    dol_syslog("HOME.PHP DEBUG: Current duration is 0 or negative, skipping readable conversion", LOG_DEBUG);
 }
 
 // Get today's summary
@@ -176,6 +270,8 @@ $today = date('Y-m-d');
 $today_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $today, $today, 3); // STATUS_COMPLETED
 $today_total_hours = 0;
 $today_total_breaks = 0;
+
+dol_syslog("HOME.PHP DEBUG: Getting today's records for date: " . $today, LOG_DEBUG);
 
 foreach ($today_records as $record) {
     if (!empty($record->work_duration) && is_numeric($record->work_duration)) {
@@ -186,15 +282,20 @@ foreach ($today_records as $record) {
     }
 }
 
+dol_syslog("HOME.PHP DEBUG: Today's totals - Hours: " . $today_total_hours . ", Breaks: " . $today_total_breaks, LOG_DEBUG);
+
 // Add active record duration to today's total
 if ($is_clocked_in && $current_duration > 0) {
     $active_duration_hours = $current_duration / 3600; // Convert seconds to hours
     $today_total_hours += $active_duration_hours;
+    dol_syslog("HOME.PHP DEBUG: Added active duration to today's total: " . $active_duration_hours . " hours", LOG_DEBUG);
 }
 
 // Get current week summary
 $current_week = WeeklySummary::getCurrentWeek();
 $weekly_summary = null;
+
+dol_syslog("HOME.PHP DEBUG: Current week: " . $current_week['year'] . "-W" . $current_week['week_number'], LOG_DEBUG);
 
 // Try to get existing weekly summary
 $sql = "SELECT rowid FROM ".MAIN_DB_PREFIX."timeclock_weekly_summary";
@@ -209,7 +310,10 @@ if ($resql && $db->num_rows($resql)) {
     $weekly_summary = new WeeklySummary($db);
     $weekly_summary->fetch($obj->rowid);
     $db->free($resql);
+    dol_syslog("HOME.PHP DEBUG: Existing weekly summary found", LOG_DEBUG);
 } else {
+    dol_syslog("HOME.PHP DEBUG: No existing weekly summary, creating temporary one", LOG_DEBUG);
+    
     // Create a temporary weekly summary with current data
     $weekly_summary = new WeeklySummary($db);
     $weekly_summary->fk_user = $user->id;
@@ -251,6 +355,7 @@ if ($resql && $db->num_rows($resql)) {
         if (!in_array($today, $days_worked)) {
             $days_worked[] = $today;
         }
+        dol_syslog("HOME.PHP DEBUG: Added active time to weekly summary", LOG_DEBUG);
     }
     
     $weekly_summary->total_hours = round($weekly_total_hours, 2);
@@ -259,6 +364,8 @@ if ($resql && $db->num_rows($resql)) {
     $weekly_summary->expected_hours = 40; // Default - could be configured
     $weekly_summary->overtime_hours = max(0, $weekly_summary->total_hours - $weekly_summary->expected_hours);
     $weekly_summary->status = 0; // In progress
+    
+    dol_syslog("HOME.PHP DEBUG: Weekly summary calculated - Total hours: " . $weekly_summary->total_hours, LOG_DEBUG);
 }
 
 // Get recent records based on view
@@ -280,9 +387,13 @@ switch ($view) {
         break;
 }
 
+dol_syslog("HOME.PHP DEBUG: Recent records count: " . count($recent_records), LOG_DEBUG);
+
 // Get available timeclock types for the interface
 $timeclock_types = TimeclockType::getActiveTypes($db);
 $default_type_id = TimeclockType::getDefaultType($db);
+
+dol_syslog("HOME.PHP DEBUG: Timeclock types count: " . count($timeclock_types) . ", Default type: " . $default_type_id, LOG_DEBUG);
 
 // Prepare data for template
 $num_records = count($recent_records);
@@ -298,26 +409,30 @@ $overtime_threshold = TimeclockConfig::getValue($db, 'OVERTIME_THRESHOLD', 8);
 $overtime_alert = false;
 if ($today_total_hours > $overtime_threshold) {
     $overtime_alert = true;
+    dol_syslog("HOME.PHP DEBUG: Overtime alert triggered - Hours: " . $today_total_hours . ", Threshold: " . $overtime_threshold, LOG_DEBUG);
 }
 
 // Prepare JavaScript data with proper type conversion
 $js_data = array(
     'is_clocked_in' => $is_clocked_in,
-    'clock_in_time' => $clock_in_time, // Already converted to timestamp
+    'clock_in_time' => $clock_in_time ? (int) $clock_in_time : null, // S'assurer que c'est un entier ou null
     'require_location' => $require_location,
     'default_type_id' => $default_type_id,
     'max_hours_per_day' => $max_hours_per_day,
     'overtime_threshold' => $overtime_threshold,
     'api_token' => newToken(),
     'user_id' => $user->id,
-    'version' => $version // Add version for debugging
+    'version' => isset($version) ? $version : '1.0' // Add version for debugging with fallback
 );
+
+dol_syslog("HOME.PHP DEBUG: JS data prepared - is_clocked_in: " . ($js_data['is_clocked_in'] ? 'true' : 'false') . ", clock_in_time: " . $js_data['clock_in_time'], LOG_DEBUG);
 
 // Fonction helper pour convertir les secondes en format lisible
 if (!function_exists('convertSecondsToReadableTime')) {
     function convertSecondsToReadableTime($seconds) {
         // CORRECTION: S'assurer que $seconds est numérique
         if (!is_numeric($seconds) || $seconds <= 0) {
+            dol_syslog("HOME.PHP DEBUG: convertSecondsToReadableTime - Invalid input: " . print_r($seconds, true), LOG_DEBUG);
             return '0h00';
         }
         
@@ -325,7 +440,10 @@ if (!function_exists('convertSecondsToReadableTime')) {
         $hours = floor($seconds / 3600);
         $minutes = floor(($seconds % 3600) / 60);
         
-        return sprintf('%dh%02d', $hours, $minutes);
+        $result = sprintf('%dh%02d', $hours, $minutes);
+        dol_syslog("HOME.PHP DEBUG: convertSecondsToReadableTime - Input: " . $seconds . ", Output: " . $result, LOG_DEBUG);
+        
+        return $result;
     }
 }
 
@@ -334,6 +452,7 @@ if (!function_exists('formatDuration')) {
     function formatDuration($minutes) {
         // CORRECTION: S'assurer que $minutes est numérique
         if (!is_numeric($minutes) || $minutes <= 0) {
+            dol_syslog("HOME.PHP DEBUG: formatDuration - Invalid input: " . print_r($minutes, true), LOG_DEBUG);
             return '0h00';
         }
         
@@ -341,12 +460,17 @@ if (!function_exists('formatDuration')) {
         $hours = floor($minutes / 60);
         $mins = $minutes % 60;
         
-        return sprintf('%dh%02d', $hours, $mins);
+        $result = sprintf('%dh%02d', $hours, $mins);
+        dol_syslog("HOME.PHP DEBUG: formatDuration - Input: " . $minutes . ", Output: " . $result, LOG_DEBUG);
+        
+        return $result;
     }
 }
 
 // Set page title
 $title = $langs->trans("TimeTracking");
+
+dol_syslog("HOME.PHP DEBUG: About to include template - All variables prepared", LOG_DEBUG);
 
 // Include template
 include "tpl/home.tpl";
