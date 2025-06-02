@@ -777,13 +777,21 @@
     
     // Show Clock Out Modal  
     function showClockOutModal() {
-      var modal = document.getElementById('clockOutModal');
-      modal.show();
-      
-      // Get GPS location if required
-      if (appConfig.require_location) {
-        getCurrentPosition('out');
-      }
+        const modal = document.getElementById('clockOutModal');
+        modal.show();
+        
+        // Initialiser les options de session
+        setTimeout(function() {
+            initializeSessionOptions();
+            startSessionTimer();
+        }, 100);
+        
+        // Get GPS location if required
+        if (appConfig && appConfig.require_location) {
+            getCurrentPositionOut();
+        } else {
+            updateGPSStatusOut('ready', '<?php echo $langs->trans("ReadyToClockOut"); ?>');
+        }
     }
     
 
@@ -1338,6 +1346,370 @@
     }
 
 
+        // Variable pour stocker l'option de session sélectionnée
+        let selectedSessionOption = 'complete';
+    
+    /**
+     * Sélectionner une option de fin de session
+     * @param {string} option - Type d'option ('complete', 'lunch', 'early')
+     */
+    function selectSessionOption(option) {
+        console.log('Selecting session option:', option);
+        
+        selectedSessionOption = option;
+        
+        // Supprimer la sélection de tous les éléments
+        const allItems = document.querySelectorAll('.session-option-item');
+        allItems.forEach(function(item) {
+            item.classList.remove('selected');
+            item.style.backgroundColor = '';
+            item.style.borderLeft = '';
+            
+            // Mettre les icônes en mode non-sélectionné
+            const icon = item.querySelector('.option-selected-icon');
+            if (icon) {
+                icon.setAttribute('icon', 'md-radio-button-unchecked');
+                icon.style.color = '#999';
+            }
+        });
+        
+        // Marquer l'élément sélectionné
+        const selectedItem = document.querySelector(`[data-option="${option}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('selected');
+            selectedItem.style.backgroundColor = 'rgba(76, 175, 80, 0.05)';
+            selectedItem.style.borderLeft = '4px solid #4CAF50';
+            
+            // Icône sélectionnée
+            const icon = selectedItem.querySelector('.option-selected-icon');
+            if (icon) {
+                icon.setAttribute('icon', 'md-radio-button-checked');
+                icon.style.color = '#4CAF50';
+            }
+            
+            // Animation de feedback
+            selectedItem.style.transform = 'scale(0.98)';
+            setTimeout(function() {
+                selectedItem.style.transform = 'scale(1)';
+            }, 150);
+        }
+        
+        // Gérer les exigences selon l'option
+        handleSessionOptionRequirements(option);
+        
+        // Feedback vibration
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
+        }
+        
+        console.log('Session option selected:', option);
+    }
+    
+    /**
+     * Gérer les exigences selon l'option sélectionnée
+     * @param {string} option - Option sélectionnée
+     */
+    function handleSessionOptionRequirements(option) {
+        const noteField = document.getElementById('clockout_note');
+        const noteIndicator = document.getElementById('note-required-indicator');
+        const buttonText = document.getElementById('clockout-button-text');
+        
+        // Réinitialiser les styles
+        if (noteField) {
+            noteField.style.borderColor = '#ddd';
+            noteField.removeAttribute('required');
+        }
+        
+        switch (option) {
+            case 'complete':
+                // Session normale - note optionnelle
+                if (noteIndicator) noteIndicator.style.display = 'none';
+                if (noteField) noteField.placeholder = '<?php echo $langs->trans("OptionalNote"); ?>';
+                if (buttonText) buttonText.textContent = '<?php echo $langs->trans("ClockOut"); ?>';
+                break;
+                
+            case 'lunch':
+                // Pause déjeuner - note optionnelle mais suggestion
+                if (noteIndicator) noteIndicator.style.display = 'none';
+                if (noteField) noteField.placeholder = '<?php echo $langs->trans("LunchBreakNote"); ?>';
+                if (buttonText) buttonText.textContent = '<?php echo $langs->trans("StartBreak"); ?>';
+                break;
+                
+            case 'early':
+                // Sortie anticipée - note obligatoire
+                if (noteIndicator) noteIndicator.style.display = 'inline';
+                if (noteField) {
+                    noteField.placeholder = '<?php echo $langs->trans("ExplanationRequired"); ?>';
+                    noteField.style.borderColor = '#ff9800';
+                    noteField.setAttribute('required', 'required');
+                }
+                if (buttonText) buttonText.textContent = '<?php echo $langs->trans("EarlyClockOut"); ?>';
+                break;
+        }
+    }
+    
+
+        /**
+     * Initialiser les options de session
+     */
+     function initializeSessionOptions() {
+        console.log('Initializing session options');
+        
+        // Ajouter les styles CSS pour les options de session
+        if (!document.querySelector('#clockout-session-styles')) {
+            const style = document.createElement('style');
+            style.id = 'clockout-session-styles';
+            style.textContent = `
+                .session-option-item {
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                }
+                
+                .session-option-item:hover {
+                    background-color: rgba(76, 175, 80, 0.03) !important;
+                }
+                
+                .session-option-item.selected {
+                    background-color: rgba(76, 175, 80, 0.05) !important;
+                    border-left: 4px solid #4CAF50 !important;
+                }
+                
+                .session-option-item:active {
+                    transform: scale(0.98);
+                }
+                
+                /* Style pour le résumé de session */
+                .session-summary {
+                    background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+                    border-radius: 8px;
+                    border-left: 4px solid #2196F3;
+                }
+                
+                /* Styles pour les différents états des champs */
+                #clockout_note[required] {
+                    border-color: #ff9800 !important;
+                    background: rgba(255, 152, 0, 0.05) !important;
+                }
+                
+                #clockout_note[required]:focus {
+                    border-color: #f57c00 !important;
+                    box-shadow: 0 0 10px rgba(255, 152, 0, 0.2) !important;
+                }
+                
+                /* Animation pour le timer */
+                #session-duration {
+                    animation: pulseGreen 2s infinite;
+                }
+                
+                @keyframes pulseGreen {
+                    0% { opacity: 1; }
+                    50% { opacity: 0.7; }
+                    100% { opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Sélectionner l'option par défaut
+        selectSessionOption('complete');
+    }
+    
+
+    /**
+     * Démarrer le timer de session en temps réel
+     */
+     function startSessionTimer() {
+        const durationElement = document.getElementById('session-duration');
+        
+        if (durationElement && appConfig && appConfig.is_clocked_in && appConfig.clock_in_time) {
+            setInterval(function() {
+                const now = Math.floor(Date.now() / 1000);
+                const duration = now - appConfig.clock_in_time;
+                const durationText = formatDuration(duration);
+                durationElement.textContent = durationText;
+            }, 1000); // Mise à jour chaque seconde
+        }
+    }
+
+
+        /**
+     * Confirmer le clock-out avec validation
+     */
+     function confirmClockOut() {
+        console.log('Confirming clock-out with option:', selectedSessionOption);
+        
+        // Validation pour sortie anticipée
+        if (selectedSessionOption === 'early') {
+            const noteField = document.getElementById('clockout_note');
+            if (!noteField || !noteField.value.trim()) {
+                // Mettre en évidence le champ requis
+                if (noteField) {
+                    noteField.style.borderColor = '#f44336';
+                    noteField.style.animation = 'shake 0.5s ease-in-out';
+                    noteField.focus();
+                }
+                
+                ons.notification.alert({
+                    title: '<?php echo $langs->trans("AttentionRequired"); ?>',
+                    message: '<?php echo $langs->trans("ExplanationRequired"); ?>',
+                    buttonLabel: 'OK'
+                });
+                
+                return;
+            }
+        }
+        
+        // Message de confirmation selon le type
+        let confirmMessage = '';
+        switch (selectedSessionOption) {
+            case 'complete':
+                confirmMessage = '<?php echo $langs->trans("ConfirmCompleteSession"); ?>';
+                break;
+            case 'lunch':
+                confirmMessage = '<?php echo $langs->trans("ConfirmLunchBreak"); ?>';
+                break;
+            case 'early':
+                confirmMessage = '<?php echo $langs->trans("ConfirmEarlyLeave"); ?>';
+                break;
+        }
+        
+        ons.notification.confirm({
+            title: '<?php echo $langs->trans("ClockOut"); ?>',
+            message: confirmMessage,
+            buttonLabels: ['<?php echo $langs->trans("Cancel"); ?>', '<?php echo $langs->trans("Confirm"); ?>']
+        }).then(function(index) {
+            if (index === 1) {
+                // Ajouter l'option de session aux données du formulaire
+                const form = document.getElementById('clockOutForm');
+                
+                // Ajouter un champ caché pour l'option de session
+                let sessionOptionInput = document.getElementById('session_option');
+                if (!sessionOptionInput) {
+                    sessionOptionInput = document.createElement('input');
+                    sessionOptionInput.type = 'hidden';
+                    sessionOptionInput.name = 'session_option';
+                    sessionOptionInput.id = 'session_option';
+                    form.appendChild(sessionOptionInput);
+                }
+                sessionOptionInput.value = selectedSessionOption;
+                
+                // Procéder au clock-out
+                submitClockOut();
+            }
+        });
+    }
+    
+
+        /**
+     * Mettre à jour le statut GPS pour le clock-out
+     */
+     function updateGPSStatusOut(status, message) {
+        const gpsStatus = document.getElementById('gps-status-out');
+        const gpsStatusText = document.getElementById('gps-status-out-text');
+        
+        if (gpsStatus && gpsStatusText) {
+            // Supprimer les classes existantes
+            gpsStatus.classList.remove('success', 'error', 'loading');
+            
+            // Ajouter la classe appropriée
+            gpsStatus.classList.add(status);
+            
+            // Mettre à jour le texte
+            gpsStatusText.textContent = message;
+            
+            // Ajouter une icône appropriée
+            let icon = 'md-gps-fixed';
+            switch (status) {
+                case 'success':
+                    icon = 'md-gps-fixed';
+                    break;
+                case 'error':
+                    icon = 'md-gps-off';
+                    break;
+                case 'loading':
+                    icon = 'md-gps-not-fixed';
+                    break;
+                default:
+                    icon = 'md-gps-fixed';
+            }
+            
+            const iconElement = gpsStatus.querySelector('ons-icon');
+            if (iconElement) {
+                iconElement.setAttribute('icon', icon);
+            }
+        }
+    }
+
+
+
+    /**
+     * Obtenir la position GPS pour le clock-out
+     */
+     function getCurrentPositionOut() {
+        updateGPSStatusOut('loading', '<?php echo $langs->trans("GettingLocation"); ?>...');
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    var lat = position.coords.latitude;
+                    var lon = position.coords.longitude;
+                    var accuracy = Math.round(position.coords.accuracy);
+                    
+                    document.getElementById('clockout_latitude').value = lat;
+                    document.getElementById('clockout_longitude').value = lon;
+                    
+                    updateGPSStatusOut('success', '<?php echo $langs->trans("LocationFound"); ?> (±' + accuracy + 'm)');
+                },
+                function(error) {
+                    var errorMsg = '';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = '<?php echo $langs->trans("LocationPermissionDenied"); ?>';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = '<?php echo $langs->trans("LocationUnavailable"); ?>';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = '<?php echo $langs->trans("LocationTimeout"); ?>';
+                            break;
+                        default:
+                            errorMsg = '<?php echo $langs->trans("LocationError"); ?>';
+                            break;
+                    }
+                    updateGPSStatusOut('error', errorMsg);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 300000
+                }
+            );
+        } else {
+            updateGPSStatusOut('error', '<?php echo $langs->trans("LocationNotSupported"); ?>');
+        }
+    }
+
+
+        /**
+     * Animation de shake pour les champs requis
+     */
+     function addShakeAnimation() {
+        if (!document.querySelector('#shake-animation')) {
+            const style = document.createElement('style');
+            style.id = 'shake-animation';
+            style.textContent = `
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                    20%, 40%, 60%, 80% { transform: translateX(5px); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+    
+    // Initialiser l'animation shake au chargement
+    addShakeAnimation();
 
   </script>
 </ons-page>

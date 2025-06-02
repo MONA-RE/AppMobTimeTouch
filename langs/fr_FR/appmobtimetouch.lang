@@ -404,3 +404,14 @@ HighContrast = Contraste élevé
 LargeText = Texte agrandi
 VoiceControl = Contrôle vocal
 ScreenReader = Lecteur décran
+
+
+SessionSummary = Résumé de session
+SessionOptions = Options de session  
+CompleteSession = Session complète
+NormalClockOut = Fin normale
+LunchBreak = Pause déjeuner
+TemporaryBreak = Pause temporaire
+EarlyLeave = Sortie anticipée
+ExplanationRequired = Explication requise
+ReadyToClockOut = Prêt à pointer la sortie
