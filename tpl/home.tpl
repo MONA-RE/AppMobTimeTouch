@@ -295,9 +295,10 @@
               <?php echo $clock_in; ?>
               <?php if ($clock_out): ?>
                 - <?php echo $clock_out; ?>
-              <?php else: ?>
-                - <span style="color: #4CAF50; font-weight: bold;"><?php echo $langs->trans("InProgress"); ?></span>
               <?php endif; ?>
+              <div style="margin-top: 2px;">
+                <?php echo $record->getLibStatut(5); ?>
+              </div>
             </div>
           </div>
           <div class="right">
