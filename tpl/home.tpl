@@ -507,124 +507,11 @@
             onblur="this.style.borderColor='#ddd'; this.style.background='#f9f9f9';">
         </div>
         
-        <!-- Options de fin de session -->
-        <div style="margin-bottom: 20px;">
-          <div style="font-weight: bold; margin-bottom: 10px; color: #333;">
-            <ons-icon icon="md-assignment-turned-in" style="color: #9C27B0; margin-right: 8px;"></ons-icon>
-            <?php echo $langs->trans("SessionOptions"); ?>:
-          </div>
-          
-          <ons-list style="border: 1px solid #e0e0e0; border-radius: 6px; margin: 0;">
-            <!-- Option: Session complète -->
-            <ons-list-item 
-              tappable 
-              class="session-option-item selected"
-              data-option="complete"
-              onclick="selectSessionOption('complete')"
-              style="border-bottom: 1px solid #f0f0f0;">
-              
-              <div class="left" style="width: 40px;">
-                <ons-icon 
-                  icon="md-check-circle" 
-                  class="session-option-icon" 
-                  style="color: #4CAF50; font-size: 20px;">
-                </ons-icon>
-              </div>
-              
-              <div class="center">
-                <div style="font-weight: 500; color: #333;">
-                  <?php echo $langs->trans("CompleteSession"); ?>
-                </div>
-                <div style="font-size: 12px; color: #666; margin-top: 2px;">
-                  <?php echo $langs->trans("NormalClockOut"); ?>
-                </div>
-              </div>
-              
-              <div class="right">
-                <ons-icon 
-                  icon="md-radio-button-checked" 
-                  class="option-selected-icon" 
-                  style="color: #4CAF50; font-size: 18px;">
-                </ons-icon>
-              </div>
-            </ons-list-item>
-            
-            <!-- Option: Pause déjeuner -->
-            <ons-list-item 
-              tappable 
-              class="session-option-item"
-              data-option="lunch"
-              onclick="selectSessionOption('lunch')"
-              style="border-bottom: 1px solid #f0f0f0;">
-              
-              <div class="left" style="width: 40px;">
-                <ons-icon 
-                  icon="md-restaurant" 
-                  class="session-option-icon" 
-                  style="color: #FF9800; font-size: 20px;">
-                </ons-icon>
-              </div>
-              
-              <div class="center">
-                <div style="font-weight: 500; color: #333;">
-                  <?php echo $langs->trans("LunchBreak"); ?>
-                </div>
-                <div style="font-size: 12px; color: #666; margin-top: 2px;">
-                  <?php echo $langs->trans("TemporaryBreak"); ?>
-                </div>
-              </div>
-              
-              <div class="right">
-                <ons-icon 
-                  icon="md-radio-button-unchecked" 
-                  class="option-selected-icon" 
-                  style="color: #999; font-size: 18px;">
-                </ons-icon>
-              </div>
-            </ons-list-item>
-            
-            <!-- Option: Sortie anticipée -->
-            <ons-list-item 
-              tappable 
-              class="session-option-item"
-              data-option="early"
-              onclick="selectSessionOption('early')"
-              style="border-bottom: none;">
-              
-              <div class="left" style="width: 40px;">
-                <ons-icon 
-                  icon="md-schedule" 
-                  class="session-option-icon" 
-                  style="color: #607D8B; font-size: 20px;">
-                </ons-icon>
-              </div>
-              
-              <div class="center">
-                <div style="font-weight: 500; color: #333;">
-                  <?php echo $langs->trans("EarlyLeave"); ?>
-                </div>
-                <div style="font-size: 12px; color: #666; margin-top: 2px;">
-                  <?php echo $langs->trans("ExplanationRequired"); ?>
-                </div>
-              </div>
-              
-              <div class="right">
-                <ons-icon 
-                  icon="md-radio-button-unchecked" 
-                  class="option-selected-icon" 
-                  style="color: #999; font-size: 18px;">
-                </ons-icon>
-              </div>
-            </ons-list-item>
-          </ons-list>
-        </div>
-        
         <!-- Note de fin de session -->
         <div style="margin-bottom: 20px;">
           <div style="font-weight: bold; margin-bottom: 8px; color: #333;">
             <ons-icon icon="md-note" style="color: #2196F3; margin-right: 8px;"></ons-icon>
             <?php echo $langs->trans("Note"); ?>:
-            <span id="note-required-indicator" style="color: #f44336; font-size: 12px; display: none;">*<?php echo $langs->trans("Required"); ?></span>
           </div>
           <textarea 
             name="note" 
@@ -654,7 +541,7 @@
             onclick="confirmClockOut()" 
             style="flex: 2; background: linear-gradient(45deg, #f44336, #d32f2f); color: white; border: none; border-radius: 25px; padding: 12px; font-size: 16px; font-weight: 500; box-shadow: 0 3px 6px rgba(244, 67, 54, 0.3);">
             <ons-icon icon="md-stop" style="margin-right: 8px;"></ons-icon>
-            <span id="clockout-button-text"><?php echo $langs->trans("ClockOut"); ?></span>
+            <?php echo $langs->trans("ClockOut"); ?>
           </ons-button>
         </div>
       </form>
