@@ -841,6 +841,61 @@ function showClockOutModal() {
         pointer-events: none;
       }
       
+      /* Animation d'entrée pour le modal clock-out */
+      #clockOutModal .modal__content {
+        animation: slideInUp 0.3s ease-out;
+      }
+      
+      @keyframes slideInUp {
+        from {
+          transform: translateY(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      
+      /* Styles pour les champs de saisie du clock-out */
+      #clockout_location:focus, 
+      #clockout_note:focus {
+        outline: none;
+        box-shadow: 0 0 10px rgba(244, 67, 54, 0.2);
+        transform: translateY(-1px);
+        transition: all 0.3s ease;
+      }
+      
+      /* Style pour le statut GPS du clock-out */
+      #gps-status-out.success {
+        background: rgba(76, 175, 80, 0.1);
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        color: #2e7d32;
+      }
+      
+      #gps-status-out.error {
+        background: rgba(244, 67, 54, 0.1);
+        border: 1px solid rgba(244, 67, 54, 0.3);
+        color: #c62828;
+      }
+      
+      #gps-status-out.loading {
+        background: rgba(255, 152, 0, 0.1);
+        border: 1px solid rgba(255, 152, 0, 0.3);
+        color: #ef6c00;
+      }
+      
+      /* Animation pour le timer de session */
+      #session-duration {
+        animation: pulseGreen 2s infinite;
+      }
+      
+      @keyframes pulseGreen {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+      }
+      
       /* Responsive adjustments */
       @media (max-width: 480px) {
         ons-card {
@@ -853,6 +908,10 @@ function showClockOutModal() {
         
         h2, h3 {
           font-size: 18px;
+        }
+        
+        #clockOutModal .modal__content {
+          margin: 10px;
         }
       }
     `;
