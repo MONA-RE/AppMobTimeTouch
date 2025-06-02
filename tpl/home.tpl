@@ -662,14 +662,13 @@
         }
     }
     
-    // Show Clock Out Modal  
-    function showClockOutModal() {
+// Show Clock Out Modal  
+function showClockOutModal() {
         const modal = document.getElementById('clockOutModal');
         modal.show();
         
-        // Initialiser les options de session
+        // Démarrer le timer de session
         setTimeout(function() {
-            initializeSessionOptions();
             startSessionTimer();
         }, 100);
         
@@ -680,7 +679,8 @@
             updateGPSStatusOut('ready', '<?php echo $langs->trans("ReadyToClockOut"); ?>');
         }
     }
-    
+
+
 
     function getCurrentPosition(type) {
         const statusElement = document.getElementById('gps-status' + (type === 'out' ? '-out' : ''));
@@ -1405,7 +1405,7 @@
     /**
      * Démarrer le timer de session en temps réel
      */
-     function startSessionTimer() {
+    function startSessionTimer() {
         const durationElement = document.getElementById('session-duration');
         
         if (durationElement && appConfig && appConfig.is_clocked_in && appConfig.clock_in_time) {
@@ -1419,75 +1419,37 @@
     }
 
 
-        /**
-     * Confirmer le clock-out avec validation
+    /**
+     * Confirmer le clock-out simplifié
      */
      function confirmClockOut() {
-        console.log('Confirming clock-out with option:', selectedSessionOption);
+        console.log('Confirming simple clock-out');
         
-        // Validation pour sortie anticipée
-        if (selectedSessionOption === 'early') {
-            const noteField = document.getElementById('clockout_note');
-            if (!noteField || !noteField.value.trim()) {
-                // Mettre en évidence le champ requis
-                if (noteField) {
-                    noteField.style.borderColor = '#f44336';
-                    noteField.style.animation = 'shake 0.5s ease-in-out';
-                    noteField.focus();
-                }
-                
-                ons.notification.alert({
-                    title: '<?php echo $langs->trans("AttentionRequired"); ?>',
-                    message: '<?php echo $langs->trans("ExplanationRequired"); ?>',
-                    buttonLabel: 'OK'
-                });
-                
+        // Validation de localisation si requise
+        if (appConfig && appConfig.require_location) {
+            const lat = document.getElementById('clockout_latitude').value;
+            const lon = document.getElementById('clockout_longitude').value;
+            
+            if (!lat || !lon) {
+                ons.notification.alert('<?php echo $langs->trans("LocationRequiredForClockOut"); ?>');
                 return;
             }
         }
         
-        // Message de confirmation selon le type
-        let confirmMessage = '';
-        switch (selectedSessionOption) {
-            case 'complete':
-                confirmMessage = '<?php echo $langs->trans("ConfirmCompleteSession"); ?>';
-                break;
-            case 'lunch':
-                confirmMessage = '<?php echo $langs->trans("ConfirmLunchBreak"); ?>';
-                break;
-            case 'early':
-                confirmMessage = '<?php echo $langs->trans("ConfirmEarlyLeave"); ?>';
-                break;
-        }
-        
+        // Message de confirmation simple
         ons.notification.confirm({
             title: '<?php echo $langs->trans("ClockOut"); ?>',
-            message: confirmMessage,
+            message: '<?php echo $langs->trans("ConfirmClockOut"); ?>',
             buttonLabels: ['<?php echo $langs->trans("Cancel"); ?>', '<?php echo $langs->trans("Confirm"); ?>']
         }).then(function(index) {
             if (index === 1) {
-                // Ajouter l'option de session aux données du formulaire
-                const form = document.getElementById('clockOutForm');
-                
-                // Ajouter un champ caché pour l'option de session
-                let sessionOptionInput = document.getElementById('session_option');
-                if (!sessionOptionInput) {
-                    sessionOptionInput = document.createElement('input');
-                    sessionOptionInput.type = 'hidden';
-                    sessionOptionInput.name = 'session_option';
-                    sessionOptionInput.id = 'session_option';
-                    form.appendChild(sessionOptionInput);
-                }
-                sessionOptionInput.value = selectedSessionOption;
-                
                 // Procéder au clock-out
                 submitClockOut();
             }
         });
     }
-    
 
-        /**
+    /**
      * Mettre à jour le statut GPS pour le clock-out
      */
      function updateGPSStatusOut(status, message) {
@@ -1526,7 +1488,6 @@
             }
         }
     }
-
 
 
     /**
@@ -1575,7 +1536,6 @@
             updateGPSStatusOut('error', '<?php echo $langs->trans("LocationNotSupported"); ?>');
         }
     }
-
 
         /**
      * Animation de shake pour les champs requis
