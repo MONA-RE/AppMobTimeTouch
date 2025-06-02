@@ -17,11 +17,11 @@
 
 -- Insert default timeclock types
 INSERT INTO llx_timeclock_types (entity, datec, code, label, description, color, position, active, module) VALUES
-(1, NOW(), 'OFFICE', 'Office Work', 'Regular office work at company premises', '#4CAF50', 1, 1, 'appmobtimetouch'),
-(1, NOW(), 'REMOTE', 'Remote Work', 'Work from home or remote location', '#2196F3', 2, 1, 'appmobtimetouch'),
-(1, NOW(), 'MISSION', 'External Mission', 'Work at client site or external mission', '#FF9800', 3, 1, 'appmobtimetouch'),
-(1, NOW(), 'TRAINING', 'Training', 'Training sessions and professional development', '#9C27B0', 4, 1, 'appmobtimetouch'),
-(1, NOW(), 'MEETING', 'External Meeting', 'Meetings outside office premises', '#607D8B', 5, 1, 'appmobtimetouch');
+(1, NOW(), 'OFFICE', 'Office Work', 'Regular office work at company premises', '#4CAF50', 1, 0, 'appmobtimetouch'),
+(1, NOW(), 'REMOTE', 'Remote Work', 'Work from home or remote location', '#2196F3', 2, 0, 'appmobtimetouch'),
+(1, NOW(), 'CHANTIER', 'CHANTIER Mission', 'chantier sur le site du client ou mission externe', '#FF9800', 3, 1, 'appmobtimetouch'),
+(1, NOW(), 'TRAINING', 'Training', 'Training sessions and professional development', '#9C27B0', 4, 0, 'appmobtimetouch'),
+(1, NOW(), 'MEETING', 'External Meeting', 'Meetings outside office premises', '#607D8B', 5, 0, 'appmobtimetouch');
 
 -- Insert default configuration parameters
 INSERT INTO llx_timeclock_config (entity, datec, name, value, type, note, active) VALUES
