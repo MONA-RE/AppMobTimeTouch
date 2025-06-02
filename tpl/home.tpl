@@ -141,7 +141,8 @@
             </div>
           </ons-col>
           <ons-col width="50%">
-            <div style="text-align: center; padding: 10px;">
+
+            <!-- <div style="text-align: center; padding: 10px;">
               <ons-icon icon="md-pause" style="color: #FF9800; font-size: 24px;"></ons-icon>
               <p style="margin: 5px 0; font-size: 14px; color: #666;">
                 <?php echo $langs->trans("BreakTime"); ?>
@@ -149,7 +150,8 @@
               <p style="margin: 0; font-size: 18px; font-weight: bold; color: #FF9800;">
                 <?php echo convertSecondsToReadableTime($today_total_breaks * 60); ?>
               </p>
-            </div>
+            </div> -->
+
           </ons-col>
         </ons-row>
         
