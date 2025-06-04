@@ -495,8 +495,25 @@
         <input type="hidden" name="latitude" id="clockout_latitude">
         <input type="hidden" name="longitude" id="clockout_longitude">
         
+        <!-- Boutons d'action -->
+        <div style="display: flex; gap: 10px; margin-top: 25px;">
+          <ons-button 
+            onclick="clockOutModal.hide()" 
+            style="flex: 1; background: #f5f5f5; color: #666; border: 1px solid #ddd; border-radius: 25px; padding: 12px; font-size: 16px; font-weight: 500;">
+            <ons-icon icon="md-close" style="margin-right: 8px;"></ons-icon>
+            <?php echo $langs->trans("Cancel"); ?>
+          </ons-button>
+          
+          <ons-button 
+            onclick="confirmClockOut()" 
+            style="flex: 2; background: linear-gradient(45deg, #f44336, #d32f2f); color: white; border: none; border-radius: 25px; padding: 12px; font-size: 16px; font-weight: 500; box-shadow: 0 3px 6px rgba(244, 67, 54, 0.3);">
+            <ons-icon icon="md-stop" style="margin-right: 8px;"></ons-icon>
+            <?php echo $langs->trans("ClockOut"); ?>
+          </ons-button>
+        </div>
+
         <!-- Localisation de sortie -->
-        <div style="margin-bottom: 20px;">
+        <div style="margin-bottom: 20px; margin-top: 25px;">
           <div style="font-weight: bold; margin-bottom: 8px; color: #333;">
             <ons-icon icon="md-place" style="color: #FF9800; margin-right: 8px;"></ons-icon>
             <?php echo $langs->trans("Location"); ?>:
@@ -532,22 +549,7 @@
           <span id="gps-status-out-text"><?php echo $langs->trans("ReadyToClockOut"); ?></span>
         </div>
         
-        <!-- Boutons d'action -->
-        <div style="display: flex; gap: 10px; margin-top: 25px;">
-          <ons-button 
-            onclick="clockOutModal.hide()" 
-            style="flex: 1; background: #f5f5f5; color: #666; border: 1px solid #ddd; border-radius: 25px; padding: 12px; font-size: 16px; font-weight: 500;">
-            <ons-icon icon="md-close" style="margin-right: 8px;"></ons-icon>
-            <?php echo $langs->trans("Cancel"); ?>
-          </ons-button>
-          
-          <ons-button 
-            onclick="confirmClockOut()" 
-            style="flex: 2; background: linear-gradient(45deg, #f44336, #d32f2f); color: white; border: none; border-radius: 25px; padding: 12px; font-size: 16px; font-weight: 500; box-shadow: 0 3px 6px rgba(244, 67, 54, 0.3);">
-            <ons-icon icon="md-stop" style="margin-right: 8px;"></ons-icon>
-            <?php echo $langs->trans("ClockOut"); ?>
-          </ons-button>
-        </div>
+
       </form>
     </div>
   </div>
