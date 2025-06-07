@@ -58,6 +58,10 @@ dol_include_once('/appmobtimetouch/class/timeclocktype.class.php');
 dol_include_once('/appmobtimetouch/class/weeklysummary.class.php');
 dol_include_once('/appmobtimetouch/class/timeclockconfig.class.php');
 
+// Load new utility classes
+require_once 'Utils/TimeHelper.php';
+require_once 'Utils/DataFormatter.php';
+
 // Load translations
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch", "users", "companies", "errors"));
 
@@ -257,9 +261,9 @@ dol_syslog("HOME.PHP DEBUG: Final values - is_clocked_in: " . ($is_clocked_in ? 
 dol_syslog("HOME.PHP DEBUG: Final values - clock_in_time: " . $clock_in_time, LOG_DEBUG);
 dol_syslog("HOME.PHP DEBUG: Final values - current_duration: " . $current_duration, LOG_DEBUG);
 
-// Test de la fonction convertSecondsToReadableTime
+// Test de la fonction TimeHelper::convertSecondsToReadableTime
 if ($current_duration > 0) {
-    $duration_readable = convertSecondsToReadableTime($current_duration);
+    $duration_readable = TimeHelper::convertSecondsToReadableTime($current_duration);
     dol_syslog("HOME.PHP DEBUG: Duration readable: " . $duration_readable, LOG_DEBUG);
 } else {
     dol_syslog("HOME.PHP DEBUG: Current duration is 0 or negative, skipping readable conversion", LOG_DEBUG);
@@ -412,60 +416,26 @@ if ($today_total_hours > $overtime_threshold) {
     dol_syslog("HOME.PHP DEBUG: Overtime alert triggered - Hours: " . $today_total_hours . ", Threshold: " . $overtime_threshold, LOG_DEBUG);
 }
 
-// Prepare JavaScript data with proper type conversion
-$js_data = array(
+// Prepare JavaScript data using DataFormatter
+$js_data_raw = array(
     'is_clocked_in' => $is_clocked_in,
-    'clock_in_time' => $clock_in_time ? (int) $clock_in_time : null, // S'assurer que c'est un entier ou null
+    'clock_in_time' => $clock_in_time,
     'require_location' => $require_location,
     'default_type_id' => $default_type_id,
     'max_hours_per_day' => $max_hours_per_day,
     'overtime_threshold' => $overtime_threshold,
     'api_token' => newToken(),
     'user_id' => $user->id,
-    'version' => isset($version) ? $version : '1.0' // Add version for debugging with fallback
+    'version' => isset($version) ? $version : '1.0'
 );
+
+$js_data = DataFormatter::prepareJavaScriptConfig($js_data_raw);
 
 dol_syslog("HOME.PHP DEBUG: JS data prepared - is_clocked_in: " . ($js_data['is_clocked_in'] ? 'true' : 'false') . ", clock_in_time: " . $js_data['clock_in_time'], LOG_DEBUG);
 
-// Fonction helper pour convertir les secondes en format lisible
-if (!function_exists('convertSecondsToReadableTime')) {
-    function convertSecondsToReadableTime($seconds) {
-        // CORRECTION: S'assurer que $seconds est numérique
-        if (!is_numeric($seconds) || $seconds <= 0) {
-            dol_syslog("HOME.PHP DEBUG: convertSecondsToReadableTime - Invalid input: " . print_r($seconds, true), LOG_DEBUG);
-            return '0h00';
-        }
-        
-        $seconds = (int) $seconds; // Cast explicite en entier
-        $hours = floor($seconds / 3600);
-        $minutes = floor(($seconds % 3600) / 60);
-        
-        $result = sprintf('%dh%02d', $hours, $minutes);
-        dol_syslog("HOME.PHP DEBUG: convertSecondsToReadableTime - Input: " . $seconds . ", Output: " . $result, LOG_DEBUG);
-        
-        return $result;
-    }
-}
-
-// Additional helper function for duration formatting
-if (!function_exists('formatDuration')) {
-    function formatDuration($minutes) {
-        // CORRECTION: S'assurer que $minutes est numérique
-        if (!is_numeric($minutes) || $minutes <= 0) {
-            dol_syslog("HOME.PHP DEBUG: formatDuration - Invalid input: " . print_r($minutes, true), LOG_DEBUG);
-            return '0h00';
-        }
-        
-        $minutes = (int) $minutes; // Cast explicite en entier
-        $hours = floor($minutes / 60);
-        $mins = $minutes % 60;
-        
-        $result = sprintf('%dh%02d', $hours, $mins);
-        dol_syslog("HOME.PHP DEBUG: formatDuration - Input: " . $minutes . ", Output: " . $result, LOG_DEBUG);
-        
-        return $result;
-    }
-}
+// Anciennes fonctions helper déplacées vers Utils/TimeHelper.php
+// convertSecondsToReadableTime() -> TimeHelper::convertSecondsToReadableTime()
+// formatDuration() -> TimeHelper::formatDuration()
 
 // Set page title
 $title = $langs->trans("TimeTracking");
