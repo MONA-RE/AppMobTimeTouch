@@ -1,0 +1,110 @@
+Contexte
+Analyse le repository courant, en particulier les fichiers home.php et tpl/home.tpl, pour proposer un découpage modulaire respectant la logique métier.
+Objectifs
+
+Éviter les limitations de tokens en découpant les gros fichiers
+Respecter la logique métier avec une architecture claire
+Faciliter la maintenance et l'ajout de fonctionnalités
+Documenter l'architecture pour une navigation rapide
+
+Instructions détaillées
+1. Analyse initiale
+bash# Analyser la structure actuelle
+find . -name "*.php" -o -name "*.tpl" | head -20
+wc -l home.php tpl/home.tpl
+Examine les fichiers principaux :
+
+home.php : logique métier, contrôleurs, traitements
+tpl/home.tpl : templates, vues, présentation
+Identifie les dépendances et imports
+
+2. Analyse du contenu
+Pour chaque fichier, identifie :
+
+Responsabilités multiples (violations du principe de responsabilité unique)
+Blocs de code réutilisables
+Logique métier vs logique de présentation
+Configuration et constantes
+Fonctions utilitaires
+
+3. Proposition d'architecture modulaire
+Propose un découpage suivant cette structure :
+appmobtimetouch/
+├── Controllers/
+│   ├── HomeController.php          # Logique principale de home.php
+│   └── BaseController.php          # Fonctionnalités communes
+├── Services/
+│   ├── DataService.php             # Accès aux données
+│   ├── AuthService.php             # Authentification
+│   └── ValidationService.php       # Validation des données
+├── Models/
+│   ├── UserModel.php               # Modèles de données
+│   └── ContentModel.php
+├── Utils/
+│   ├── Helpers.php                 # Fonctions utilitaires
+│   └── Constants.php               # Constantes globales
+├── Config/
+│   └── AppConfig.php               # Configuration
+└── tpl/
+    ├── layouts/
+    │   └── main.tpl                # Layout principal
+    ├── components/
+    │   ├── header.tpl              # Composants réutilisables
+    │   ├── footer.tpl
+    │   └── navigation.tpl
+    └── pages/
+        └── home.tpl                # Template home refactorisé
+4. Plan de migration
+Crée un plan étape par étape :
+
+Extraction des constantes et configuration
+Séparation des fonctions utilitaires
+Création des services métier
+Refactoring du contrôleur principal
+Découpage des templates
+
+5. Documentation requise
+Génère :
+
+README_ARCHITECTURE.md : Vue d'ensemble de l'architecture
+COMPONENT_MAP.md : Cartographie des composants et leurs responsabilités
+MIGRATION_GUIDE.md : Guide de migration pas à pas
+DEVELOPMENT_GUIDE.md : Guide pour ajouter de nouvelles fonctionnalités
+
+6. Critères de découpage
+Respecte ces principes :
+
+Cohésion forte : chaque fichier a une responsabilité claire
+Couplage faible : minimise les dépendances entre modules
+Taille optimale : 200-500 lignes max par fichier
+Réutilisabilité : composants réutilisables dans d'autres parties
+Testabilité : code facilement testable
+
+7. Livrables attendus
+
+Analyse détaillée des fichiers actuels
+Proposition d'architecture avec justifications
+Fichiers refactorisés suivant la nouvelle structure
+Documentation complète de l'architecture
+Scripts de migration si nécessaire
+Guide de développement pour futures modifications
+
+Questions spécifiques à traiter
+
+Quelles sont les principales responsabilités dans home.php ?
+Comment séparer la logique métier de la présentation ?
+Quels composants peuvent être réutilisés ailleurs ?
+Comment organiser les templates pour éviter la duplication ?
+Quelle stratégie pour gérer les dépendances entre modules ?
+
+Format de réponse
+Structure ta réponse ainsi :
+
+Résumé exécutif (2-3 phrases)
+Analyse actuelle (problèmes identifiés)
+Architecture proposée (avec diagramme textuel)
+Plan de migration (étapes concrètes)
+Documentation (fichiers à créer dans le repertoire doc/)
+Bénéfices attendus (maintenabilité, évolutivité)
+
+Commence l'analyse maintenant !
