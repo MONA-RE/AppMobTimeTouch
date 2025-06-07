@@ -54,7 +54,7 @@
             <p style="margin: 5px 0;">
               <strong><?php echo $langs->trans("Duration"); ?>:</strong>
               <span id="current-duration" style="font-weight: bold; color: #4CAF50;">
-                <?php echo convertSecondsToReadableTime($current_duration); ?>
+                <?php echo TimeHelper::convertSecondsToReadableTime($current_duration); ?>
               </span>
             </p>
             <?php if ($active_record && !empty($active_record->fk_timeclock_type)): ?>
@@ -136,7 +136,7 @@
                 <?php echo $langs->trans("WorkedHours"); ?>
               </p>
               <p style="margin: 0; font-size: 18px; font-weight: bold; color: #2196F3;">
-                <?php echo convertSecondsToReadableTime($today_total_hours * 3600); ?>
+                <?php echo TimeHelper::convertSecondsToReadableTime($today_total_hours * 3600); ?>
               </p>
             </div>
           </ons-col>
@@ -148,7 +148,7 @@
                 <?php echo $langs->trans("BreakTime"); ?>
               </p>
               <p style="margin: 0; font-size: 18px; font-weight: bold; color: #FF9800;">
-                <?php echo convertSecondsToReadableTime($today_total_breaks * 60); ?>
+                <?php echo TimeHelper::convertSecondsToReadableTime($today_total_breaks * 60); ?>
               </p>
             </div> -->
 
@@ -188,7 +188,7 @@
                 <?php echo $langs->trans("TotalHours"); ?>
               </p>
               <p style="margin: 0; font-size: 16px; font-weight: bold;">
-                <?php echo convertSecondsToReadableTime($weekly_summary->total_hours * 3600); ?>
+                <?php echo TimeHelper::convertSecondsToReadableTime($weekly_summary->total_hours * 3600); ?>
               </p>
             </div>
           </ons-col>
@@ -219,7 +219,7 @@
           <p style="margin: 0; color: #856404; font-size: 14px;">
             <ons-icon icon="md-warning" style="color: #ffc107;"></ons-icon>
             <strong><?php echo $langs->trans("OvertimeHours"); ?>:</strong>
-            <?php echo convertSecondsToReadableTime($weekly_summary->overtime_hours * 3600); ?>
+            <?php echo TimeHelper::convertSecondsToReadableTime($weekly_summary->overtime_hours * 3600); ?>
           </p>
         </div>
         <?php endif; ?>
@@ -264,7 +264,7 @@
           $record_date = dol_print_date($db->jdate($record->clock_in_time), 'day');
           $clock_in = dol_print_date($db->jdate($record->clock_in_time), 'hour');
           $clock_out = !empty($record->clock_out_time) ? dol_print_date($db->jdate($record->clock_out_time), 'hour') : '';
-          $duration = !empty($record->work_duration) ? convertSecondsToReadableTime($record->work_duration * 60) : '';
+          $duration = !empty($record->work_duration) ? TimeHelper::convertSecondsToReadableTime($record->work_duration * 60) : '';
           $status_class = '';
           
           switch ($record->status) {
@@ -468,7 +468,7 @@
           <div style="flex: 1; min-width: 120px;">
             <div style="font-size: 12px; color: #666; margin-bottom: 2px;"><?php echo $langs->trans("Duration"); ?></div>
             <div style="font-weight: bold; color: #4CAF50; font-size: 16px;" id="session-duration">
-              <?php echo convertSecondsToReadableTime($current_duration); ?>
+              <?php echo TimeHelper::convertSecondsToReadableTime($current_duration); ?>
             </div>
           </div>
           
