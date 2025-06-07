@@ -1,0 +1,868 @@
+/**
+ * TimeClock Component Styles
+ * Styles for specific UI components (status indicators, modals, forms)
+ */
+
+/* Status indicators */
+.status-active {
+    border-left: 3px solid #4CAF50;
+}
+
+.status-completed {
+    border-left: 3px solid #2196F3;
+}
+
+.status-draft {
+    border-left: 3px solid #999;
+}
+
+/* Progress bars */
+@keyframes progressFill {
+    from { width: 0%; }
+    to { width: var(--progress-width); }
+}
+
+/* Modal styles */
+.modal-loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Clock-out modal specific styles */
+#clockOutModal .modal__content {
+    animation: slideInUp 0.3s ease-out;
+}
+
+/* Clock-in modal specific styles */
+#clockInModal .modal__content {
+    animation: slideInUp 0.3s ease-out;
+}
+
+/* Timeclock type selection */
+.timeclock-type-item {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.timeclock-type-item:hover {
+    background-color: rgba(76, 175, 80, 0.05) !important;
+}
+
+.timeclock-type-item.selected {
+    background-color: rgba(76, 175, 80, 0.1) !important;
+    transform: translateX(2px);
+}
+
+.timeclock-type-item:active {
+    transform: scale(0.98);
+}
+
+.type-selected-icon {
+    transition: all 0.3s ease;
+}
+
+/* Form input focus styles */
+#clockout_location:focus, 
+#clockout_note:focus {
+    outline: none;
+    box-shadow: 0 0 10px rgba(244, 67, 54, 0.2);
+    transform: translateY(-1px);
+    transition: all 0.3s ease;
+}
+
+#clockin_location:focus,
+textarea:focus {
+    outline: none;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
+    transform: translateY(-1px);
+    transition: all 0.3s ease;
+}
+
+/* GPS status styles for clock-in */
+#gps-status.success {
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #2e7d32;
+}
+
+#gps-status.error {
+    background: rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    color: #c62828;
+}
+
+#gps-status.loading {
+    background: rgba(255, 152, 0, 0.1);
+    border: 1px solid rgba(255, 152, 0, 0.3);
+    color: #ef6c00;
+}
+
+/* GPS status styles for clock-out */
+#gps-status-out.success {
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #2e7d32;
+}
+
+#gps-status-out.error {
+    background: rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    color: #c62828;
+}
+
+#gps-status-out.loading {
+    background: rgba(255, 152, 0, 0.1);
+    border: 1px solid rgba(255, 152, 0, 0.3);
+    color: #ef6c00;
+}
+
+/* Shake animation for validation errors */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake {
+    animation: shake 0.6s ease-in-out;
+}
+
+/* Offline indicator */
+.offline-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #f44336;
+    color: white;
+    text-align: center;
+    padding: 5px;
+    font-size: 12px;
+    z-index: 10000;
+}
+
+/* Message cards */
+.success-message {
+    background-color: #e8f5e8;
+    border-left: 4px solid #4CAF50;
+}
+
+.error-message {
+    background-color: #ffebee;
+    border-left: 4px solid #f44336;
+}
+
+/* Session summary card in clock-out modal */
+.session-summary {
+    background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-left: 4px solid #2196F3;
+}
+
+/* Progress indicators */
+.progress-bar {
+    background-color: #e0e0e0;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.progress-green {
+    background-color: #4CAF50;
+}
+
+.progress-orange {
+    background-color: #FF9800;
+}
+
+.progress-red {
+    background-color: #f44336;
+}
+
+/* Button enhancements */
+ons-button[modifier="material"] {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+ons-button[modifier="material"]:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* List item interactions */
+ons-list-item:active {
+    background-color: #f5f5f5;
+}
+
+/* Type color badges */
+.type-badge {
+    background-color: var(--type-color);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Modal header gradients */
+.modal-header-clockin {
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+    color: white;
+    padding: 20px;
+    border-radius: 8px 8px 0 0;
+    text-align: center;
+}
+
+.modal-header-clockout {
+    background: linear-gradient(45deg, #f44336, #d32f2f);
+    color: white;
+    padding: 20px;
+    border-radius: 8px 8px 0 0;
+    text-align: center;
+}
+
+/* Responsive adjustments for components */
+@media (max-width: 480px) {
+    .timeclock-type-item {
+        padding: 8px 12px;
+    }
+    
+    .session-summary {
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .modal-header-clockin,
+    .modal-header-clockout {
+        padding: 15px;
+    }
+    
+    .type-badge {
+        font-size: 11px;
+        padding: 2px 6px;
+    }
+}
+
+/* Message cards styling */
+.message-card {
+    padding: 10px 15px;
+}
+
+.message-card ons-card {
+    margin: 0;
+}
+
+.message-card .content {
+    padding: 10px;
+}
+
+.error-card {
+    background-color: #ffebee;
+    border-left: 4px solid #f44336;
+}
+
+.error-card .content span {
+    color: #c62828;
+}
+
+.success-card {
+    background-color: #e8f5e8;
+    border-left: 4px solid #4CAF50;
+}
+
+.success-card .content span {
+    color: #2e7d32;
+}
+
+/* Card containers */
+.status-card-container {
+    padding: 15px;
+}
+
+.summary-card-container {
+    padding: 0 15px 15px 15px;
+}
+
+.records-card-container {
+    padding: 0 15px 15px 15px;
+}
+
+/* Card title sections */
+.card-title {
+    text-align: center;
+    padding: 10px 0;
+}
+
+.card-title h2 {
+    margin: 0;
+}
+
+.card-title h3 {
+    margin: 0;
+    padding: 10px;
+}
+
+/* Card content sections */
+.card-content {
+    text-align: center;
+    padding: 20px;
+}
+
+.card-content-padded {
+    padding: 0 15px 15px 15px;
+}
+
+/* Status displays */
+.status-since {
+    margin: 5px 0;
+}
+
+.status-duration {
+    margin: 5px 0;
+}
+
+.status-duration span {
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.status-type {
+    margin: 5px 0;
+}
+
+.status-location {
+    margin: 5px 0;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Overtime alert */
+.overtime-alert {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 15px;
+}
+
+.overtime-alert span {
+    color: #856404;
+    font-size: 14px;
+    margin-left: 5px;
+}
+
+/* Button containers */
+.button-container {
+    margin-top: 20px;
+}
+
+.button-large {
+    width: 100%;
+    border-radius: 25px;
+    font-size: 16px;
+}
+
+.button-clockin {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.button-clockout {
+    background-color: #f44336;
+    color: white;
+}
+
+/* Summary grid */
+.summary-grid {
+    padding: 10px;
+}
+
+.summary-item {
+    text-align: center;
+    padding: 10px;
+}
+
+.summary-item p {
+    margin: 5px 0;
+}
+
+.summary-item .label {
+    font-size: 14px;
+    color: #666;
+}
+
+.summary-item .value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #2196F3;
+}
+
+/* Progress sections */
+.progress-section {
+    margin-top: 15px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.progress-header span {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Weekly summary specific */
+.weekly-summary-container {
+    padding: 0 15px 15px 15px;
+}
+
+.weekly-summary-grid {
+    padding: 0 15px 15px 15px;
+}
+
+.weekly-summary-item {
+    text-align: center;
+    padding: 10px;
+}
+
+.weekly-summary-item p {
+    margin: 5px 0;
+}
+
+.weekly-summary-item .label {
+    font-size: 12px;
+    color: #666;
+}
+
+.weekly-summary-item .value {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.weekly-overtime-alert {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.weekly-overtime-alert p {
+    margin: 0;
+    color: #856404;
+    font-size: 14px;
+}
+
+/* Records list styling */
+.records-list {
+    margin: 0;
+}
+
+.record-item-left {
+    width: 8px;
+    height: 40px;
+    border-radius: 4px;
+}
+
+.record-item-center {
+    /* No specific styling needed, handled by OnsenUI */
+}
+
+.record-item-date {
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.record-item-type {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.record-item-time {
+    font-size: 12px;
+    color: #999;
+}
+
+.record-item-status {
+    margin-top: 2px;
+}
+
+.record-item-right {
+    /* No specific styling needed */
+}
+
+.record-item-duration {
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.view-all-container {
+    text-align: center;
+    padding: 10px;
+}
+
+/* Modal headers */
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    margin: 20px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header-clockin {
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+    color: white;
+    padding: 20px;
+    border-radius: 8px 8px 0 0;
+    text-align: center;
+}
+
+.modal-header-clockout {
+    background: linear-gradient(45deg, #f44336, #d32f2f);
+    color: white;
+    padding: 20px;
+    border-radius: 8px 8px 0 0;
+    text-align: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+/* Modal body */
+.modal-body {
+    padding: 20px;
+}
+
+/* Session summary in clock-out modal */
+.session-summary-clockout {
+    background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-left: 4px solid #2196F3;
+}
+
+.session-summary-header {
+    font-weight: bold;
+    color: #1976d2;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.session-summary-grid {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.session-summary-item {
+    flex: 1;
+    min-width: 120px;
+}
+
+.session-summary-item .label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.session-summary-item .value {
+    font-weight: 500;
+    color: #333;
+}
+
+.session-summary-item .duration {
+    font-weight: bold;
+    color: #4CAF50;
+    font-size: 16px;
+}
+
+.session-summary-item .type-info {
+    display: flex;
+    align-items: center;
+}
+
+.session-summary-item .type-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.session-summary-item .type-label {
+    font-size: 14px;
+    color: #333;
+}
+
+/* Form sections */
+.form-section {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    background: #f9f9f9;
+}
+
+.form-input:focus {
+    border-color: #4CAF50;
+    background: white;
+    outline: none;
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    height: 80px;
+    resize: vertical;
+    font-size: 16px;
+    font-family: inherit;
+    background: #f9f9f9;
+}
+
+.form-textarea:focus {
+    border-color: #4CAF50;
+    background: white;
+    outline: none;
+}
+
+.form-textarea-clockout:focus {
+    border-color: #f44336;
+}
+
+/* Type selection list */
+.type-selection-list {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    margin: 0;
+}
+
+.type-selection-item {
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+.type-selection-item:last-child {
+    border-bottom: none;
+}
+
+.type-item-left {
+    width: 50px;
+}
+
+.type-item-circle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin: auto;
+    border: 2px solid rgba(255,255,255,0.8);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.type-item-center {
+    /* Handled by OnsenUI structure */
+}
+
+.type-item-label {
+    font-weight: 500;
+    color: #333;
+    font-size: 16px;
+}
+
+.type-item-code {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+
+.type-item-right {
+    /* Handled by OnsenUI structure */
+}
+
+.type-selected-icon {
+    color: #4CAF50;
+    font-size: 20px;
+}
+
+/* Modal buttons */
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.modal-button-cancel {
+    flex: 1;
+    background: #f5f5f5;
+    color: #666;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.modal-button-submit {
+    flex: 2;
+    border: none;
+    border-radius: 25px;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.modal-button-clockin {
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+    color: white;
+    box-shadow: 0 3px 6px rgba(76, 175, 80, 0.3);
+}
+
+.modal-button-clockout {
+    background: linear-gradient(45deg, #f44336, #d32f2f);
+    color: white;
+    box-shadow: 0 3px 6px rgba(244, 67, 54, 0.3);
+}
+
+/* Location and note sections in clock-out */
+.clockout-location-section {
+    margin-bottom: 20px;
+    margin-top: 25px;
+}
+
+.clockout-note-section {
+    margin-bottom: 20px;
+}
+
+/* GPS status styling */
+.gps-status {
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #666;
+    text-align: center;
+    min-height: 20px;
+}
+
+/* Development mode indicators */
+.dev-mode-indicator {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(255, 193, 7, 0.9);
+    color: #333;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 11px;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+/* Loading states */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #4CAF50;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Form validation states */
+.form-field-valid {
+    border-color: #4CAF50 !important;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+}
+
+.form-field-invalid {
+    border-color: #f44336 !important;
+    box-shadow: 0 0 5px rgba(244, 67, 54, 0.3);
+}
+
+.form-field-warning {
+    border-color: #FF9800 !important;
+    box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
+}
+
+/* Accessibility improvements */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus indicators for keyboard navigation */
+.focusable:focus {
+    outline: 2px solid #4CAF50;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .timeclock-type-item.selected {
+        border: 2px solid #000;
+    }
+    
+    .progress-fill {
+        border: 1px solid #000;
+    }
+    
+    .type-badge {
+        border: 1px solid #000;
+    }
+}

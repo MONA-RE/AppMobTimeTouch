@@ -1,0 +1,97 @@
+/**
+ * TimeClock Base Styles
+ * Base animations and core component styles
+ */
+
+/* Base animations */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes progressFill {
+    from { width: 0%; }
+    to { width: var(--progress-width); }
+}
+
+@keyframes pulseGreen {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Base timeclock styles */
+.timeclock-status-active {
+    animation: fadeIn 0.5s ease-in;
+}
+
+.timeclock-status-inactive {
+    animation: fadeIn 0.5s ease-in;
+}
+
+/* Form styles */
+.select-input:focus,
+input[type="text"]:focus,
+textarea:focus {
+    outline: none;
+    border-color: #4CAF50 !important;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+}
+
+/* OnsenUI button enhancements */
+ons-button[modifier="material"] {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+ons-button[modifier="material"]:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+ons-list-item:active {
+    background-color: #f5f5f5;
+}
+
+/* Loading animation for modals */
+.modal-loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Animation pour le timer de session */
+#session-duration {
+    animation: pulseGreen 2s infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    ons-card {
+        margin: 0 5px;
+    }
+    
+    .content {
+        padding: 10px !important;
+    }
+    
+    h2, h3 {
+        font-size: 18px;
+    }
+}

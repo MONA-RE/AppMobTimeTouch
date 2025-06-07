@@ -1,0 +1,456 @@
+/**
+ * TimeClock Responsive Styles
+ * Mobile-first responsive design adjustments
+ */
+
+/* Base mobile styles (default) */
+.content {
+    padding: 15px;
+}
+
+ons-card {
+    margin: 0 10px 15px 10px;
+}
+
+h2, h3 {
+    font-size: 20px;
+    line-height: 1.3;
+}
+
+/* Small mobile devices (480px and down) */
+@media (max-width: 480px) {
+    .content {
+        padding: 10px !important;
+    }
+    
+    ons-card {
+        margin: 0 5px 10px 5px;
+    }
+    
+    h2, h3 {
+        font-size: 18px;
+    }
+    
+    /* Modal adjustments */
+    #clockInModal .modal__content,
+    #clockOutModal .modal__content {
+        margin: 10px;
+        max-height: 95vh;
+    }
+    
+    /* Form adjustments */
+    input[type="text"],
+    textarea,
+    select {
+        font-size: 16px; /* Prevent zoom on iOS */
+        padding: 12px;
+    }
+    
+    /* Button adjustments */
+    ons-button {
+        font-size: 14px;
+        padding: 10px 15px;
+    }
+    
+    ons-button[modifier="large"] {
+        font-size: 16px;
+        padding: 12px 20px;
+    }
+    
+    /* List item adjustments */
+    ons-list-item {
+        padding: 8px 15px;
+    }
+    
+    /* Progress bar adjustments */
+    .progress-bar {
+        height: 8px;
+    }
+    
+    /* Status card adjustments */
+    .timeclock-status-active,
+    .timeclock-status-inactive {
+        padding: 15px;
+    }
+    
+    /* Weekly summary grid adjustments */
+    ons-row ons-col {
+        text-align: center;
+        padding: 8px 5px;
+    }
+    
+    /* Recent records adjustments */
+    .recent-record-item {
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    /* Modal form adjustments */
+    .modal-form-section {
+        margin-bottom: 15px;
+    }
+    
+    .modal-form-label {
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+    
+    /* GPS status adjustments */
+    #gps-status,
+    #gps-status-out {
+        padding: 8px;
+        font-size: 13px;
+    }
+    
+    /* Session summary in modal */
+    .session-summary {
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .session-summary-grid {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .session-summary-item {
+        min-width: auto;
+        text-align: center;
+    }
+}
+
+/* Very small devices (320px and down) */
+@media (max-width: 320px) {
+    .content {
+        padding: 8px !important;
+    }
+    
+    ons-card {
+        margin: 0 3px 8px 3px;
+    }
+    
+    h2, h3 {
+        font-size: 16px;
+    }
+    
+    h1 {
+        font-size: 18px;
+    }
+    
+    /* Ultra compact form elements */
+    input[type="text"],
+    textarea {
+        padding: 10px;
+        font-size: 15px;
+    }
+    
+    ons-button {
+        font-size: 13px;
+        padding: 8px 12px;
+    }
+    
+    /* Compact modals */
+    #clockInModal .modal__content,
+    #clockOutModal .modal__content {
+        margin: 5px;
+    }
+    
+    .modal-header-clockin,
+    .modal-header-clockout {
+        padding: 12px;
+        font-size: 16px;
+    }
+    
+    /* Compact timeclock type list */
+    .timeclock-type-item {
+        padding: 8px 10px;
+    }
+    
+    .timeclock-type-item .center div {
+        font-size: 14px;
+    }
+    
+    .timeclock-type-item .center div:last-child {
+        font-size: 11px;
+    }
+    
+    /* Compact session summary */
+    .session-summary {
+        padding: 8px;
+    }
+    
+    .session-summary-item {
+        font-size: 12px;
+    }
+}
+
+/* Medium screens (481px to 768px) - Tablets portrait */
+@media (min-width: 481px) and (max-width: 768px) {
+    .content {
+        padding: 20px;
+    }
+    
+    ons-card {
+        margin: 0 15px 20px 15px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Modal improvements for tablets */
+    #clockInModal .modal__content,
+    #clockOutModal .modal__content {
+        margin: 40px auto;
+        max-width: 500px;
+    }
+    
+    /* Better form layout for tablets */
+    .modal-form-row {
+        display: flex;
+        gap: 15px;
+    }
+    
+    .modal-form-row .modal-form-section {
+        flex: 1;
+    }
+    
+    /* Improved button layout */
+    .modal-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 25px;
+    }
+    
+    .modal-buttons ons-button {
+        flex: 1;
+        min-height: 50px;
+    }
+    
+    /* Better grid layout for summaries */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+}
+
+/* Large tablets and small desktops (769px to 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .content {
+        padding: 25px;
+    }
+    
+    ons-card {
+        max-width: 700px;
+        margin: 0 auto 25px auto;
+    }
+    
+    /* Side-by-side layout for larger screens */
+    .dashboard-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    
+    .dashboard-layout .status-card {
+        grid-column: 1 / -1; /* Full width for status */
+    }
+    
+    /* Enhanced modal for larger screens */
+    #clockInModal .modal__content,
+    #clockOutModal .modal__content {
+        margin: 60px auto;
+        max-width: 600px;
+    }
+    
+    /* Better form organization */
+    .form-sections {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    
+    .form-sections .form-section-full {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Desktop and larger (1025px and up) */
+@media (min-width: 1025px) {
+    .content {
+        padding: 30px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    ons-card {
+        max-width: 800px;
+        margin: 0 auto 30px auto;
+    }
+    
+    /* Desktop-optimized dashboard */
+    .desktop-dashboard {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+    }
+    
+    .main-content {
+        grid-column: 1;
+    }
+    
+    .sidebar-content {
+        grid-column: 2;
+    }
+    
+    /* Desktop modal optimizations */
+    #clockInModal .modal__content,
+    #clockOutModal .modal__content {
+        margin: 80px auto;
+        max-width: 700px;
+    }
+    
+    /* Enhanced forms for desktop */
+    .desktop-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
+    
+    .desktop-form .full-width {
+        grid-column: 1 / -1;
+    }
+    
+    /* Desktop button layout */
+    .desktop-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .desktop-buttons ons-button {
+        min-width: 120px;
+        height: 45px;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+    /* Compact modals for landscape phones */
+    #clockInModal .modal__content,
+    #clockOutModal .modal__content {
+        margin: 10px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .modal-header-clockin,
+    .modal-header-clockout {
+        padding: 15px;
+    }
+    
+    /* Compact form sections */
+    .modal-form-section {
+        margin-bottom: 12px;
+    }
+    
+    /* Smaller buttons in landscape */
+    .modal-buttons ons-button {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+    
+    /* Hide non-essential elements in landscape */
+    .landscape-hide {
+        display: none;
+    }
+    
+    /* Compact status display */
+    .status-compact {
+        padding: 10px;
+    }
+    
+    .status-compact h3 {
+        font-size: 16px;
+        margin: 5px 0;
+    }
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    ons-card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+        margin: 10px 0;
+    }
+    
+    .content {
+        padding: 0;
+    }
+    
+    h2, h3 {
+        color: #000 !important;
+    }
+    
+    /* Ensure backgrounds print */
+    .type-badge,
+    .status-active,
+    .status-completed {
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    ons-card {
+        border: 2px solid #000;
+    }
+    
+    ons-button {
+        border: 2px solid #000;
+    }
+    
+    .progress-fill {
+        border: 1px solid #000;
+    }
+    
+    input[type="text"],
+    textarea {
+        border: 2px solid #000;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .pulse,
+    .fadeIn,
+    .slideInUp {
+        animation: none !important;
+    }
+}
+
+/* Dark mode support (future enhancement) */
+@media (prefers-color-scheme: dark) {
+    /* This section is prepared for future dark mode implementation */
+    .dark-mode-ready {
+        --bg-primary: #121212;
+        --bg-secondary: #1e1e1e;
+        --text-primary: #ffffff;
+        --text-secondary: #b3b3b3;
+        --accent-color: #4CAF50;
+    }
+}
