@@ -2,11 +2,26 @@
 ├── admin
 │   ├── about.php
 │   └── setup.php
+├── api
+│   └── timeclock.php
+├── Assets
+│   ├── css
+│   │   ├── timeclock-base.css
+│   │   ├── timeclock-components.css
+│   │   └── timeclock-responsive.css
+│   └── js
+│       ├── location-manager.js
+│       ├── timeclock-app.js
+│       └── ui-components.js
 ├── backport
 │   └── v16
 │       └── core
 │           └── class
 │               └── html.formsetup.class.php
+├── bin
+│   ├── module_appmobtimetouch-1.0.4.zip
+│   ├── module_appmobtimetouch-1.0.5.zip
+│   └── module_appmobtimetouch-1.0.6.zip
 ├── build
 │   └── makepack-appmobtimetouch.conf
 ├── ChangeLog.md
@@ -16,6 +31,12 @@
 │   ├── timeclockrecord.class.php
 │   ├── timeclocktype.class.php
 │   └── weeklysummary.class.php
+├── CLAUDE.md
+├── constants_to_extract.txt
+├── Controllers
+│   ├── BaseController.php
+│   ├── HomeController.php
+│   └── TimeclockController.php
 ├── COPYING
 ├── core
 │   ├── actions_appmobtimetouch.php
@@ -80,15 +101,28 @@
 │   ├── onsen-css-components.min.css
 │   ├── onsenui-core.min.css
 │   └── onsenui.min.css
+├── diff_2.txt
 ├── diff.txt
 ├── doc
+│   ├── api_timeclock_php.md
+│   ├── COMPONENT_MAP.md
+│   ├── DEVELOPMENT_GUIDE.md
 │   ├── home-php.md
 │   ├── home-tpl.md
+│   ├── index_php.md
+│   ├── js_timeclock-api_js.md
+│   ├── lib_appmobtimetouch_lib_php.md
+│   ├── MIGRATION_GUIDE.md
+│   ├── README_ARCHITECTURE.md
 │   ├── rightmenu_tpl.md
+│   ├── roadmap.md
+│   ├── sprint-1.md
 │   ├── tabbar-tpl.md
+│   ├── timeclock_php.md
 │   ├── top-bar-home-tpl.md
 │   └── topbar-tpl.md
 ├── home.php
+├── home.php.backup
 ├── img
 │   ├── clock-icon.png
 │   ├── object_appmobtimetouch_over.png
@@ -96,36 +130,67 @@
 ├── index.php
 ├── js
 │   ├── lib
-│   └── onsenui.min.js
+│   ├── navigation.js
+│   ├── navigation.js.bkp
+│   ├── onsenui.min.js
+│   └── timeclock-api.js
 ├── langs
-│   └── en_US
+│   ├── en_US
+│   │   └── appmobtimetouch.lang
+│   └── fr_FR
 │       └── appmobtimetouch.lang
 ├── lib
 │   └── appmobtimetouch.lib.php
 ├── LICENSE
 ├── manifest.json
+├── Models
 ├── modulebuilder.txt
+├── prompts
+│   ├── etap6.md
+│   ├── prompt-architecture.md
+│   ├── prompt_description_projet.md
+│   └── prompt-SOLID.md
 ├── README.md
+├── Services
+│   ├── ConfigService.php
+│   ├── LocationService.php
+│   ├── TimeclockService.php
+│   └── ValidationService.php
 ├── sql
 │   ├── dolibarr_allversions.sql
+│   ├── llx_appmobtimetouch_timeclockbreak.key.sql
+│   ├── llx_appmobtimetouch_timeclockbreak.sql
+│   ├── llx_appmobtimetouch_timeclockconfig.key.sql
+│   ├── llx_appmobtimetouch_timeclockconfig.sql
+│   ├── llx_appmobtimetouch_timeclockrecord.key.sql
+│   ├── llx_appmobtimetouch_timeclockrecord.sql
+│   ├── llx_appmobtimetouch_timeclocktype.key.sql
+│   ├── llx_appmobtimetouch_timeclocktype.sql
+│   ├── llx_appmobtimetouch_weeklysummary.key.sql
+│   ├── llx_appmobtimetouch_weeklysummary.sql
 │   ├── sql_data_default.sql
-│   ├── sql_timeclock_breaks.sql
-│   ├── sql_timeclock_config.sql
-│   ├── sql_timeclock_keys.sql
-│   ├── sql_timeclock_records.sql
-│   ├── sql_timeclock_types.sql
-│   └── sql_timeclock_weekly_summary.sql
+│   └── sql_timeclock_keys.sql
 ├── test
+│   ├── api_timeclock_test.php
 │   └── phpunit
-│       └── AppMobTimeTouchFunctionalTest.php
+│       ├── AppMobTimeTouchFunctionalTest.php
+│       └── timeclockrecordTest.php
 ├── todo.txt
 ├── tpl
+│   ├── components
 │   ├── home.tpl
+│   ├── home.tpl.backup
+│   ├── layouts
+│   ├── pages
 │   └── parts
 │       ├── rightmenu.tpl
 │       ├── tabbar.tpl
 │       ├── topbar-home.tpl
 │       └── topbar.tpl
-└── tree_file_AppMobTimeTouch.txt
+├── tree_file_AppMobTimeTouch.txt
+└── Utils
+    ├── Constants.php
+    ├── DataFormatter.php
+    └── TimeHelper.php
 
-31 directories, 97 files
+45 directories, 148 files
