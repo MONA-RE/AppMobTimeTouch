@@ -346,7 +346,7 @@
           <div style="margin-bottom: 20px;">
             <div style="font-weight: bold; margin-bottom: 10px; color: #333;">
               <ons-icon icon="md-work" style="color: #4CAF50; margin-right: 8px;"></ons-icon>
-              <?php echo $langs->trans("TimeclockType"); ?>:
+              <?php echo $langs->trans("TimeclockType")."AAA"; ?>:
             </div>
             
             <ons-list id="timeclockTypeList" style="border: 1px solid #e0e0e0; border-radius: 6px; margin: 0;">
@@ -573,6 +573,16 @@
     }
     
     ons.ready(function () {
+      // Initialize token in localStorage for timeclock-api.js
+      if (appConfig && appConfig.api_token) {
+        try {
+          localStorage.setItem('timeclock_api_token', appConfig.api_token);
+          console.log('TimeClock token initialized in localStorage');
+        } catch (e) {
+          console.error('Failed to store token in localStorage:', e);
+        }
+      }
+      
       // Initialize pull to refresh
       var pullHook = document.getElementById('pull-hook');
 
@@ -748,12 +758,29 @@ function showClockOutModal() {
       }
       
       // Use API instead of form submission
-      if (window.submitClockIn) {
-        window.submitClockIn();
+      if (window.TimeclockAPI && window.TimeclockAPI.clockIn) {
+        // Get form data
+        const form = document.getElementById('clockInForm');
+        const formData = new FormData(form);
+        const data = {};
+        for (let [key, value] of formData.entries()) {
+          data[key] = value;
+        }
+        
+        // Call TimeclockAPI directly
+        window.TimeclockAPI.clockIn(data).then(function() {
+          // Hide modal
+          const modal = document.getElementById('clockInModal');
+          if (modal && modal.hide) {
+            modal.hide();
+          }
+        }).catch(function(error) {
+          console.error('Clock in failed:', error);
+        });
       } else {
         // Fallback to form submission
-      document.getElementById('clockInForm').submit();
-    }
+        document.getElementById('clockInForm').submit();
+      }
     }
     
     // Submit Clock Out (uses API)
@@ -762,12 +789,29 @@ function showClockOutModal() {
       ons.notification.confirm('<?php echo $langs->trans("ConfirmClockOut"); ?>').then(function(result) {
         if (result === 1) {
           // Use API instead of form submission
-          if (window.submitClockOut) {
-            window.submitClockOut();
+          if (window.TimeclockAPI && window.TimeclockAPI.clockOut) {
+            // Get form data
+            const form = document.getElementById('clockOutForm');
+            const formData = new FormData(form);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+              data[key] = value;
+            }
+            
+            // Call TimeclockAPI directly
+            window.TimeclockAPI.clockOut(data).then(function() {
+              // Hide modal
+              const modal = document.getElementById('clockOutModal');
+              if (modal && modal.hide) {
+                modal.hide();
+              }
+            }).catch(function(error) {
+              console.error('Clock out failed:', error);
+            });
           } else {
             // Fallback to form submission
-          document.getElementById('clockOutForm').submit();
-        }
+            document.getElementById('clockOutForm').submit();
+          }
         }
       });
     }
