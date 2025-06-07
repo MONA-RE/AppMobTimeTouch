@@ -58,6 +58,9 @@ dol_include_once('/appmobtimetouch/class/timeclocktype.class.php');
 dol_include_once('/appmobtimetouch/class/weeklysummary.class.php');
 dol_include_once('/appmobtimetouch/class/timeclockconfig.class.php');
 
+// Load SOLID architecture components - Étape 1: Configuration centralisée
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/Constants.php';
+
 // Load translations
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch", "users", "companies", "errors"));
 
@@ -106,11 +109,11 @@ if ($action) {
 
         dol_syslog("HOME.PHP DEBUG: Clock-in parameters - Type: " . $timeclock_type_id . ", Location: " . $location, LOG_DEBUG);
 
-        // Validate required location if configured
-        $require_location = TimeclockConfig::getValue($db, 'REQUIRE_LOCATION', 0);
+        // Validate required location if configured - Using SOLID Constants
+        $require_location = TimeclockConstants::getValue($db, TimeclockConstants::REQUIRE_LOCATION, 0);
         if ($require_location && (empty($latitude) || empty($longitude))) {
             $error++;
-            $errors[] = $langs->trans("LocationRequiredForClockIn");
+            $errors[] = $langs->trans(TimeclockConstants::MSG_LOCATION_REQUIRED);
             dol_syslog("HOME.PHP DEBUG: Location required but not provided", LOG_WARNING);
         }
 
@@ -121,14 +124,14 @@ if ($action) {
             dol_syslog("HOME.PHP DEBUG: Clock-in result: " . $result, LOG_DEBUG);
             
             if ($result > 0) {
-                $messages[] = $langs->trans("ClockInSuccess");
+                $messages[] = $langs->trans(TimeclockConstants::MSG_CLOCKIN_SUCCESS);
                 dol_syslog("HOME.PHP DEBUG: Clock-in success, redirecting", LOG_DEBUG);
                 // Redirect to avoid resubmission
                 header('Location: '.$_SERVER['PHP_SELF'].'?clockin_success=1');
                 exit;
             } else {
                 $error++;
-                $errors[] = !empty($timeclockrecord->error) ? $langs->trans($timeclockrecord->error) : $langs->trans("ClockInError");
+                $errors[] = !empty($timeclockrecord->error) ? $langs->trans($timeclockrecord->error) : $langs->trans(TimeclockConstants::MSG_CLOCKIN_ERROR);
                 dol_syslog("HOME.PHP DEBUG: Clock-in failed - Error: " . $timeclockrecord->error, LOG_ERROR);
             }
         }
@@ -148,26 +151,26 @@ if ($action) {
         dol_syslog("HOME.PHP DEBUG: Clock-out result: " . $result, LOG_DEBUG);
         
         if ($result > 0) {
-            $messages[] = $langs->trans("ClockOutSuccess");
+            $messages[] = $langs->trans(TimeclockConstants::MSG_CLOCKOUT_SUCCESS);
             dol_syslog("HOME.PHP DEBUG: Clock-out success, redirecting", LOG_DEBUG);
             // Redirect to avoid resubmission
             header('Location: '.$_SERVER['PHP_SELF'].'?clockout_success=1');
             exit;
         } else {
             $error++;
-            $errors[] = !empty($timeclockrecord->error) ? $langs->trans($timeclockrecord->error) : $langs->trans("ClockOutError");
+            $errors[] = !empty($timeclockrecord->error) ? $langs->trans($timeclockrecord->error) : $langs->trans(TimeclockConstants::MSG_CLOCKOUT_ERROR);
             dol_syslog("HOME.PHP DEBUG: Clock-out failed - Error: " . $timeclockrecord->error, LOG_ERROR);
         }
     }
 }
 
-// Handle success messages from redirects
+// Handle success messages from redirects - Using SOLID Constants
 if (GETPOST('clockin_success', 'int')) {
-    $messages[] = $langs->trans("ClockInSuccess");
+    $messages[] = $langs->trans(TimeclockConstants::MSG_CLOCKIN_SUCCESS);
     dol_syslog("HOME.PHP DEBUG: Clock-in success message displayed", LOG_DEBUG);
 }
 if (GETPOST('clockout_success', 'int')) {
-    $messages[] = $langs->trans("ClockOutSuccess");
+    $messages[] = $langs->trans(TimeclockConstants::MSG_CLOCKOUT_SUCCESS);
     dol_syslog("HOME.PHP DEBUG: Clock-out success message displayed", LOG_DEBUG);
 }
 
@@ -398,12 +401,12 @@ dol_syslog("HOME.PHP DEBUG: Timeclock types count: " . count($timeclock_types) .
 // Prepare data for template
 $num_records = count($recent_records);
 
-// Check if location is required
-$require_location = TimeclockConfig::getValue($db, 'REQUIRE_LOCATION', 0);
+// Check if location is required - Using SOLID Constants
+$require_location = TimeclockConstants::getValue($db, TimeclockConstants::REQUIRE_LOCATION, 0);
 
-// Get configuration values for display
-$max_hours_per_day = TimeclockConfig::getValue($db, 'MAX_HOURS_PER_DAY', 12);
-$overtime_threshold = TimeclockConfig::getValue($db, 'OVERTIME_THRESHOLD', 8);
+// Get configuration values for display - Using SOLID Constants
+$max_hours_per_day = TimeclockConstants::getValue($db, TimeclockConstants::MAX_HOURS_PER_DAY, TimeclockConstants::DEFAULT_MAX_HOURS);
+$overtime_threshold = TimeclockConstants::getValue($db, TimeclockConstants::OVERTIME_THRESHOLD, TimeclockConstants::DEFAULT_OVERTIME_THRESHOLD);
 
 // Calculate overtime alert for today
 $overtime_alert = false;
