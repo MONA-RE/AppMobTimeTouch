@@ -4,6 +4,16 @@
 
 Toute nouvelle fonctionnalité DOIT respecter strictement les principes SOLID et suivre l'architecture modulaire établie.
 
+## Points d'Entrée Multiples - CRITIQUE
+
+⚠️ **ATTENTION** : Le module a **DEUX points d'entrée** qui partagent les templates :
+- `index.php` : Interface mobile OnsenUI (templates avec valeurs par défaut)
+- `home.php` : Logique métier (templates avec données réelles)
+
+**Règle OBLIGATOIRE** : Tout helper/variable utilisé dans les templates DOIT être disponible dans **les DEUX fichiers**.
+
+📖 **Voir documentation complète** : [INDEX_HOME_COMPATIBILITY.md](INDEX_HOME_COMPATIBILITY.md)
+
 ## Structure de Développement
 
 ### Ajout de Nouvelles Fonctionnalités
@@ -423,6 +433,12 @@ npm test -- components/NewComponent.test.js
 ### Checklist Validation
 
 Avant chaque commit, vérifier :
+
+#### ✅ Compatibilité Points d'Entrée
+- [ ] Nouveaux helpers inclus dans index.php ET home.php
+- [ ] Variables template initialisées dans les DEUX fichiers  
+- [ ] Tests sur `/index.php` ET `/home.php` sans erreur
+- [ ] Template fonctionne depuis les deux points d'entrée
 
 #### ✅ Conformité SOLID
 - [ ] Chaque classe a une responsabilité unique

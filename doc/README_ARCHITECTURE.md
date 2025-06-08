@@ -80,6 +80,25 @@ Views/
 - **Nouvelles vues** : Composants réutilisables
 - **Configuration flexible** : Paramètres externalisés
 
+## Points d'Entrée Multiples
+
+⚠️ **CONTRAINTE CRITIQUE** : Le module a **deux points d'entrée** partageant les templates :
+
+### index.php - Interface Mobile
+- Build dynamique OnsenUI
+- Variables par défaut pour templates
+- Point d'entrée principal application mobile
+
+### home.php - Logique Métier  
+- Traitement actions (clockin/clockout)
+- Données utilisateur réelles
+- Include direct templates avec données
+
+### Règle Architecture SOLID
+**Tout helper/service utilisé dans templates DOIT être disponible dans les DEUX fichiers.**
+
+📖 **Documentation détaillée** : [INDEX_HOME_COMPATIBILITY.md](INDEX_HOME_COMPATIBILITY.md)
+
 ## Migration progressive
 
 La migration suit une approche incrémentale avec validation à chaque étape :
@@ -90,3 +109,4 @@ La migration suit une approche incrémentale avec validation à chaque étape :
 4. **Templates modulaires** → UI composable
 
 Chaque étape maintient la compatibilité et permet rollback si nécessaire.
+**Validation supplémentaire** : Tests sur index.php ET home.php.

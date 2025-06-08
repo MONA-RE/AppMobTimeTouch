@@ -963,3 +963,33 @@ curl -s http://localhost/appmobtimetouch/home.php | grep "clockInModal"
 - **Nouveaux composants** : Réutilisation facilitée
 
 La migration SOLID est **COMPLÈTE** et **VALIDÉE** à chaque étape.
+
+---
+
+## ⚠️ IMPORTANT - Points d'Entrée Multiples
+
+**Découverte lors ÉTAPE 2** : Le module AppMobTimeTouch a **DEUX points d'entrée** qui partagent les templates :
+
+- **index.php** : Interface mobile OnsenUI (build dynamique templates)
+- **home.php** : Page logique métier (include direct template)
+
+### Règle CRITIQUE pour Étapes Suivantes
+
+**Tout helper SOLID créé DOIT être inclus dans les DEUX fichiers** :
+
+```php
+// OBLIGATOIRE dans index.php ET home.php
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/NouveauHelper.php';
+```
+
+**Raison** : Template `home.tpl` utilise les helpers et est chargé par les deux points d'entrée.
+
+### Impact sur Migration
+
+- **ÉTAPE 3** (Services) : Inclure services dans index.php si utilisés par templates
+- **ÉTAPE 4** (Contrôleurs) : Vérifier compatibilité points d'entrée
+- **ÉTAPE 5** (Templates) : Tester rendu depuis index.php ET home.php
+
+📖 **Documentation complète** : [INDEX_HOME_COMPATIBILITY.md](doc/INDEX_HOME_COMPATIBILITY.md)
+
+Cette contrainte garantit que l'architecture SOLID reste fonctionnelle sur tous les points d'accès.

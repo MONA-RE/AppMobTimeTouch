@@ -56,6 +56,11 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
 dol_include_once('/appmobtimetouch/lib/appmobtimetouch.lib.php');
 dol_include_once('/appmobtimetouch/core/modules/modAppMobTimeTouch.class.php');
 
+// Load SOLID architecture components for template compatibility
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/Constants.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/TimeHelper.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/LocationHelper.php';
+
 // Load translation files required by the page
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch"));
 
