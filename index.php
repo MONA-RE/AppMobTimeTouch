@@ -67,6 +67,10 @@ require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/Data
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/DataService.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/TimeclockService.php';
 
+// Load SOLID architecture components - Étape 4: Contrôleurs (compatibilité templates)
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Controllers/BaseController.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Controllers/HomeController.php';
+
 // Load translation files required by the page
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch"));
 
