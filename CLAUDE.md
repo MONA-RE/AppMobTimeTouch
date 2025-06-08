@@ -27,6 +27,11 @@ AppMobTimeTouch is a Dolibarr module for mobile time tracking and employee prese
 
 ⚠️ **IMPORTANT**: This module now uses a complete SOLID architecture. Always respect these principles when making changes.
 
+### 🎯 CURRENT STATUS (Juin 2025)
+- **Sprint 2 MVP 3.1-3.2**: ✅ COMPLETED - Validation manager with individual actions functional
+- **ViewRecord() Employee**: ✅ COMPLETED - Full navigation from RecordsList to details  
+- **Next Priority**: MVP 3.3 (Batch validation) - See CLAUDE_CONTEXT.md for detailed roadmap
+
 ### 🏗️ Architecture Layers (SOLID Compliant)
 
 #### **1. Controllers (SRP + OCP + DIP)**
