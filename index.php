@@ -61,6 +61,12 @@ require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/Constants.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/TimeHelper.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/LocationHelper.php';
 
+// Load SOLID architecture components - Étape 3: Services métier (compatibilité templates)
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/TimeclockServiceInterface.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/DataServiceInterface.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/DataService.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/TimeclockService.php';
+
 // Load translation files required by the page
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch"));
 

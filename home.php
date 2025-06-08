@@ -65,6 +65,12 @@ require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/Constants.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/TimeHelper.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/LocationHelper.php';
 
+// Load SOLID architecture components - Étape 3: Services métier avec interfaces (DIP + ISP)
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/TimeclockServiceInterface.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/DataServiceInterface.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/DataService.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/TimeclockService.php';
+
 // Load translations
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch", "users", "companies", "errors"));
 
@@ -100,70 +106,70 @@ $errors = array();
 $message = '';
 $messages = array();
 
+// Initialize SOLID Services with Dependency Injection (DIP)
+$dataService = new DataService($db);
+$timeclockService = new TimeclockService($db, $dataService);
+
 // Handle actions from mobile interface
 if ($action) {
     dol_syslog("HOME.PHP DEBUG: Processing action: " . $action, LOG_DEBUG);
     
     if ($action == 'clockin' && !empty($user->rights->appmobtimetouch->timeclock->write)) {
-        $timeclock_type_id = GETPOST('timeclock_type_id', 'int');
-        $location = GETPOST('location', 'alphanohtml');
-        $latitude = GETPOST('latitude', 'float');
-        $longitude = GETPOST('longitude', 'float');
-        $note = GETPOST('note', 'restricthtml');
+        // Prepare parameters using SOLID approach
+        $params = [
+            'timeclock_type_id' => GETPOST('timeclock_type_id', 'int'),
+            'location' => GETPOST('location', 'alphanohtml'),
+            'latitude' => GETPOST('latitude', 'float'),
+            'longitude' => GETPOST('longitude', 'float'),
+            'note' => GETPOST('note', 'restricthtml')
+        ];
 
-        dol_syslog("HOME.PHP DEBUG: Clock-in parameters - Type: " . $timeclock_type_id . ", Location: " . $location, LOG_DEBUG);
+        dol_syslog("HOME.PHP DEBUG: Clock-in parameters - Type: " . $params['timeclock_type_id'] . ", Location: " . $params['location'], LOG_DEBUG);
 
-        // Validate required location if configured - Using SOLID Constants
-        $require_location = TimeclockConstants::getValue($db, TimeclockConstants::REQUIRE_LOCATION, 0);
-        if ($require_location && (empty($latitude) || empty($longitude))) {
+        try {
+            // Use SOLID TimeclockService with validation
+            $result = $timeclockService->clockIn($user, $params);
+            
+            dol_syslog("HOME.PHP DEBUG: Clock-in success via SOLID service, record ID: " . $result, LOG_INFO);
+            $messages[] = $langs->trans(TimeclockConstants::MSG_CLOCKIN_SUCCESS);
+            
+            // Redirect to avoid resubmission
+            header('Location: '.$_SERVER['PHP_SELF'].'?clockin_success=1');
+            exit;
+            
+        } catch (Exception $e) {
             $error++;
-            $errors[] = $langs->trans(TimeclockConstants::MSG_LOCATION_REQUIRED);
-            dol_syslog("HOME.PHP DEBUG: Location required but not provided", LOG_WARNING);
-        }
-
-        if (!$error) {
-            $timeclockrecord = new TimeclockRecord($db);
-            $result = $timeclockrecord->clockIn($user, $timeclock_type_id, $location, $latitude, $longitude, $note);
-            
-            dol_syslog("HOME.PHP DEBUG: Clock-in result: " . $result, LOG_DEBUG);
-            
-            if ($result > 0) {
-                $messages[] = $langs->trans(TimeclockConstants::MSG_CLOCKIN_SUCCESS);
-                dol_syslog("HOME.PHP DEBUG: Clock-in success, redirecting", LOG_DEBUG);
-                // Redirect to avoid resubmission
-                header('Location: '.$_SERVER['PHP_SELF'].'?clockin_success=1');
-                exit;
-            } else {
-                $error++;
-                $errors[] = !empty($timeclockrecord->error) ? $langs->trans($timeclockrecord->error) : $langs->trans(TimeclockConstants::MSG_CLOCKIN_ERROR);
-                dol_syslog("HOME.PHP DEBUG: Clock-in failed - Error: " . $timeclockrecord->error, LOG_ERROR);
-            }
+            $errors[] = $langs->trans($e->getMessage());
+            dol_syslog("HOME.PHP DEBUG: Clock-in failed via SOLID service - Error: " . $e->getMessage(), LOG_ERROR);
         }
     }
 
     if ($action == 'clockout' && !empty($user->rights->appmobtimetouch->timeclock->write)) {
-        $location = GETPOST('location', 'alphanohtml');
-        $latitude = GETPOST('latitude', 'float');
-        $longitude = GETPOST('longitude', 'float');
-        $note = GETPOST('note', 'restricthtml');
+        // Prepare parameters using SOLID approach
+        $params = [
+            'location' => GETPOST('location', 'alphanohtml'),
+            'latitude' => GETPOST('latitude', 'float'),
+            'longitude' => GETPOST('longitude', 'float'),
+            'note' => GETPOST('note', 'restricthtml')
+        ];
 
-        dol_syslog("HOME.PHP DEBUG: Clock-out parameters - Location: " . $location, LOG_DEBUG);
+        dol_syslog("HOME.PHP DEBUG: Clock-out parameters - Location: " . $params['location'], LOG_DEBUG);
 
-        $timeclockrecord = new TimeclockRecord($db);
-        $result = $timeclockrecord->clockOut($user, $location, $latitude, $longitude, $note);
-        
-        dol_syslog("HOME.PHP DEBUG: Clock-out result: " . $result, LOG_DEBUG);
-        
-        if ($result > 0) {
+        try {
+            // Use SOLID TimeclockService with validation
+            $result = $timeclockService->clockOut($user, $params);
+            
+            dol_syslog("HOME.PHP DEBUG: Clock-out success via SOLID service, record ID: " . $result, LOG_INFO);
             $messages[] = $langs->trans(TimeclockConstants::MSG_CLOCKOUT_SUCCESS);
-            dol_syslog("HOME.PHP DEBUG: Clock-out success, redirecting", LOG_DEBUG);
+            
             // Redirect to avoid resubmission
             header('Location: '.$_SERVER['PHP_SELF'].'?clockout_success=1');
             exit;
-        } else {
+            
+        } catch (Exception $e) {
             $error++;
-            $errors[] = !empty($timeclockrecord->error) ? $langs->trans($timeclockrecord->error) : $langs->trans(TimeclockConstants::MSG_CLOCKOUT_ERROR);
-            dol_syslog("HOME.PHP DEBUG: Clock-out failed - Error: " . $timeclockrecord->error, LOG_ERROR);
+            $errors[] = $langs->trans($e->getMessage());
+            dol_syslog("HOME.PHP DEBUG: Clock-out failed via SOLID service - Error: " . $e->getMessage(), LOG_ERROR);
         }
     }
 }
@@ -184,27 +190,22 @@ $weeklysummary = new WeeklySummary($db);
 
 dol_syslog("HOME.PHP DEBUG: Time tracking objects initialized", LOG_DEBUG);
 
-// Get current user's active timeclock record
-$active_record_id = $timeclockrecord->getActiveRecord($user->id);
-$active_record = null;
-$is_clocked_in = false;
+// Get current user's active timeclock record using SOLID Service
+$active_record = $timeclockService->getActiveRecord($user->id);
+$is_clocked_in = !is_null($active_record);
 $clock_in_time = null;
 $current_duration = 0;
 
-dol_syslog("HOME.PHP DEBUG: Active record ID: " . $active_record_id, LOG_DEBUG);
+dol_syslog("HOME.PHP DEBUG: Active record from SOLID service: " . ($active_record ? 'found' : 'none'), LOG_DEBUG);
 
-if ($active_record_id > 0) {
-    dol_syslog("HOME.PHP DEBUG: Found active record, fetching details", LOG_DEBUG);
+if ($active_record) {
+    dol_syslog("HOME.PHP DEBUG: Found active record via SOLID service", LOG_DEBUG);
+    dol_syslog("HOME.PHP DEBUG: Raw clock_in_time from DB: " . $active_record->clock_in_time, LOG_DEBUG);
     
-    $active_record = new TimeclockRecord($db);
-    if ($active_record->fetch($active_record_id) > 0) {
-        dol_syslog("HOME.PHP DEBUG: Active record fetched successfully", LOG_DEBUG);
-        dol_syslog("HOME.PHP DEBUG: Raw clock_in_time from DB: " . $active_record->clock_in_time, LOG_DEBUG);
+    $is_clocked_in = true;
         
-        $is_clocked_in = true;
-        
-        // CORRECTION: Gestion intelligente du timestamp selon le format
-        $raw_timestamp = $active_record->clock_in_time;
+    // CORRECTION: Gestion intelligente du timestamp selon le format
+    $raw_timestamp = $active_record->clock_in_time;
         
         // Méthode 1: Vérifier si c'est déjà un timestamp Unix valide
         if (is_numeric($raw_timestamp) && $raw_timestamp > 946684800 && $raw_timestamp < 4102444800) {
@@ -251,10 +252,7 @@ if ($active_record_id > 0) {
         } else {
             $current_duration = 0;
             dol_syslog("HOME.PHP DEBUG: Unable to calculate duration - invalid clock_in_time", LOG_WARNING);
-}
-    } else {
-        dol_syslog("HOME.PHP DEBUG: Failed to fetch active record details", LOG_ERROR);
-    }
+        }
 } else {
     dol_syslog("HOME.PHP DEBUG: No active record found for user", LOG_DEBUG);
 }
@@ -272,24 +270,12 @@ if ($current_duration > 0) {
     dol_syslog("HOME.PHP DEBUG: Current duration is 0 or negative, skipping readable conversion", LOG_DEBUG);
 }
 
-// Get today's summary
-$today = date('Y-m-d');
-$today_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $today, $today, 3); // STATUS_COMPLETED
-$today_total_hours = 0;
-$today_total_breaks = 0;
+// Get today's summary using SOLID DataService
+$today_summary = $dataService->calculateTodaySummary($user->id);
+$today_total_hours = $today_summary['total_hours'] ?? 0;
+$today_total_breaks = $today_summary['total_breaks'] ?? 0;
 
-dol_syslog("HOME.PHP DEBUG: Getting today's records for date: " . $today, LOG_DEBUG);
-
-foreach ($today_records as $record) {
-    if (!empty($record->work_duration) && is_numeric($record->work_duration)) {
-        $today_total_hours += $record->work_duration / 60; // Convert minutes to hours
-    }
-    if (!empty($record->break_duration) && is_numeric($record->break_duration)) {
-        $today_total_breaks += $record->break_duration;
-    }
-}
-
-dol_syslog("HOME.PHP DEBUG: Today's totals - Hours: " . $today_total_hours . ", Breaks: " . $today_total_breaks, LOG_DEBUG);
+dol_syslog("HOME.PHP DEBUG: Today's summary via SOLID service - Hours: " . $today_total_hours . ", Breaks: " . $today_total_breaks, LOG_DEBUG);
 
 // Add active record duration to today's total
 if ($is_clocked_in && $current_duration > 0) {
@@ -298,107 +284,23 @@ if ($is_clocked_in && $current_duration > 0) {
     dol_syslog("HOME.PHP DEBUG: Added active duration to today's total: " . $active_duration_hours . " hours", LOG_DEBUG);
 }
 
-// Get current week summary
-$current_week = WeeklySummary::getCurrentWeek();
-$weekly_summary = null;
+// Get weekly summary using SOLID DataService
+$weekly_summary = $dataService->calculateWeeklySummary($user->id);
 
-dol_syslog("HOME.PHP DEBUG: Current week: " . $current_week['year'] . "-W" . $current_week['week_number'], LOG_DEBUG);
-
-// Try to get existing weekly summary
-$sql = "SELECT rowid FROM ".MAIN_DB_PREFIX."timeclock_weekly_summary";
-$sql .= " WHERE fk_user = ".((int) $user->id);
-$sql .= " AND year = ".((int) $current_week['year']);
-$sql .= " AND week_number = ".((int) $current_week['week_number']);
-$sql .= " AND entity IN (".getEntity('weeklysummary').")";
-
-$resql = $db->query($sql);
-if ($resql && $db->num_rows($resql)) {
-    $obj = $db->fetch_object($resql);
-    $weekly_summary = new WeeklySummary($db);
-    $weekly_summary->fetch($obj->rowid);
-    $db->free($resql);
-    dol_syslog("HOME.PHP DEBUG: Existing weekly summary found", LOG_DEBUG);
+if ($weekly_summary) {
+    dol_syslog("HOME.PHP DEBUG: Weekly summary from SOLID service - Week: " . $weekly_summary->year . "-W" . $weekly_summary->week_number, LOG_DEBUG);
 } else {
-    dol_syslog("HOME.PHP DEBUG: No existing weekly summary, creating temporary one", LOG_DEBUG);
-    
-    // Create a temporary weekly summary with current data
-    $weekly_summary = new WeeklySummary($db);
-    $weekly_summary->fk_user = $user->id;
-    $weekly_summary->year = $current_week['year'];
-    $weekly_summary->week_number = $current_week['week_number'];
-    
-    // Calculate week dates
-    $week_dates = WeeklySummary::getWeekDates($current_week['year'], $current_week['week_number']);
-    $weekly_summary->week_start_date = $week_dates['start_date'];
-    $weekly_summary->week_end_date = $week_dates['end_date'];
-    
-    // Get week's records for calculation
-    $week_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $week_dates['start_date'], $week_dates['end_date'], 3);
-    $weekly_total_hours = 0;
-    $weekly_total_breaks = 0;
-    $days_worked = array();
-    
-    foreach ($week_records as $record) {
-        if (!empty($record->work_duration) && is_numeric($record->work_duration)) {
-            $weekly_total_hours += $record->work_duration / 60;
-        }
-        if (!empty($record->break_duration) && is_numeric($record->break_duration)) {
-            $weekly_total_breaks += $record->break_duration;
-        }
-        
-        // CORRECTION: Conversion correcte pour la date de travail
-        $work_date_timestamp = $db->jdate($record->clock_in_time);
-        if (!empty($work_date_timestamp)) {
-            $work_date = date('Y-m-d', $work_date_timestamp);
-        if (!in_array($work_date, $days_worked)) {
-            $days_worked[] = $work_date;
-        }
-    }
-    }
-    
-    // Add today's active time if it's in current week
-    if ($is_clocked_in && $today >= $week_dates['start_date'] && $today <= $week_dates['end_date']) {
-        $weekly_total_hours += $current_duration / 3600;
-        if (!in_array($today, $days_worked)) {
-            $days_worked[] = $today;
-        }
-        dol_syslog("HOME.PHP DEBUG: Added active time to weekly summary", LOG_DEBUG);
-    }
-    
-    $weekly_summary->total_hours = round($weekly_total_hours, 2);
-    $weekly_summary->total_breaks = $weekly_total_breaks;
-    $weekly_summary->days_worked = count($days_worked);
-    $weekly_summary->expected_hours = 40; // Default - could be configured
-    $weekly_summary->overtime_hours = max(0, $weekly_summary->total_hours - $weekly_summary->expected_hours);
-    $weekly_summary->status = 0; // In progress
-    
-    dol_syslog("HOME.PHP DEBUG: Weekly summary calculated - Total hours: " . $weekly_summary->total_hours, LOG_DEBUG);
+    dol_syslog("HOME.PHP DEBUG: No weekly summary available from SOLID service", LOG_DEBUG);
 }
 
-// Get recent records based on view
-$recent_records = array();
-switch ($view) {
-    case 1: // Today
-        $recent_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $today, $today);
-        break;
-    case 2: // This week
-        $week_dates = WeeklySummary::getWeekDates($current_week['year'], $current_week['week_number']);
-        $recent_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $week_dates['start_date'], $week_dates['end_date']);
-        break;
-    case 3: // All time (last 30 days)
-        $date_start = date('Y-m-d', strtotime('-30 days'));
-        $recent_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $date_start, $today);
-        break;
-    default:
-        $recent_records = $timeclockrecord->getRecordsByUserAndDate($user->id, $today, $today);
-        break;
-}
+// Get recent records using SOLID DataService
+$recent_records = $dataService->getRecentRecords($user->id, 5);
 
-dol_syslog("HOME.PHP DEBUG: Recent records count: " . count($recent_records), LOG_DEBUG);
+dol_syslog("HOME.PHP DEBUG: Recent records from SOLID service count: " . count($recent_records), LOG_DEBUG);
 
-// Get available timeclock types for the interface
-$timeclock_types = TimeclockType::getActiveTypes($db);
-$default_type_id = TimeclockType::getDefaultType($db);
+// Get available timeclock types using SOLID DataService
+$timeclock_types = $dataService->getActiveTimeclockTypes();
+$default_type_id = $dataService->getDefaultTimeclockType();
 
 dol_syslog("HOME.PHP DEBUG: Timeclock types count: " . count($timeclock_types) . ", Default type: " . $default_type_id, LOG_DEBUG);
 
