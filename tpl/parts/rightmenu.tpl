@@ -33,7 +33,7 @@
       </div>
     </ons-list-item>
 
-    <?php if ($user->rights->appmobtimetouch->timeclock->readall): ?>
+    <?php if (!empty($user->rights->appmobtimetouch->timeclock->readall)): ?>
     <!-- Gestion Équipe (Managers seulement) -->
     <ons-list-item onclick="gotoPage('teamManagement');" tappable modifier="nodivider">
       <div class="left">
@@ -45,7 +45,7 @@
     </ons-list-item>
     <?php endif; ?>
 
-    <?php if ($user->rights->appmobtimetouch->timeclock->validate): ?>
+    <?php if (!empty($user->rights->appmobtimetouch->timeclock->validate)): ?>
     <!-- Validation (Managers seulement) -->
     <ons-list-item onclick="gotoPage('validation');" tappable modifier="nodivider">
       <div class="left">
@@ -65,7 +65,7 @@
     </ons-list-item>
     <?php endif; ?>
 
-    <?php if ($user->rights->appmobtimetouch->timeclock->export): ?>
+    <?php if (!empty($user->rights->appmobtimetouch->timeclock->export)): ?>
     <!-- Rapports -->
     <ons-list-item onclick="gotoPage('reports');" tappable modifier="nodivider">
       <div class="left">

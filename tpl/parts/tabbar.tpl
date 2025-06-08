@@ -8,7 +8,7 @@
 		<ons-tab id="tabMyRecords" onclick="loadMyRecords();" label="<?php echo $langs->trans('MyRecords'); ?>" icon="fa-clock-o" badge="">
 		</ons-tab>
 		
-		<?php if ($user->rights->appmobtimetouch->timeclock->readall): ?>
+		<?php if (!empty($user->rights->appmobtimetouch->timeclock->readall)): ?>
 		<!-- Onglet Gestion (pour les managers) -->
 		<ons-tab id="tabManagement" onclick="loadManagement();" label="<?php echo $langs->trans('Management'); ?>" icon="fa-users" badge="">
 		</ons-tab>

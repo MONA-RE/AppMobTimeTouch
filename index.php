@@ -210,6 +210,19 @@ $overtime_alert = false;
 $errors = array();
 $messages = array();
 
+// Prepare JavaScript data with default values for mobile interface
+$js_data = array(
+    'is_clocked_in' => $is_clocked_in,
+    'clock_in_time' => $clock_in_time,
+    'require_location' => 0, // Default: no location required
+    'default_type_id' => $default_type_id,
+    'max_hours_per_day' => 12,
+    'overtime_threshold' => $overtime_threshold,
+    'api_token' => function_exists('newToken') ? newToken() : '',
+    'user_id' => isset($user->id) ? $user->id : 0,
+    'version' => $version
+);
+
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -276,12 +289,16 @@ $messages = array();
     $dir = "tpl";
     if ($dh = opendir($dir)) {
         while (($file = readdir($dh)) !== false) {
-            if ($file == '.' || $file == '..' || $file == 'parts') {
+            // Skip non-files and parts directory
+            if ($file == '.' || $file == '..' || $file == 'parts' || is_dir($dir . '/' . $file)) {
                 continue;
             }
-            echo "<template id=\"" . str_replace(".tpl", "Application", $file) . "\">\n";
-            include $dir . '/' . $file;
-            echo "</template>\n";
+            // Only include .tpl files
+            if (pathinfo($file, PATHINFO_EXTENSION) === 'tpl') {
+                echo "<template id=\"" . str_replace(".tpl", "Application", $file) . "\">\n";
+                include $dir . '/' . $file;
+                echo "</template>\n";
+            }
         }
         closedir($dh);
     }
@@ -298,11 +315,11 @@ $messages = array();
             DOL_URL_ROOT: '<?php echo DOL_URL_ROOT; ?>',
             version: '<?php echo $version; ?>',
             user_rights: {
-                read: <?php echo $user->rights->appmobtimetouch->timeclock->read ? 'true' : 'false'; ?>,
-                write: <?php echo $user->rights->appmobtimetouch->timeclock->write ? 'true' : 'false'; ?>,
-                readall: <?php echo $user->rights->appmobtimetouch->timeclock->readall ? 'true' : 'false'; ?>,
-                validate: <?php echo $user->rights->appmobtimetouch->timeclock->validate ? 'true' : 'false'; ?>,
-                export: <?php echo $user->rights->appmobtimetouch->timeclock->export ? 'true' : 'false'; ?>
+                read: <?php echo (!empty($user->rights->appmobtimetouch->timeclock->read)) ? 'true' : 'false'; ?>,
+                write: <?php echo (!empty($user->rights->appmobtimetouch->timeclock->write)) ? 'true' : 'false'; ?>,
+                readall: <?php echo (!empty($user->rights->appmobtimetouch->timeclock->readall)) ? 'true' : 'false'; ?>,
+                validate: <?php echo (!empty($user->rights->appmobtimetouch->timeclock->validate)) ? 'true' : 'false'; ?>,
+                export: <?php echo (!empty($user->rights->appmobtimetouch->timeclock->export)) ? 'true' : 'false'; ?>
             }
         };
 
