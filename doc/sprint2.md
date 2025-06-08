@@ -649,9 +649,40 @@ class NotificationService implements NotificationServiceInterface
 
 ---
 
-## 🎯 ÉTAPE 3 : Controllers Implementation (Jour 5-6)
+## 🎯 ÉTAPE 3 : Controllers Implementation - SOLID + MVP (Jour 5-6)
 
-### 3.1 ValidationController (SRP + DIP)
+## Plan de développement SOLID + MVP
+
+### Analyse :
+Implémentation du ValidationController suivant les principes SOLID avec découpage MVP pour interface testable à chaque étape.
+
+### Découpage en MVPs :
+1. **MVP 3.1** : Controller de base avec dashboard minimal
+   - Fonctionnalité core : ValidationController avec action dashboard basique
+   - Interface graphique : Page dashboard simple avec statistiques de base
+   - Critères de validation : Affichage du nombre de validations en attente
+
+2. **MVP 3.2** : Actions de validation individuelles  
+   - Fonctionnalité core : Actions approve/reject avec interface
+   - Interface graphique : Boutons validation + formulaire commentaire
+   - Critères de validation : Validation d'un enregistrement avec feedback visuel
+
+3. **MVP 3.3** : Validation en lot et filtres
+   - Fonctionnalité core : Sélection multiple + validation groupée
+   - Interface graphique : Checkboxes + actions en lot + filtres
+   - Critères de validation : Validation de plusieurs enregistrements simultanément
+
+### Points de contrôle MVP :
+- Après MVP 3.1 : Dashboard manager accessible et affiche données réelles
+- Après MVP 3.2 : Manager peut valider/rejeter individuellement via l'interface  
+- Après MVP 3.3 : Validation en lot fonctionnelle avec filtres actifs
+
+### Validation interface :
+- Éléments UI créés à chaque étape : dashboard → actions → batch validation
+- Interactions utilisateur possibles : navigation → validation → filtrage
+- Feedback visuel pour validation : messages de succès/erreur
+
+### 3.1 ValidationController (SRP + DIP) - MVP 3.1
 
 **Fichier :** `Controllers/ValidationController.php`
 
@@ -958,9 +989,40 @@ class ValidationController extends BaseController
 
 ---
 
-## 🎯 ÉTAPE 4 : View Components (Jour 7-8)
+## 🎯 ÉTAPE 4 : View Components - SOLID + MVP (Jour 7-8)
 
-### 4.1 Composants Interface Manager (SRP)
+## Plan de développement SOLID + MVP
+
+### Analyse :
+Création des composants d'interface manager avec approche modulaire SOLID et MVPs testables.
+
+### Découpage en MVPs :
+1. **MVP 4.1** : Composant ValidationStatus de base
+   - Fonctionnalité core : Affichage statut validation avec icônes
+   - Interface graphique : Card de statut avec indicateurs visuels
+   - Critères de validation : Statut visible et différencié par couleur
+
+2. **MVP 4.2** : Composant ValidationActions interactif
+   - Fonctionnalité core : Boutons approve/reject fonctionnels
+   - Interface graphique : Actions avec feedback utilisateur
+   - Critères de validation : Actions cliquables avec retour immédiat
+
+3. **MVP 4.3** : Composants AnomalyCard et ManagerAlert
+   - Fonctionnalité core : Détection et affichage des anomalies
+   - Interface graphique : Cartes d'alertes avec niveaux de priorité  
+   - Critères de validation : Anomalies visibles avec codes couleur
+
+### Points de contrôle MVP :
+- Après MVP 4.1 : Statuts de validation visibles dans l'interface employé
+- Après MVP 4.2 : Manager peut déclencher actions depuis l'interface
+- Après MVP 4.3 : Anomalies et alertes affichées avec priorités
+
+### Validation interface :
+- Éléments UI créés à chaque étape : statut → actions → alertes
+- Interactions utilisateur possibles : visualisation → validation → monitoring
+- Feedback visuel pour validation : statuts colorés, boutons actifs, alertes prioritaires
+
+### 4.1 Composants Interface Manager (SRP) - MVP 4.1
 
 **Fichier :** `Views/components/ValidationStatus.tpl`
 
@@ -1347,9 +1409,40 @@ function getNotificationColor($type) {
 
 ---
 
-## 🎯 ÉTAPE 5 : Templates Pages Manager (Jour 9-10)
+## 🎯 ÉTAPE 5 : Templates Pages Manager - SOLID + MVP (Jour 9-10)
 
-### 5.1 Pages Principales Manager
+## Plan de développement SOLID + MVP
+
+### Analyse :
+Assemblage des composants en pages complètes manager avec architecture modulaire et MVPs progressifs.
+
+### Découpage en MVPs :
+1. **MVP 5.1** : Dashboard manager de base
+   - Fonctionnalité core : Page dashboard avec statistiques essentielles
+   - Interface graphique : Layout responsive avec cards de statistiques
+   - Critères de validation : Dashboard accessible avec données temps réel
+
+2. **MVP 5.2** : Navigation et actions rapides
+   - Fonctionnalité core : Menu navigation + actions courantes
+   - Interface graphique : Bottom navigation + boutons d'action
+   - Critères de validation : Navigation fluide entre sections
+
+3. **MVP 5.3** : Liste détaillée avec filtres  
+   - Fonctionnalité core : Page liste complète avec filtres avancés
+   - Interface graphique : Liste avec tri, filtres et pagination
+   - Critères de validation : Filtres fonctionnels avec mise à jour dynamique
+
+### Points de contrôle MVP :
+- Après MVP 5.1 : Dashboard complet et opérationnel pour managers
+- Après MVP 5.2 : Navigation intuitive entre toutes les sections
+- Après MVP 5.3 : Interface de gestion complète et ergonomique
+
+### Validation interface :
+- Éléments UI créés à chaque étape : dashboard → navigation → listes détaillées
+- Interactions utilisateur possibles : consultation → navigation → filtrage/tri
+- Feedback visuel pour validation : loading states, filtres actifs, données actualisées
+
+### 5.1 Pages Principales Manager - MVP 5.1
 
 **Fichier :** `Views/validation/dashboard.tpl`
 
@@ -1610,9 +1703,40 @@ function getNotificationColor($type) {
 
 ---
 
-## 🎯 ÉTAPE 6 : API REST et Integration (Jour 11-12)
+## 🎯 ÉTAPE 6 : API REST et Integration - SOLID + MVP (Jour 11-12)
 
-### 6.1 API Validation
+## Plan de développement SOLID + MVP
+
+### Analyse :
+Développement API REST suivant principes SOLID avec endpoints progressifs et interface de test à chaque étape.
+
+### Découpage en MVPs :
+1. **MVP 6.1** : API de base avec authentification
+   - Fonctionnalité core : Structure API + authentification + endpoint status
+   - Interface graphique : Page de test API avec formulaires simples
+   - Critères de validation : API accessible et sécurisée, endpoints testables
+
+2. **MVP 6.2** : Endpoints validation CRUD
+   - Fonctionnalité core : GET pending, POST validate, GET status complets
+   - Interface graphique : Interface de test avec calls Ajax fonctionnels
+   - Critères de validation : Actions de validation via API avec retours JSON
+
+3. **MVP 6.3** : Endpoints avancés et batch operations
+   - Fonctionnalité core : Batch validation, anomalies, notifications
+   - Interface graphique : Interface de monitoring API + outils de debug
+   - Critères de validation : Toutes les fonctionnalités accessibles via API
+
+### Points de contrôle MVP :
+- Après MVP 6.1 : API sécurisée accessible avec documentation
+- Après MVP 6.2 : Actions de validation complètement fonctionnelles via API
+- Après MVP 6.3 : API complète avec toutes les fonctionnalités avancées
+
+### Validation interface :
+- Éléments UI créés à chaque étape : page test → interface Ajax → monitoring API
+- Interactions utilisateur possibles : test manuel → intégration → debugging
+- Feedback visuel pour validation : réponses JSON, codes de statut, logs d'erreur
+
+### 6.1 API Validation - MVP 6.1
 
 **Fichier :** `api/validation.php`
 
@@ -1939,9 +2063,40 @@ $api->handleRequest();
 
 ---
 
-## 🎯 ÉTAPE 7 : Tests et Documentation (Jour 13-14)
+## 🎯 ÉTAPE 7 : Tests et Documentation - SOLID + MVP (Jour 13-14)
 
-### 7.1 Tests Unitaires
+## Plan de développement SOLID + MVP
+
+### Analyse :
+Implémentation complète des tests avec approche TDD et documentation progressive à chaque MVP.
+
+### Découpage en MVPs :
+1. **MVP 7.1** : Tests unitaires des services core
+   - Fonctionnalité core : Tests ValidationService et NotificationService
+   - Interface graphique : Interface de lancement tests avec résultats visuels
+   - Critères de validation : Tests passent avec couverture > 80%
+
+2. **MVP 7.2** : Tests d'intégration API et controllers
+   - Fonctionnalité core : Tests API endpoints et ValidationController
+   - Interface graphique : Interface de test API automatisée
+   - Critères de validation : Tous les endpoints testés avec scénarios complets
+
+3. **MVP 7.3** : Tests fonctionnels et documentation
+   - Fonctionnalité core : Tests end-to-end + documentation complète
+   - Interface graphique : Documentation interactive avec exemples
+   - Critères de validation : Documentation à jour avec exemples fonctionnels
+
+### Points de contrôle MVP :
+- Après MVP 7.1 : Services testés unitairement avec bonne couverture
+- Après MVP 7.2 : API et controllers entièrement validés par tests
+- Après MVP 7.3 : Système complet testé et documenté
+
+### Validation interface :
+- Éléments UI créés à chaque étape : runner de tests → interface API test → doc interactive
+- Interactions utilisateur possibles : lancement tests → validation API → consultation doc
+- Feedback visuel pour validation : résultats tests, couverture code, exemples doc
+
+### 7.1 Tests Unitaires - MVP 7.1
 
 **Fichier :** `test/phpunit/ValidationServiceTest.php`
 
@@ -2034,58 +2189,145 @@ class ValidationServiceTest extends TestCase
 
 ---
 
-## 📋 Checklist Sprint 2
+## 📋 Checklist Sprint 2 - Approche SOLID + MVP
 
-### ✅ Architecture & Code
-- [ ] **Constants/ValidationConstants.php** - Configuration centralisée
-- [ ] **Services/Interfaces/** - Contrats ValidationService & NotificationService
-- [ ] **Services/ValidationService.php** - Logique métier validation
-- [ ] **Services/NotificationService.php** - Gestion notifications
-- [ ] **Controllers/ValidationController.php** - Interface manager
-- [ ] **Views/components/** - 4 composants modulaires (ValidationStatus, ValidationActions, AnomalyCard, ManagerAlert)
-- [ ] **Views/validation/dashboard.tpl** - Page dashboard manager
-- [ ] **api/validation.php** - API REST complète
+### ✅ Architecture & Code (MVPs 1-2 complétés)
+- [x] **Constants/ValidationConstants.php** - Configuration centralisée (ÉTAPE 1.1)
+- [x] **Services/Interfaces/** - Contrats ValidationService & NotificationService (ÉTAPE 1.2)  
+- [x] **Services/ValidationService.php** - Logique métier validation (ÉTAPE 2.1)
+- [x] **Services/NotificationService.php** - Gestion notifications (ÉTAPE 2.2)
 
-### ✅ Features Fonctionnelles
-- [ ] **Dashboard manager** avec statistiques temps réel
-- [ ] **Liste validations** avec filtres et tri par priorité
-- [ ] **Actions validation** : Approve/Reject/Partial + commentaires
-- [ ] **Validation en lot** pour actions groupées
-- [ ] **Détection anomalies** automatique (4 types)
-- [ ] **Notifications** manager et employés
-- [ ] **API REST** avec 7 endpoints validation
+### ✅ Interface & Components (MVPs à implémenter avec interface)
+- [ ] **Controllers/ValidationController.php** - Interface manager (MVP 3.1→3.3)
+- [ ] **Views/components/ValidationStatus.tpl** - Composant statut (MVP 4.1)  
+- [ ] **Views/components/ValidationActions.tpl** - Actions validation (MVP 4.2)
+- [ ] **Views/components/AnomalyCard.tpl** - Cartes anomalies (MVP 4.3)
+- [ ] **Views/components/ManagerAlert.tpl** - Alertes manager (MVP 4.3)
+- [ ] **Views/validation/dashboard.tpl** - Dashboard manager (MVP 5.1→5.3)
 
-### ✅ Tests & Qualité
-- [ ] **Tests unitaires** ValidationService & NotificationService
-- [ ] **Tests API** tous endpoints validation
-- [ ] **Tests interface** composants validation
-- [ ] **Documentation** mise à jour avec Sprint 2
+### ✅ API & Integration (MVPs avec interface de test)
+- [ ] **api/validation.php** - API REST complète (MVP 6.1→6.3)
+- [ ] **Interface de test API** - Validation endpoints (MVP 6.2)
+- [ ] **Monitoring API** - Debug et performance (MVP 6.3)
 
-### ✅ Base de Données
-- [ ] **Migration script** pour champs validation (validation_status, validated_by, validated_date, validation_comment)
-- [ ] **Table notifications** pour système alertes
-- [ ] **Index performance** sur champs fréquemment utilisés
+### ✅ Features Fonctionnelles (testables via interface)
+- [ ] **Dashboard manager MVP** - Statistiques de base (MVP 5.1)
+- [ ] **Actions validation MVP** - Approve/Reject individuel (MVP 3.2)
+- [ ] **Validation en lot MVP** - Actions groupées (MVP 3.3)
+- [ ] **Détection anomalies MVP** - Affichage alertes (MVP 4.3)
+- [ ] **Notifications MVP** - Système alertes (MVP 4.3)
+- [ ] **Filtres et tri MVP** - Interface avancée (MVP 5.3)
+
+### ✅ Tests & Qualité (avec interface validation)
+- [ ] **Tests unitaires MVP** - Services core (MVP 7.1)
+- [ ] **Tests API MVP** - Endpoints validation (MVP 7.2)
+- [ ] **Tests interface MVP** - Composants validation (MVP 7.2)
+- [ ] **Documentation MVP** - Interactive avec exemples (MVP 7.3)
+
+### ✅ Base de Données (validée à chaque MVP)
+- [ ] **Migration script** - Champs validation (validation_status, validated_by, validated_date, validation_comment)
+- [ ] **Table notifications** - Système alertes
+- [ ] **Index performance** - Optimisation requêtes
+
+### 🎯 Validation MVP à chaque étape :
+- **MVP 3.1** : Dashboard accessible + données affichées
+- **MVP 3.2** : Actions validation fonctionnelles via UI
+- **MVP 3.3** : Validation en lot opérationnelle
+- **MVP 4.1** : Statuts visuels différenciés  
+- **MVP 4.2** : Boutons actions avec feedback
+- **MVP 4.3** : Anomalies et alertes visibles
+- **MVP 5.1** : Dashboard complet responsive
+- **MVP 5.2** : Navigation fluide
+- **MVP 5.3** : Filtres et tri actifs
+- **MVP 6.1** : API sécurisée testable
+- **MVP 6.2** : Endpoints validation Ajax
+- **MVP 6.3** : API complète avec monitoring
+- **MVP 7.1** : Tests unitaires > 80% couverture
+- **MVP 7.2** : Tests intégration complets
+- **MVP 7.3** : Documentation interactive
+
+### 📝 Critères de validation interface obligatoires :
+- Interface graphique à chaque MVP
+- Actions utilisateur testables
+- Feedback visuel immédiat
+- Application stable entre chaque étape
+- Démonstration possible à l'utilisateur
 
 ---
 
-## 🚀 Points d'Entry Implementation
+## 🚀 Points d'Entry Implementation - SOLID + MVP
 
-### Pour Claude Code :
+### Pour Claude Code - Workflow MVP obligatoire :
 
-1. **Commencer par les Constants** (jour 1)
-2. **Créer les Interfaces** avant les Services (ISP)
-3. **Implémenter Services** avec injection dépendances (DIP)
-4. **Développer Controller** en étendant BaseController (OCP)
-5. **Créer composants Views** modulaires (SRP)
-6. **Assembler pages** avec composants
-7. **Développer API REST** avec routing propre
-8. **Écrire tests** pour validation qualité
+#### Phase 1 : Foundation SOLID (Jours 1-4) ✅ COMPLÉTÉ
+1. **Constants/ValidationConstants.php** - Configuration (ÉTAPE 1.1) ✅
+2. **Interfaces** avant Services (ISP) (ÉTAPE 1.2) ✅  
+3. **Services** avec injection dépendances (DIP) (ÉTAPE 2.1-2.2) ✅
 
-### Principes SOLID à Respecter :
-- **Un service = une responsabilité** métier
-- **Interfaces avant implémentations**
-- **Injection dépendances** systématique
-- **Composants UI** modulaires et réutilisables
-- **Extension** sans modification du code existant
+#### Phase 2 : Interface MVP (Jours 5-10) - NOUVEAU WORKFLOW
+4. **MVP 3.1** : Controller dashboard minimal → Interface testable
+5. **MVP 3.2** : Actions validation → Interface interactive  
+6. **MVP 3.3** : Validation en lot → Interface complète
+7. **MVP 4.1** : Composant ValidationStatus → Interface statut
+8. **MVP 4.2** : Composant ValidationActions → Interface actions
+9. **MVP 4.3** : Composants anomalies → Interface alertes
+10. **MVP 5.1** : Dashboard page → Interface manager
+11. **MVP 5.2** : Navigation → Interface ergonomique
+12. **MVP 5.3** : Filtres avancés → Interface complète
 
-Ce guide garantit une implémentation **SOLID complète** du Sprint 2 ! 🎯
+#### Phase 3 : API & Tests MVP (Jours 11-14)
+13. **MVP 6.1** : API base → Interface test
+14. **MVP 6.2** : API CRUD → Interface Ajax
+15. **MVP 6.3** : API avancée → Interface monitoring
+16. **MVP 7.1** : Tests unitaires → Interface résultats
+17. **MVP 7.2** : Tests intégration → Interface validation
+18. **MVP 7.3** : Documentation → Interface interactive
+
+### 🔄 Workflow MVP à chaque étape :
+
+#### Template obligatoire par MVP :
+```
+1. **Analyse** : Principe SOLID appliqué
+2. **Implémentation** : Code minimal fonctionnel  
+3. **Interface** : UI testable créée
+4. **Validation** : Test utilisateur possible
+5. **Stabilité** : Application reste fonctionnelle
+```
+
+### ⚡ Critères de validation STRICT :
+
+#### ❌ INTERDIT :
+- Implémentation sans interface graphique
+- MVP non testable par l'utilisateur
+- Code qui casse les fonctionnalités existantes
+- Étapes trop larges (> 1 jour de travail)
+
+#### ✅ OBLIGATOIRE :
+- Interface graphique à chaque MVP
+- Utilisateur peut tester la fonctionnalité
+- Application stable après chaque MVP
+- Démonstration possible à chaque étape
+- Respect strict des principes SOLID
+
+### 🎯 Validation Success Criteria :
+
+#### Chaque MVP doit passer ces tests :
+1. **Interface Test** : UI accessible et fonctionnelle
+2. **User Test** : Actions utilisateur possibles
+3. **Stability Test** : Application reste opérationnelle  
+4. **SOLID Test** : Principes respectés
+5. **Demo Test** : Démonstration possible
+
+### 📝 Exemple de MVP réussi :
+
+```
+MVP 3.1 - Controller Dashboard Minimal :
+✅ Code : ValidationController avec méthode dashboard()
+✅ Interface : Page /validation/dashboard accessible
+✅ Test utilisateur : Manager peut voir nombre validations en attente
+✅ Stabilité : Application existante inchangée
+✅ SOLID : SRP (seule responsabilité dashboard), DIP (injection services)
+✅ Demo : "Regardez, le dashboard manager affiche 5 validations en attente"
+```
+
+Cette approche garantit une implémentation **SOLID + MVP** robuste avec validation utilisateur continue ! 🎯
