@@ -95,7 +95,20 @@ class DataService implements DataServiceInterface
         if ($result) {
             while ($obj = $this->db->fetch_object($result)) {
                 $record = new TimeclockRecord($this->db);
-                $record->fetch($obj->rowid);
+                $fetchResult = $record->fetch($obj->rowid);
+                
+                // Debug: vérifier que le fetch a réussi
+                if ($fetchResult <= 0) {
+                    dol_syslog("DataService: Failed to fetch TimeclockRecord with ID " . $obj->rowid, LOG_WARNING);
+                    continue;
+                }
+                
+                // Vérifier que rowid est bien défini
+                if (empty($record->rowid)) {
+                    dol_syslog("DataService: TimeclockRecord fetched but rowid is empty for ID " . $obj->rowid, LOG_WARNING);
+                    $record->rowid = $obj->rowid; // Force l'ID si nécessaire
+                }
+                
                 $records[] = $record;
             }
             $this->db->free($result);

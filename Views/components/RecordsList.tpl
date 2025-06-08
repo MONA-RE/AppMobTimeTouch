@@ -38,6 +38,11 @@
         $duration = !empty($record->work_duration) ? TimeHelper::convertSecondsToReadableTime($record->work_duration * 60) : '';
         $status_class = '';
         
+        // Debug: log record ID
+        if (empty($record->rowid)) {
+            error_log("RecordsList.tpl WARNING: Empty rowid for record with clock_in_time: " . $record->clock_in_time);
+        }
+        
         switch ($record->status) {
           case 2: // In progress
             $status_class = 'status-active';
@@ -49,13 +54,13 @@
             $status_class = 'status-draft';
         }
       ?>
-      <ons-list-item tappable onclick="viewRecord(<?php echo $record->rowid; ?>)">
+      <ons-list-item tappable onclick="viewRecord(<?php echo $record->rowid; ?>)" data-record-id="<?php echo $record->rowid; ?>">
         <div class="left">
           <div style="width: 8px; height: 40px; background-color: <?php echo $type->color; ?>; border-radius: 4px;"></div>
         </div>
         <div class="center">
           <div style="font-weight: bold; margin-bottom: 2px;">
-            <?php echo $record_date; ?>
+            <?php echo $record_date; ?> (ID: <?php echo $record->rowid; ?>)
           </div>
           <div style="font-size: 14px; color: #666; margin-bottom: 2px;">
             <span style="background-color: <?php echo $type->color; ?>; color: white; padding: 2px 6px; border-radius: 8px; font-size: 11px;">
