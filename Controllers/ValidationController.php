@@ -119,19 +119,214 @@ class ValidationController extends BaseController
     }
     
     /**
-     * Action placeholder pour MVP futures (OCP - Ouvert à l'extension)
+     * Validation individuelle d'un enregistrement (MVP 3.2)
+     * Responsabilité unique : Traitement validation individuelle (SRP)
      * 
-     * @return array Réponse JSON
+     * @return array Réponse JSON avec résultat validation
      */
     public function validateRecord(): array 
     {
-        // MVP 3.2 : Implémentation validation individuelle
-        return [
-            'error' => 1,
-            'errors' => ['Feature coming in MVP 3.2']
-        ];
+        // Vérification module et droits
+        $this->checkModuleEnabled();
+        $this->checkUserRights('validate');
+        
+        try {
+            // Validation des paramètres requis pour MVP 3.2
+            $validation = $this->validatePostParams([
+                'record_id' => 'int',
+                'validation_action' => 'alpha'
+            ]);
+            
+            if (!empty($validation['errors'])) {
+                return [
+                    'error' => 1,
+                    'errors' => $validation['errors']
+                ];
+            }
+            
+            $params = $validation['params'];
+            $recordId = $params['record_id'];
+            $action = $params['validation_action'];
+            $comment = GETPOST('comment', 'restricthtml'); // Optionnel
+            
+            // Validation de l'action
+            $allowedActions = ['approve', 'reject', 'partial'];
+            if (!in_array($action, $allowedActions)) {
+                return [
+                    'error' => 1,
+                    'errors' => [$this->langs->trans('InvalidValidationAction')]
+                ];
+            }
+            
+            // Vérification que l'enregistrement existe et peut être validé
+            if (!$this->validationService->canValidate($this->user->id, $recordId)) {
+                return [
+                    'error' => 1,
+                    'errors' => [$this->langs->trans('InsufficientPermissionsForRecord')]
+                ];
+            }
+            
+            // Effectuer la validation via le service (DIP)
+            $result = $this->validationService->validateRecord(
+                $recordId, 
+                $this->user->id, 
+                $action, 
+                $comment
+            );
+            
+            if ($result) {
+                // Succès de la validation
+                $actionLabels = [
+                    'approve' => $this->langs->trans('RecordApproved'),
+                    'reject' => $this->langs->trans('RecordRejected'),
+                    'partial' => $this->langs->trans('RecordPartiallyApproved')
+                ];
+                
+                dol_syslog("ValidationController: Record $recordId validated as $action by user " . $this->user->id, LOG_INFO);
+                
+                return [
+                    'error' => 0,
+                    'messages' => [$actionLabels[$action] ?? $this->langs->trans('ValidationCompleted')],
+                    'action' => $action,
+                    'record_id' => $recordId,
+                    'validated_by' => $this->user->id,
+                    'timestamp' => dol_now()
+                ];
+            } else {
+                return [
+                    'error' => 1,
+                    'errors' => [$this->langs->trans('ValidationFailed')]
+                ];
+            }
+            
+        } catch (Exception $e) {
+            dol_syslog("ValidationController: Error in validateRecord - " . $e->getMessage(), LOG_ERROR);
+            return $this->handleError($e);
+        }
     }
     
+    /**
+     * Récupérer détails d'un enregistrement pour validation (MVP 3.2)
+     * Responsabilité unique : Fournir données enregistrement (SRP)
+     * 
+     * @return array Données enregistrement pour interface
+     */
+    public function getRecordDetails(): array 
+    {
+        // Vérification module et droits
+        $this->checkModuleEnabled();
+        $this->checkUserRights('validate');
+        
+        try {
+            $recordId = GETPOST('record_id', 'int');
+            
+            if (!$recordId) {
+                return [
+                    'error' => 1,
+                    'errors' => [$this->langs->trans('MissingRecordId')]
+                ];
+            }
+            
+            // Vérifier permissions sur cet enregistrement
+            if (!$this->validationService->canValidate($this->user->id, $recordId)) {
+                return [
+                    'error' => 1,
+                    'errors' => [$this->langs->trans('InsufficientPermissionsForRecord')]
+                ];
+            }
+            
+            // Charger l'enregistrement via DataService (DIP)
+            $record = new TimeclockRecord($this->db);
+            if ($record->fetch($recordId) <= 0) {
+                return [
+                    'error' => 1,
+                    'errors' => [$this->langs->trans('RecordNotFound')]
+                ];
+            }
+            
+            // Enrichir avec infos validation et anomalies
+            $validationStatus = $this->validationService->getValidationStatus($recordId);
+            $anomalies = $this->detectRecordAnomalies($record);
+            
+            // Récupérer infos utilisateur
+            $user_obj = new User($this->db);
+            $user_obj->fetch($record->fk_user);
+            
+            // Récupérer type de pointage
+            $type = new TimeclockType($this->db);
+            $type->fetch($record->fk_timeclock_type);
+            
+            return [
+                'error' => 0,
+                'record' => [
+                    'id' => $record->rowid,
+                    'user_id' => $record->fk_user,
+                    'user_name' => $user_obj->getFullName($this->langs),
+                    'clock_in_time' => $record->clock_in_time,
+                    'clock_out_time' => $record->clock_out_time,
+                    'work_duration' => $record->work_duration,
+                    'break_duration' => $record->break_duration,
+                    'location_in' => $record->location_in,
+                    'location_out' => $record->location_out,
+                    'note' => $record->note,
+                    'type' => [
+                        'id' => $type->id,
+                        'label' => $type->label,
+                        'color' => $type->color
+                    ],
+                    'validation_status' => $validationStatus,
+                    'anomalies' => $anomalies,
+                    'can_validate' => true
+                ]
+            ];
+            
+        } catch (Exception $e) {
+            dol_syslog("ValidationController: Error in getRecordDetails - " . $e->getMessage(), LOG_ERROR);
+            return $this->handleError($e);
+        }
+    }
+    
+    /**
+     * Détecter anomalies pour un enregistrement (Helper MVP 3.2)
+     * 
+     * @param TimeclockRecord $record Enregistrement à analyser
+     * @return array Anomalies détectées
+     */
+    private function detectRecordAnomalies(TimeclockRecord $record): array 
+    {
+        $anomalies = [];
+        
+        // Overtime (plus de 8h)
+        if ($record->work_duration > 480) { // 8h en minutes
+            $anomalies[] = [
+                'type' => 'overtime',
+                'level' => 'warning',
+                'message' => $this->langs->trans('OvertimeDetected') . ': ' . 
+                           TimeHelper::convertSecondsToReadableTime($record->work_duration * 60)
+            ];
+        }
+        
+        // Clock-out manquant
+        if (empty($record->clock_out_time) && $record->status == 2) { // Status in progress
+            $anomalies[] = [
+                'type' => 'missing_clockout',
+                'level' => 'critical',
+                'message' => $this->langs->trans('MissingClockOut')
+            ];
+        }
+        
+        // Pause longue (plus de 90 minutes)
+        if ($record->break_duration > 90) {
+            $anomalies[] = [
+                'type' => 'long_break',
+                'level' => 'info',
+                'message' => $this->langs->trans('ExtendedBreak') . ': ' . $record->break_duration . ' minutes'
+            ];
+        }
+        
+        return $anomalies;
+    }
+
     /**
      * Action placeholder pour MVP futures (OCP - Ouvert à l'extension)
      * 

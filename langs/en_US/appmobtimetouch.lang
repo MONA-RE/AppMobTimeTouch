@@ -49,6 +49,55 @@ Settings=Settings
 # Additional validation interface
 ClockedIn=Clocked In
 NotClockedIn=Not Clocked In
+
+# MVP 3.2 Validation Actions
+ValidationActions=Validation Actions
+Approve=Approve
+Reject=Reject
+Partial=Partial
+AddComment=Add Comment
+ValidationComment=Validation Comment
+EnterValidationComment=Enter your validation comment here...
+Cancel=Cancel
+ApproveWithComment=Approve with Comment
+RejectWithComment=Reject with Comment
+ProcessingValidation=Processing validation
+ValidationCompleted=Validation completed
+ValidationFailed=Validation failed
+RecordApproved=Record has been approved
+RecordRejected=Record has been rejected
+RecordPartiallyApproved=Record has been partially approved
+InvalidAction=Invalid action
+CommentRequired=Comment is required
+ValidationError=Validation error
+NoRecordForValidation=No record provided for validation
+
+# Record Details MVP 3.2
+WorkHours=Work Hours
+ClockIn=Clock In
+ClockOut=Clock Out
+NotClockedOut=Not clocked out
+WorkDuration=Work Duration
+BreakDuration=Break Duration
+minutes=minutes
+AnomaliesDetected=Anomalies Detected
+Note=Note
+ValidationStatus=Validation Status
+ValidatedBy=Validated By
+ValidatedDate=Validated Date
+Comment=Comment
+RecordNotFound=Record not found
+RecordNotFoundDescription=The requested record could not be found or you don't have permission to view it
+GoBack=Go Back
+RefreshingData=Refreshing data
+
+# Anomaly Types
+Overtime=Overtime
+MissingClockOut=Missing Clock Out
+ExtendedBreak=Extended Break
+OvertimeDetected=Overtime detected
+MissingPermissionsForRecord=Missing permissions for this record
+MissingRecordId=Missing record ID
 ModuleAppMobTimeTouchName = AppMobTimeTouch
 # Module description 'ModuleAppMobTimeTouchDesc'
 ModuleAppMobTimeTouchDesc = AppMobTimeTouch description

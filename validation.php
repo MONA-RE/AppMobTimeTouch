@@ -51,8 +51,18 @@ try {
             break;
             
         case 'validate_record':
-            // MVP 3.2 : Validation individuelle (placeholder)
+            // MVP 3.2 : Validation individuelle avec retour JSON
             $result = $controller->validateRecord();
+            
+            // Si c'est une requête AJAX, retourner JSON
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+                strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode($result);
+                exit;
+            }
+            
+            // Sinon traitement normal avec redirection
             if ($result['error']) {
                 $errors = $result['errors'];
                 $error = 1;
@@ -61,6 +71,14 @@ try {
             }
             // Redirection vers dashboard après action
             $data = $controller->dashboard();
+            break;
+            
+        case 'get_record_details':
+            // MVP 3.2 : Récupération détails enregistrement
+            $result = $controller->getRecordDetails();
+            header('Content-Type: application/json');
+            echo json_encode($result);
+            exit;
             break;
     }
     
