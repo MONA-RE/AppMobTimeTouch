@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Navigation MVP 3.1</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f5f5f5; }
+        .test-container { background: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto; }
+        .test-button { 
+            background: #007bff; color: white; border: none; padding: 12px 20px; 
+            margin: 10px; border-radius: 5px; cursor: pointer; font-size: 16px;
+        }
+        .test-button:hover { background: #0056b3; }
+        .info { background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .success { background: #e8f5e8; color: #2e7d32; padding: 10px; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test Navigation MVP 3.1 - Validation Manager</h1>
+        
+        <div class="info">
+            <h3>Test de la fonction loadManagement()</h3>
+            <p>Ce test vérifie que la navigation vers le dashboard de validation manager fonctionne correctement.</p>
+            <p><strong>URL attendue :</strong> ./validation.php</p>
+        </div>
+        
+        <div id="test-results"></div>
+        
+        <h3>Tests disponibles :</h3>
+        
+        <button class="test-button" onclick="testLoadManagement()">
+            🎯 Test loadManagement() (MVP 3.1)
+        </button>
+        
+        <button class="test-button" onclick="testLoadMyRecords()">
+            📋 Test loadMyRecords() (placeholder)
+        </button>
+        
+        <button class="test-button" onclick="testLoadSummary()">
+            📊 Test loadSummary() (placeholder)
+        </button>
+        
+        <button class="test-button" onclick="testLoadSettings()">
+            ⚙️ Test loadSettings() (placeholder)
+        </button>
+        
+        <button class="test-button" onclick="testDebugConfiguration()">
+            🔍 Debug Configuration
+        </button>
+        
+        <h3>Console Output :</h3>
+        <div id="console-output" style="background: #2d2d2d; color: #fff; padding: 15px; border-radius: 5px; font-family: monospace; height: 200px; overflow-y: auto;">
+            Waiting for tests...
+        </div>
+    </div>
+
+    <!-- Include navigation.js -->
+    <script src="js/navigation.js"></script>
+    
+    <!-- Mock OnsenUI for testing -->
+    <script>
+        // Mock OnsenUI notification for testing
+        window.ons = {
+            notification: {
+                toast: function(message, options) {
+                    logToConsole('OnsenUI Toast: ' + message);
+                    showResult('success', 'Toast shown: ' + message);
+                },
+                alert: function(message) {
+                    logToConsole('OnsenUI Alert: ' + message);
+                    showResult('success', 'Alert shown: ' + message);
+                }
+            }
+        };
+        
+        // Override window.location.href for testing
+        var originalLocationHref = window.location.href;
+        Object.defineProperty(window.location, 'href', {
+            set: function(url) {
+                logToConsole('Navigation intercepted: ' + url);
+                showResult('success', 'Navigation to: ' + url);
+                // Ne pas naviguer réellement pendant les tests
+            }
+        });
+        
+        function logToConsole(message) {
+            const output = document.getElementById('console-output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.innerHTML += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+        
+        function showResult(type, message) {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `✅ ${message}`;
+            results.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            document.getElementById('console-output').innerHTML = 'Console cleared...\n';
+        }
+        
+        // Test functions
+        function testLoadManagement() {
+            logToConsole('=== TESTING loadManagement() ===');
+            clearResults();
+            
+            try {
+                if (typeof loadManagement === 'function') {
+                    logToConsole('loadManagement function found, executing...');
+                    loadManagement();
+                    showResult('success', 'loadManagement() executed successfully');
+                } else {
+                    showResult('error', 'loadManagement function not found!');
+                }
+            } catch (error) {
+                logToConsole('ERROR: ' + error.message);
+                showResult('error', 'Error in loadManagement: ' + error.message);
+            }
+        }
+        
+        function testLoadMyRecords() {
+            logToConsole('=== TESTING loadMyRecords() ===');
+            clearResults();
+            
+            try {
+                if (typeof loadMyRecords === 'function') {
+                    loadMyRecords();
+                    showResult('success', 'loadMyRecords() executed successfully');
+                } else {
+                    showResult('error', 'loadMyRecords function not found!');
+                }
+            } catch (error) {
+                showResult('error', 'Error in loadMyRecords: ' + error.message);
+            }
+        }
+        
+        function testLoadSummary() {
+            logToConsole('=== TESTING loadSummary() ===');
+            clearResults();
+            
+            try {
+                if (typeof loadSummary === 'function') {
+                    loadSummary();
+                    showResult('success', 'loadSummary() executed successfully');
+                } else {
+                    showResult('error', 'loadSummary function not found!');
+                }
+            } catch (error) {
+                showResult('error', 'Error in loadSummary: ' + error.message);
+            }
+        }
+        
+        function testLoadSettings() {
+            logToConsole('=== TESTING loadSettings() ===');
+            clearResults();
+            
+            try {
+                if (typeof loadSettings === 'function') {
+                    loadSettings();
+                    showResult('success', 'loadSettings() executed successfully');
+                } else {
+                    showResult('error', 'loadSettings function not found!');
+                }
+            } catch (error) {
+                showResult('error', 'Error in loadSettings: ' + error.message);
+            }
+        }
+        
+        function testDebugConfiguration() {
+            logToConsole('=== TESTING debugAppConfiguration() ===');
+            clearResults();
+            
+            try {
+                if (typeof debugAppConfiguration === 'function') {
+                    debugAppConfiguration();
+                    showResult('success', 'debugAppConfiguration() executed successfully');
+                } else if (typeof window.debugAppConfiguration === 'function') {
+                    window.debugAppConfiguration();
+                    showResult('success', 'window.debugAppConfiguration() executed successfully');
+                } else {
+                    showResult('error', 'debugAppConfiguration function not found!');
+                }
+            } catch (error) {
+                showResult('error', 'Error in debugAppConfiguration: ' + error.message);
+            }
+        }
+        
+        // Auto-test at page load
+        document.addEventListener('DOMContentLoaded', function() {
+            logToConsole('Page loaded, navigation system should be initialized...');
+            
+            setTimeout(function() {
+                logToConsole('Checking if navigation functions are available...');
+                
+                const functions = ['loadManagement', 'loadMyRecords', 'loadSummary', 'loadSettings'];
+                let available = 0;
+                
+                functions.forEach(function(func) {
+                    if (typeof window[func] === 'function') {
+                        logToConsole(`✅ ${func} is available`);
+                        available++;
+                    } else {
+                        logToConsole(`❌ ${func} is NOT available`);
+                    }
+                });
+                
+                if (available === functions.length) {
+                    showResult('success', `All ${available} navigation functions are available!`);
+                } else {
+                    showResult('error', `Only ${available}/${functions.length} navigation functions are available`);
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>

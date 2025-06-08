@@ -181,10 +181,113 @@ function testNavigation() {
 }
 
 /**
+ * Navigation vers le dashboard de validation manager (MVP 3.1)
+ * Fonction appelée depuis tabbar.tpl pour les managers
+ */
+function loadManagement() {
+    console.log('=== DEBUG loadManagement (MVP 3.1) ===');
+    
+    try {
+        // Construction de l'URL vers validation.php
+        var currentUrl = window.location.href;
+        var currentPath = window.location.pathname;
+        
+        // Détecter si on est dans le module appmobtimetouch
+        if (currentPath.includes('/appmobtimetouch/')) {
+            // URL relative depuis le module actuel
+            var validationUrl = './validation.php';
+        } else {
+            // URL absolue depuis detectBaseUrl
+            var baseUrl = detectBaseUrl();
+            var validationUrl = baseUrl + '/custom/appmobtimetouch/validation.php';
+        }
+        
+        console.log('Current URL:', currentUrl);
+        console.log('Validation URL constructed:', validationUrl);
+        
+        // Message de chargement
+        if (typeof ons !== 'undefined') {
+            ons.notification.toast('Loading Validation Manager...', {timeout: 1500});
+        }
+        
+        // Navigation vers le dashboard validation
+        setTimeout(function() {
+            console.log('Navigating to validation dashboard...');
+            window.location.href = validationUrl;
+        }, 300);
+        
+    } catch (error) {
+        console.error('ERROR in loadManagement:', error);
+        
+        // Fallback d'urgence
+        var fallbackUrl = './validation.php';
+        console.log('Using fallback URL:', fallbackUrl);
+        
+        if (typeof ons !== 'undefined') {
+            ons.notification.alert('Error loading validation manager. Trying fallback...');
+        }
+        
+        setTimeout(function() {
+            window.location.href = fallbackUrl;
+        }, 1000);
+    }
+}
+
+/**
+ * Navigation vers les enregistrements de l'utilisateur
+ * Placeholder pour futures implémentations
+ */
+function loadMyRecords() {
+    console.log('=== DEBUG loadMyRecords ===');
+    
+    if (typeof ons !== 'undefined') {
+        ons.notification.alert('My Records feature coming soon!');
+    } else {
+        alert('My Records feature coming soon!');
+    }
+}
+
+/**
+ * Navigation vers les résumés
+ * Placeholder pour futures implémentations
+ */
+function loadSummary() {
+    console.log('=== DEBUG loadSummary ===');
+    
+    if (typeof ons !== 'undefined') {
+        ons.notification.alert('Summary feature coming soon!');
+    } else {
+        alert('Summary feature coming soon!');
+    }
+}
+
+/**
+ * Navigation vers les paramètres
+ * Placeholder pour futures implémentations
+ */
+function loadSettings() {
+    console.log('=== DEBUG loadSettings ===');
+    
+    if (typeof ons !== 'undefined') {
+        ons.notification.alert('Settings feature coming soon!');
+    } else {
+        alert('Settings feature coming soon!');
+    }
+}
+
+/**
  * Initialize navigation system
  */
 function initNavigation() {
     console.log('Navigation system initialized');
+    
+    // Exposer les fonctions de navigation globalement
+    window.loadManagement = loadManagement;
+    window.loadMyRecords = loadMyRecords;
+    window.loadSummary = loadSummary;
+    window.loadSettings = loadSettings;
+    
+    console.log('Navigation functions exposed: loadManagement(), loadMyRecords(), loadSummary(), loadSettings()');
     
     // Exposer les fonctions de debug en mode développement
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -193,3 +296,8 @@ function initNavigation() {
         console.log('Debug functions exposed: debugAppConfiguration(), testNavigation()');
     }
 }
+
+// Auto-initialisation
+document.addEventListener('DOMContentLoaded', function() {
+    initNavigation();
+});

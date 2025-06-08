@@ -39,6 +39,12 @@ RefreshingData=Refreshing data
 FeatureComingInMVP32=Feature coming in MVP 3.2
 RecordDetails=Record Details
 WelcomeValidationManager=Welcome to Validation Manager
+
+# Navigation & Tabbar
+Management=Management
+MyRecords=My Records
+Summary=Summary
+Settings=Settings
 ModuleAppMobTimeTouchName = AppMobTimeTouch
 # Module description 'ModuleAppMobTimeTouchDesc'
 ModuleAppMobTimeTouchDesc = AppMobTimeTouch description
