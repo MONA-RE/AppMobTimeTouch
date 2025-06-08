@@ -61,6 +61,10 @@ dol_include_once('/appmobtimetouch/class/timeclockconfig.class.php');
 // Load SOLID architecture components - Étape 1: Configuration centralisée
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/Constants.php';
 
+// Load SOLID architecture components - Étape 2: Helpers utilitaires (SRP + OCP)
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/TimeHelper.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/LocationHelper.php';
+
 // Load translations
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch", "users", "companies", "errors"));
 
@@ -260,9 +264,9 @@ dol_syslog("HOME.PHP DEBUG: Final values - is_clocked_in: " . ($is_clocked_in ? 
 dol_syslog("HOME.PHP DEBUG: Final values - clock_in_time: " . $clock_in_time, LOG_DEBUG);
 dol_syslog("HOME.PHP DEBUG: Final values - current_duration: " . $current_duration, LOG_DEBUG);
 
-// Test de la fonction convertSecondsToReadableTime
+// Test de la fonction TimeHelper::convertSecondsToReadableTime (SOLID Helper)
 if ($current_duration > 0) {
-    $duration_readable = convertSecondsToReadableTime($current_duration);
+    $duration_readable = TimeHelper::convertSecondsToReadableTime($current_duration);
     dol_syslog("HOME.PHP DEBUG: Duration readable: " . $duration_readable, LOG_DEBUG);
 } else {
     dol_syslog("HOME.PHP DEBUG: Current duration is 0 or negative, skipping readable conversion", LOG_DEBUG);
@@ -430,45 +434,14 @@ $js_data = array(
 
 dol_syslog("HOME.PHP DEBUG: JS data prepared - is_clocked_in: " . ($js_data['is_clocked_in'] ? 'true' : 'false') . ", clock_in_time: " . $js_data['clock_in_time'], LOG_DEBUG);
 
-// Fonction helper pour convertir les secondes en format lisible
-if (!function_exists('convertSecondsToReadableTime')) {
-    function convertSecondsToReadableTime($seconds) {
-        // CORRECTION: S'assurer que $seconds est numérique
-        if (!is_numeric($seconds) || $seconds <= 0) {
-            dol_syslog("HOME.PHP DEBUG: convertSecondsToReadableTime - Invalid input: " . print_r($seconds, true), LOG_DEBUG);
-            return '0h00';
-        }
-        
-        $seconds = (int) $seconds; // Cast explicite en entier
-        $hours = floor($seconds / 3600);
-        $minutes = floor(($seconds % 3600) / 60);
-        
-        $result = sprintf('%dh%02d', $hours, $minutes);
-        dol_syslog("HOME.PHP DEBUG: convertSecondsToReadableTime - Input: " . $seconds . ", Output: " . $result, LOG_DEBUG);
-        
-        return $result;
-    }
-}
-
-// Additional helper function for duration formatting
-if (!function_exists('formatDuration')) {
-    function formatDuration($minutes) {
-        // CORRECTION: S'assurer que $minutes est numérique
-        if (!is_numeric($minutes) || $minutes <= 0) {
-            dol_syslog("HOME.PHP DEBUG: formatDuration - Invalid input: " . print_r($minutes, true), LOG_DEBUG);
-            return '0h00';
-        }
-        
-        $minutes = (int) $minutes; // Cast explicite en entier
-        $hours = floor($minutes / 60);
-        $mins = $minutes % 60;
-        
-        $result = sprintf('%dh%02d', $hours, $mins);
-        dol_syslog("HOME.PHP DEBUG: formatDuration - Input: " . $minutes . ", Output: " . $result, LOG_DEBUG);
-        
-        return $result;
-    }
-}
+// SOLID Architecture - Étape 2: Fonctions helper migrées vers classes utilitaires
+// Les fonctions convertSecondsToReadableTime() et formatDuration() sont maintenant disponibles via :
+// - TimeHelper::convertSecondsToReadableTime($seconds)
+// - TimeHelper::formatDuration($minutes)
+// - LocationHelper::validateCoordinates($lat, $lon)
+// - LocationHelper::calculateDistance($lat1, $lon1, $lat2, $lon2)
+// Principe SRP: Responsabilité unique par classe helper
+// Principe OCP: Extensible sans modification du code existant
 
 // Set page title
 $title = $langs->trans("TimeTracking");
