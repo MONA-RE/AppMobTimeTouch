@@ -64,6 +64,12 @@ dol_include_once('/appmobtimetouch/class/timeclocktype.class.php');
 dol_include_once('/appmobtimetouch/class/weeklysummary.class.php');
 dol_include_once('/appmobtimetouch/class/timeclockconfig.class.php');
 
+// Load SOLID Services
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/TimeclockServiceInterface.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/DataServiceInterface.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/TimeclockService.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/DataService.php';
+
 // Load translations
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch", "errors"));
 
@@ -84,12 +90,18 @@ class TimeclockAPI
     private $db;
     private $user;
     private $langs;
+    private TimeclockServiceInterface $timeclockService;
+    private DataServiceInterface $dataService;
 
     public function __construct($db, $user, $langs)
     {
         $this->db = $db;
         $this->user = $user;
         $this->langs = $langs;
+        
+        // Initialize services with dependency injection (DIP)
+        $this->dataService = new DataService($db);
+        $this->timeclockService = new TimeclockService($db, $this->dataService);
     }
 
     /**
@@ -249,8 +261,8 @@ class TimeclockAPI
     {
         $this->checkPermissions('read');
 
-        $timeclockrecord = new TimeclockRecord($this->db);
-        $active_record_id = $timeclockrecord->getActiveRecord($this->user->id);
+        // Use TimeclockService for business logic (SOLID Architecture)
+        $active_record = $this->timeclockService->getActiveRecord($this->user->id);
         
         $status = array(
             'is_clocked_in' => false,
@@ -260,31 +272,28 @@ class TimeclockAPI
             'timeclock_type' => null
         );
 
-        if ($active_record_id > 0) {
-            $active_record = new TimeclockRecord($this->db);
-            if ($active_record->fetch($active_record_id) > 0) {
-                $status['is_clocked_in'] = true;
-                $status['active_record'] = array(
-                    'id' => $active_record->id,
-                    'ref' => $active_record->ref,
-                    'clock_in_time' => $active_record->clock_in_time,
-                    'location_in' => $active_record->location_in,
-                    'fk_timeclock_type' => $active_record->fk_timeclock_type
-                );
-                $status['clock_in_time'] = $this->db->jdate($active_record->clock_in_time);
-                $status['current_duration'] = dol_now() - $status['clock_in_time'];
+        if ($active_record) {
+            $status['is_clocked_in'] = true;
+            $status['active_record'] = array(
+                'id' => $active_record->id,
+                'ref' => $active_record->ref,
+                'clock_in_time' => $active_record->clock_in_time,
+                'location_in' => $active_record->location_in,
+                'fk_timeclock_type' => $active_record->fk_timeclock_type
+            );
+            $status['clock_in_time'] = $this->db->jdate($active_record->clock_in_time);
+            $status['current_duration'] = dol_now() - $status['clock_in_time'];
 
-                // Get timeclock type info
-                if (!empty($active_record->fk_timeclock_type)) {
-                    $type = new TimeclockType($this->db);
-                    if ($type->fetch($active_record->fk_timeclock_type) > 0) {
-                        $status['timeclock_type'] = array(
-                            'id' => $type->id,
-                            'code' => $type->code,
-                            'label' => $type->label,
-                            'color' => $type->color
-                        );
-                    }
+            // Get timeclock type info
+            if (!empty($active_record->fk_timeclock_type)) {
+                $type = new TimeclockType($this->db);
+                if ($type->fetch($active_record->fk_timeclock_type) > 0) {
+                    $status['timeclock_type'] = array(
+                        'id' => $type->id,
+                        'code' => $type->code,
+                        'label' => $type->label,
+                        'color' => $type->color
+                    );
                 }
             }
         }
@@ -348,11 +357,18 @@ class TimeclockAPI
             $this->sendResponse(false, null, '', $this->langs->trans('LocationRequiredForClockIn'), 400);
         }
 
-        // Create timeclock record
-        $timeclockrecord = new TimeclockRecord($this->db);
-        $result = $timeclockrecord->clockIn($this->user, $timeclock_type_id, $location, $latitude, $longitude, $note);
+        // Use TimeclockService for business logic (SOLID Architecture)
+        try {
+            $params = [
+                'timeclock_type_id' => $timeclock_type_id,
+                'location' => $location,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'note' => $note
+            ];
+            
+            $result = $this->timeclockService->clockIn($this->user, $params);
 
-        if ($result > 0) {
             // Return the created record info
             $record_data = array(
                 'id' => $result,
@@ -363,8 +379,9 @@ class TimeclockAPI
 
             $this->logActivity('Clock In Success', $record_data);
             $this->sendResponse(true, $record_data, $this->langs->trans('ClockInSuccess'));
-        } else {
-            $error_msg = !empty($timeclockrecord->error) ? $this->langs->trans($timeclockrecord->error) : $this->langs->trans('ClockInError');
+            
+        } catch (Exception $e) {
+            $error_msg = $e->getMessage();
             $this->logActivity('Clock In Failed', null, $error_msg);
             $this->sendResponse(false, null, '', $error_msg, 400);
         }
@@ -415,22 +432,40 @@ class TimeclockAPI
             'note' => $note
         ));
 
-        // Clock out
-        $timeclockrecord = new TimeclockRecord($this->db);
-        $result = $timeclockrecord->clockOut($this->user, $location, $latitude, $longitude, $note);
+        // Use TimeclockService for business logic (SOLID Architecture)
+        try {
+            $params = [
+                'location' => $location,
+                'latitude' => $latitude,
+                'longitude' => $longitude,
+                'note' => $note
+            ];
+            
+            $result = $this->timeclockService->clockOut($this->user, $params);
+            
+            // Get the updated record for response
+            $activeRecord = $this->timeclockService->getActiveRecord($this->user->id);
+            $workDuration = 0;
+            if (!$activeRecord) {
+                // Record was successfully closed, get the latest completed record
+                $recentRecords = $this->dataService->getRecentRecords($this->user->id, 1);
+                if (!empty($recentRecords)) {
+                    $workDuration = $recentRecords[0]->work_duration ?? 0;
+                }
+            }
 
-        if ($result > 0) {
             // Get the updated record info
             $record_data = array(
                 'clock_out_time' => dol_now(),
                 'location' => $location,
-                'work_duration' => $timeclockrecord->work_duration
+                'work_duration' => $workDuration
             );
 
             $this->logActivity('Clock Out Success', $record_data);
             $this->sendResponse(true, $record_data, $this->langs->trans('ClockOutSuccess'));
-        } else {
-            $error_msg = !empty($timeclockrecord->error) ? $this->langs->trans($timeclockrecord->error) : $this->langs->trans('ClockOutError');
+            
+        } catch (Exception $e) {
+            $error_msg = $e->getMessage();
             $this->logActivity('Clock Out Failed', null, $error_msg);
             $this->sendResponse(false, null, '', $error_msg, 400);
         }
