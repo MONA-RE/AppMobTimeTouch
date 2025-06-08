@@ -100,7 +100,29 @@
 - Le statut est affiché correctement
 - Les heures sont calculées automatiquement
 
-### SPRINT 2 - Gestion des Pauses (2 semaines)
+### SPRINT 2 - Validation et Workflow (2 semaines)
+**Objectif:** Processus de validation manager
+
+#### User Stories
+- En tant que manager, je veux valider les temps de mes équipes
+- En tant qu'employé, je veux voir le statut de validation de mes temps
+- En tant que manager, je veux être alerté des anomalies
+
+#### Tâches Techniques
+1. **Interface Manager**
+   - Liste des temps à valider
+   - Actions de validation/rejet
+   - Tableau de bord équipe
+
+2. **Workflow Backend**
+   - Processus de validation
+   - Notifications
+   - Historique des actions
+
+
+
+
+### SPRINT 3 - Gestion des Pauses (2 semaines)
 **Objectif:** Système de pauses complet
 
 #### User Stories
@@ -119,24 +141,6 @@
    - Calculs automatiques
    - Validations métier
 
-### SPRINT 3 - Validation et Workflow (2 semaines)
-**Objectif:** Processus de validation manager
-
-#### User Stories
-- En tant que manager, je veux valider les temps de mes équipes
-- En tant qu'employé, je veux voir le statut de validation de mes temps
-- En tant que manager, je veux être alerté des anomalies
-
-#### Tâches Techniques
-1. **Interface Manager**
-   - Liste des temps à valider
-   - Actions de validation/rejet
-   - Tableau de bord équipe
-
-2. **Workflow Backend**
-   - Processus de validation
-   - Notifications
-   - Historique des actions
 
 ### SPRINT 4 - Géolocalisation et Contrôles (2 semaines)
 **Objectif:** Contrôles avancés et géolocalisation
