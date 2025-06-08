@@ -18,6 +18,27 @@
 #
 
 # Module label 'ModuleAppMobTimeTouchName'
+
+# Validation Manager MVP 3.1
+ValidationDashboard=Validation Dashboard  
+ValidationManager=Validation Manager
+ValidationStatistics=Validation Statistics
+PendingValidation=Pending Validation
+WithAnomalies=With Anomalies
+UrgentValidation=Urgent (>2 days)
+TodayPending=Today
+RecentNotifications=Recent Notifications
+RecentPendingRecords=Recent Pending Records
+AllValidated=All Validated!
+NoValidationPending=No validation pending
+QuickActions=Quick Actions
+Refresh=Refresh
+ViewAll=View All
+ViewAllPendingRecords=View All Pending Records
+RefreshingData=Refreshing data
+FeatureComingInMVP32=Feature coming in MVP 3.2
+RecordDetails=Record Details
+WelcomeValidationManager=Welcome to Validation Manager
 ModuleAppMobTimeTouchName = AppMobTimeTouch
 # Module description 'ModuleAppMobTimeTouchDesc'
 ModuleAppMobTimeTouchDesc = AppMobTimeTouch description
