@@ -14,7 +14,6 @@ if (!$res && file_exists("../../../main.inc.php")) $res = include '../../../main
 if (!$res) die("Include of main fails");
 
 // Chargement classes nécessaires
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Controllers/HomeController.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/class/timeclockrecord.class.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/class/timeclocktype.class.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/TimeHelper.php';

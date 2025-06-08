@@ -254,13 +254,10 @@ function showClockOutModal() {
     
     // View record function - Adaptation MVP 3.2 pour employés
     function viewRecord(recordId) {
-      console.log('View record called with recordId:', recordId);
-      console.log('Type of recordId:', typeof recordId);
-      console.log('RecordId is null/undefined?', recordId == null);
+      console.log('View record:', recordId);
       
-      if (!recordId || recordId == null || recordId == undefined) {
-        console.error('Invalid recordId received:', recordId);
-        ons.notification.alert('<?php echo $langs->trans("MissingRecordId"); ?> (Debug: ' + recordId + ')');
+      if (!recordId) {
+        ons.notification.alert('<?php echo $langs->trans("MissingRecordId"); ?>');
         return;
       }
       
@@ -269,9 +266,7 @@ function showClockOutModal() {
       
       // Navigation vers page détail employé
       setTimeout(function() {
-        var url = './employee-record-detail.php?id=' + recordId;
-        console.log('Navigating to:', url);
-        window.location.href = url;
+        window.location.href = './employee-record-detail.php?id=' + recordId;
       }, 300);
     }
     

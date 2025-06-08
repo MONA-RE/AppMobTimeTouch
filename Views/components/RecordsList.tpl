@@ -60,7 +60,7 @@
         </div>
         <div class="center">
           <div style="font-weight: bold; margin-bottom: 2px;">
-            <?php echo $record_date; ?> (ID: <?php echo $record->rowid; ?>)
+            <?php echo $record_date; ?>
           </div>
           <div style="font-size: 14px; color: #666; margin-bottom: 2px;">
             <span style="background-color: <?php echo $type->color; ?>; color: white; padding: 2px 6px; border-radius: 8px; font-size: 11px;">
