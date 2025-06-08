@@ -165,7 +165,13 @@ class DataService implements DataServiceInterface
         foreach ($weeklyRecords as $record) {
             if ($record->status == TimeclockConstants::STATUS_COMPLETED && !empty($record->work_duration)) {
                 $totalHours += ($record->work_duration / 60);
-                $workDay = date('Y-m-d', $this->db->jdate($record->clock_in_time));
+                // Conversion sécurisée du timestamp
+                $rawTimestamp = $this->db->jdate($record->clock_in_time);
+                if ($rawTimestamp === false || $rawTimestamp === null) {
+                    continue; // Skip ce record si timestamp invalide
+                }
+                $timestamp = $this->convertToUnixTimestamp($rawTimestamp);
+                $workDay = date('Y-m-d', $timestamp);
                 $daysWorked[$workDay] = true;
             }
         }
@@ -251,5 +257,35 @@ class DataService implements DataServiceInterface
         }
         
         return 1; // Fallback ultime
+    }
+    
+    /**
+     * Conversion sécurisée d'un timestamp Dolibarr vers timestamp Unix
+     * 
+     * @param mixed $dolibarrTimestamp Timestamp depuis jdate()
+     * @return int Timestamp Unix valide
+     */
+    private function convertToUnixTimestamp($dolibarrTimestamp): int 
+    {
+        // Vérification des valeurs nulles/false
+        if ($dolibarrTimestamp === null || $dolibarrTimestamp === false || $dolibarrTimestamp === '') {
+            return time();
+        }
+        
+        if (is_int($dolibarrTimestamp) && $dolibarrTimestamp > 0) {
+            return $dolibarrTimestamp;
+        }
+        
+        if (is_string($dolibarrTimestamp)) {
+            $converted = strtotime($dolibarrTimestamp);
+            return ($converted !== false && $converted > 0) ? $converted : time();
+        }
+        
+        // Vérification si c'est un float (parfois retourné par jdate)
+        if (is_float($dolibarrTimestamp)) {
+            return (int) $dolibarrTimestamp;
+        }
+        
+        return time(); // Fallback sur timestamp actuel
     }
 }
