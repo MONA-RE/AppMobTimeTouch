@@ -23,9 +23,37 @@ AppMobTimeTouch is a Dolibarr module for mobile time tracking and employee prese
 - **Configure module**: Go to HR menu → TimeTracking → Setup
 - **View logs**: Check Dolibarr syslog for debug information (all functions use `dol_syslog`)
 
-## Architecture Overview
+## SOLID Architecture Overview
 
-### Core Business Classes
+⚠️ **IMPORTANT**: This module now uses a complete SOLID architecture. Always respect these principles when making changes.
+
+### 🏗️ Architecture Layers (SOLID Compliant)
+
+#### **1. Controllers (SRP + OCP + DIP)**
+- **BaseController**: Abstract base with common functionality (`Controllers/BaseController.php`)
+- **HomeController**: Page-specific logic with dependency injection (`Controllers/HomeController.php`)
+- **Principle**: Single responsibility, Open for extension, Dependency inversion
+
+#### **2. Services (DIP + ISP)** 
+- **TimeclockService**: Business logic for timeclock operations (`Services/TimeclockService.php`)
+- **DataService**: Data access and retrieval operations (`Services/DataService.php`)
+- **Interfaces**: Abstract contracts in `Services/Interfaces/`
+- **Principle**: Dependency inversion through interfaces, Interface segregation
+
+#### **3. View Components (SRP + ISP)**
+- **Modular Templates**: Each component has single responsibility (`Views/components/`)
+- **Messages.tpl**: Error/success message display only
+- **StatusCard.tpl**: Timeclock status with sub-components
+- **SummaryCard.tpl**: Daily summary display
+- **WeeklySummary.tpl**: Weekly summary display
+- **RecordsList.tpl**: Recent records list
+- **Modal Components**: ClockInModal.tpl, ClockOutModal.tpl (Interface segregation)
+
+#### **4. Helpers & Constants (SRP)**
+- **TimeHelper**: Time calculation utilities (`Helpers/TimeHelper.php`)
+- **TimeclockConstants**: Centralized configuration (`Constants/TimeclockConstants.php`)
+
+#### **5. Legacy Classes (Dolibarr Entities)**
 - **TimeclockRecord**: Main entity for time tracking entries (`class/timeclockrecord.class.php`)
 - **TimeclockType**: Work types (office, remote, mission) (`class/timeclocktype.class.php`)
 - **TimeclockConfig**: Module configuration storage (`class/timeclockconfig.class.php`)
@@ -141,3 +169,229 @@ Time records have status workflow:
 - Handle offline scenarios gracefully
 - Optimize for touch interfaces
 - Consider mobile data limitations for API calls
+
+## 🎯 SOLID Development Guidelines
+
+### When Adding New Features
+
+#### 1. Follow Single Responsibility Principle (SRP)
+- **Controllers**: Create specific controllers for new pages/sections
+- **Services**: Separate business logic from data access
+- **Components**: One template component = one UI responsibility
+- **Example**: 
+  ```php
+  // ❌ Bad: Mixed responsibilities
+  class HomeController {
+      public function index() {
+          // Database access + business logic + template rendering
+      }
+  }
+  
+  // ✅ Good: Separated responsibilities  
+  class HomeController extends BaseController {
+      private TimeclockServiceInterface $timeclockService;
+      private DataServiceInterface $dataService;
+  }
+  ```
+
+#### 2. Respect Open/Closed Principle (OCP)
+- **Extend** existing classes instead of modifying them
+- **Add** new methods to interfaces rather than changing signatures
+- **Create** new components instead of modifying existing ones
+- **Example**:
+  ```php
+  // ✅ Good: Extending BaseController
+  class ReportsController extends BaseController {
+      // New functionality without modifying base
+  }
+  
+  // ✅ Good: New template component
+  <?php include 'Views/components/NewFeature.tpl'; ?>
+  ```
+
+#### 3. Apply Interface Segregation Principle (ISP)
+- **Create** specific interfaces for new services
+- **Avoid** adding unrelated methods to existing interfaces
+- **Split** large interfaces into smaller, focused ones
+- **Example**:
+  ```php
+  // ✅ Good: Focused interface
+  interface ReportServiceInterface {
+      public function generateReport(int $userId, string $period): array;
+      public function exportReport(array $data, string $format): string;
+  }
+  ```
+
+#### 4. Use Dependency Inversion Principle (DIP)
+- **Inject** dependencies through constructor
+- **Depend** on interfaces, not concrete implementations
+- **Use** abstract contracts for all service dependencies
+- **Example**:
+  ```php
+  // ✅ Good: Dependency injection
+  class ReportsController extends BaseController {
+      public function __construct(
+          $db, $user, $langs, $conf,
+          ReportServiceInterface $reportService,
+          DataServiceInterface $dataService
+      ) {
+          parent::__construct($db, $user, $langs, $conf);
+          $this->reportService = $reportService;
+          $this->dataService = $dataService;
+      }
+  }
+  ```
+
+### Component Development Best Practices
+
+#### Template Components
+- **Location**: Always in `Views/components/`
+- **Naming**: Descriptive names ending in `.tpl`
+- **Dependencies**: Receive data via included variables
+- **Example**:
+  ```php
+  <?php
+  /**
+   * Composant ReportCard - Responsabilité unique : Affichage rapport
+   * 
+   * Respecte le principe SRP : Seule responsabilité l'affichage d'un rapport
+   * Respecte le principe ISP : Interface spécialisée pour les rapports
+   */
+  ?>
+  <ons-card>
+    <div class="title"><?php echo $report_title; ?></div>
+    <div class="content"><?php echo $report_content; ?></div>
+  </ons-card>
+  ```
+
+#### Service Implementation
+- **Interface First**: Always create interface before implementation
+- **Single Purpose**: One service = one business domain
+- **Error Handling**: Consistent error management
+- **Example**:
+  ```php
+  class ReportService implements ReportServiceInterface {
+      public function __construct(
+          private DoliDB $db,
+          private DataServiceInterface $dataService
+      ) {}
+      
+      public function generateReport(int $userId, string $period): array {
+          // Single responsibility: report generation logic only
+      }
+  }
+  ```
+
+### Database Access Patterns
+
+#### Use DataService for Database Operations
+```php
+// ✅ Good: Through DataService
+$records = $this->dataService->getRecordsByPeriod($userId, $startDate, $endDate);
+
+// ❌ Bad: Direct database access in controller
+$sql = "SELECT * FROM llx_timeclock_records WHERE...";
+$result = $this->db->query($sql);
+```
+
+#### Timestamp Handling (Important!)
+```php
+// ✅ Good: Use helper method for safe conversion
+$timestamp = $this->convertToUnixTimestamp($this->db->jdate($record->clock_in_time));
+$date = date('Y-m-d', $timestamp);
+
+// ❌ Bad: Direct conversion (can cause TypeError)
+$date = date('Y-m-d', $this->db->jdate($record->clock_in_time));
+```
+
+### Template Refactoring Guidelines
+
+#### Before Adding New UI Elements
+1. **Check** if existing component can be extended
+2. **Create** new component if different responsibility
+3. **Update** main template to include new component
+4. **Test** component isolation
+
+#### Template Assembly Pattern
+```php
+<!-- Main template (home.tpl) should only assemble components -->
+<?php include 'Views/components/Messages.tpl'; ?>
+<?php include 'Views/components/StatusCard.tpl'; ?>
+<?php include 'Views/components/SummaryCard.tpl'; ?>
+<?php include 'Views/components/NewFeature.tpl'; ?>
+```
+
+### Testing New Features
+
+#### Required Tests
+- **Unit tests** for new services
+- **Integration tests** for controller actions  
+- **Component tests** for template rendering
+- **API tests** for new endpoints
+
+#### Test Commands
+```bash
+# Test new service
+cd test/phpunit && phpunit NewServiceTest.php
+
+# Test component rendering  
+cd test/phpunit && phpunit ComponentRenderTest.php
+
+# Test API endpoints
+php test/api_new_feature_test.php
+```
+
+### Common Anti-Patterns to Avoid
+
+#### ❌ Don't Do This
+```php
+// Mixed responsibilities in controller
+class HomeController {
+    public function index() {
+        $sql = "SELECT * FROM..."; // Database access
+        $result = $this->db->query($sql); // Direct DB
+        echo "<div>"; // Template mixing
+        // Business logic here
+    }
+}
+
+// God object with multiple responsibilities
+class TimeclockManager {
+    public function clockIn() { }
+    public function generateReport() { }
+    public function sendEmail() { }
+    public function validateData() { }
+}
+```
+
+#### ✅ Do This Instead
+```php
+// Separated responsibilities
+class HomeController extends BaseController {
+    public function __construct(
+        TimeclockServiceInterface $timeclockService,
+        DataServiceInterface $dataService
+    ) {
+        // Dependency injection
+    }
+    
+    public function index(): array {
+        // Delegate to services
+        $data = $this->dataService->getHomePageData($this->user->id);
+        return $this->prepareTemplateData($data);
+    }
+}
+```
+
+### Quick Reference: File Locations
+
+| Type | Location | Example |
+|------|----------|---------|
+| Controllers | `Controllers/` | `Controllers/ReportsController.php` |
+| Services | `Services/` | `Services/ReportService.php` |
+| Interfaces | `Services/Interfaces/` | `Services/Interfaces/ReportServiceInterface.php` |
+| Components | `Views/components/` | `Views/components/ReportCard.tpl` |
+| Helpers | `Helpers/` | `Helpers/ReportHelper.php` |
+| Constants | `Constants/` | `Constants/ReportConstants.php` |
+
+Remember: **Always follow SOLID principles** - they make the code maintainable, testable, and extensible! 🎯
