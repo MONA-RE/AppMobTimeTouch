@@ -252,11 +252,22 @@ function showClockOutModal() {
       });
     }
     
-    // View record function
+    // View record function - Adaptation MVP 3.2 pour employés
     function viewRecord(recordId) {
       console.log('View record:', recordId);
-      // TODO: Navigate to record detail page
-      ons.notification.toast('<?php echo $langs->trans("RecordDetails"); ?>: ' + recordId, {timeout: 1500});
+      
+      if (!recordId) {
+        ons.notification.alert('<?php echo $langs->trans("MissingRecordId"); ?>');
+        return;
+      }
+      
+      // Feedback utilisateur
+      ons.notification.toast('<?php echo $langs->trans("RefreshingData"); ?>...', {timeout: 1000});
+      
+      // Navigation vers page détail employé
+      setTimeout(function() {
+        window.location.href = './employee-record-detail.php?id=' + recordId;
+      }, 300);
     }
     
     // CSS Animations

@@ -98,6 +98,12 @@ ExtendedBreak=Extended Break
 OvertimeDetected=Overtime detected
 MissingPermissionsForRecord=Missing permissions for this record
 MissingRecordId=Missing record ID
+
+# Employee Record Detail
+ValidationInformation=Validation Information
+RecordPendingValidation=This record is pending manager validation
+RecordAlreadyValidated=This record has been validated by your manager
+ViewAllRecords=View All Records
 ModuleAppMobTimeTouchName = AppMobTimeTouch
 # Module description 'ModuleAppMobTimeTouchDesc'
 ModuleAppMobTimeTouchDesc = AppMobTimeTouch description

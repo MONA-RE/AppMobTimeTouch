@@ -231,9 +231,27 @@
   </div>
   <?php endif; ?>
 
-  <!-- Actions de validation (MVP 3.2) -->
-  <?php if ($record['validation_status']['status'] == 0): // Seulement si en attente ?>
-  <?php include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/components/ValidationActions.tpl'; ?>
+  <!-- Actions de validation (MVP 3.2) - Seulement pour les managers -->
+  <?php if (isset($isEmployeeView) && $isEmployeeView): ?>
+    <!-- Vue employé : Information sur le statut seulement -->
+    <div style="padding: 15px; background-color: #e9ecef; border-radius: 8px; margin: 15px;">
+      <h4 style="margin: 0 0 10px 0; color: #495057;">
+        <ons-icon icon="md-info" style="color: #17a2b8; margin-right: 8px;"></ons-icon>
+        <?php echo $langs->trans('ValidationInformation'); ?>
+      </h4>
+      <p style="margin: 0; color: #6c757d; font-size: 14px;">
+        <?php if ($record['validation_status']['status'] == 0): ?>
+          <?php echo $langs->trans('RecordPendingValidation'); ?>
+        <?php else: ?>
+          <?php echo $langs->trans('RecordAlreadyValidated'); ?>
+        <?php endif; ?>
+      </p>
+    </div>
+  <?php else: ?>
+    <!-- Vue manager : Actions de validation -->
+    <?php if ($record['validation_status']['status'] == 0): // Seulement si en attente ?>
+    <?php include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/components/ValidationActions.tpl'; ?>
+    <?php endif; ?>
   <?php endif; ?>
 
   <!-- Espacement pour éviter que le contenu soit masqué -->
