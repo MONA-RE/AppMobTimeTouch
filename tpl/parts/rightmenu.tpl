@@ -46,13 +46,13 @@
     <?php endif; ?>
 
     <?php if (!empty($user->rights->appmobtimetouch->timeclock->validate)): ?>
-    <!-- Validation (Managers seulement) -->
-    <ons-list-item onclick="gotoPage('validation');" tappable modifier="nodivider">
+    <!-- Validation Manager Dashboard (MVP 3.1) -->
+    <ons-list-item onclick="loadManagement();" tappable modifier="nodivider">
       <div class="left">
         <ons-icon icon="fa-check-circle" style="color: #607D8B;"></ons-icon>
       </div>
       <div class="center">
-        <span><?php echo $langs->trans("Validation"); ?></span>
+        <span><?php echo $langs->trans("ValidationManager"); ?></span>
         <?php 
         // Afficher le nombre d'éléments en attente de validation
         if (isset($pending_validation_count) && $pending_validation_count > 0): 

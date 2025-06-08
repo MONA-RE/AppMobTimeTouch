@@ -45,6 +45,10 @@ Management=Management
 MyRecords=My Records
 Summary=Summary
 Settings=Settings
+
+# Additional validation interface
+ClockedIn=Clocked In
+NotClockedIn=Not Clocked In
 ModuleAppMobTimeTouchName = AppMobTimeTouch
 # Module description 'ModuleAppMobTimeTouchDesc'
 ModuleAppMobTimeTouchDesc = AppMobTimeTouch description

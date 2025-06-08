@@ -86,117 +86,212 @@ try {
     ];
 }
 
-// En-têtes page
-$title = $langs->trans('ValidationManager') . ' - MVP 3.1';
-llxHeader('', $title, '');
+// Préparation des actions pour la topbar validation
+$page_actions = array(
+    array(
+        'icon' => 'md-refresh',
+        'onclick' => 'refreshDashboard()',
+        'title' => $langs->trans('Refresh')
+    )
+);
+
+// Configuration pour le layout mobile
+$isValidationPage = true;
+$showTabbar = false; // Pas de tabbar sur la page validation
+$useValidationTopbar = true;
 
 // Debug MVP 3.1
 if ($conf->global->MAIN_FEATURES_LEVEL >= 2) {
-    print '<!-- DEBUG MVP 3.1: ValidationManager Dashboard -->';
-    print '<!-- Action: ' . $action . ' -->';
-    print '<!-- Manager ID: ' . $user->id . ' -->';
-    print '<!-- Pending records: ' . count($data['pending_records'] ?? []) . ' -->';
-    print '<!-- Notifications: ' . count($data['notifications'] ?? []) . ' -->';
+    dol_syslog('DEBUG MVP 3.1: ValidationManager Dashboard', LOG_DEBUG);
+    dol_syslog('Action: ' . $action, LOG_DEBUG);
+    dol_syslog('Manager ID: ' . $user->id, LOG_DEBUG);
+    dol_syslog('Pending records: ' . count($data['pending_records'] ?? []), LOG_DEBUG);
+    dol_syslog('Notifications: ' . count($data['notifications'] ?? []), LOG_DEBUG);
 }
+
+// Préparer les variables pour templates
+extract($data);
 ?>
 
-<!-- Messages d'erreur/succès -->
-<?php if ($error): ?>
-<div class="error">
-    <?php foreach ($errors as $err): ?>
-    <div><?php echo dol_escape_htmltag($err); ?></div>
-    <?php endforeach; ?>
-</div>
-<?php endif; ?>
-
-<?php if (!empty($messages)): ?>
-<div class="ok">
-    <?php foreach ($messages as $msg): ?>
-    <div><?php echo dol_escape_htmltag($msg); ?></div>
-    <?php endforeach; ?>
-</div>
-<?php endif; ?>
-
-<!-- Interface mobile OnsenUI -->
-<div id="validation-app">
-    <!-- Injection variables PHP pour template -->
-    <?php 
-    // Rendre variables disponibles pour template
-    extract($data);
+<!DOCTYPE html>
+<html lang="<?php echo $langs->getDefaultLang(); ?>">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <title><?php echo $langs->trans('ValidationManager'); ?> - <?php echo $conf->global->MAIN_INFO_SOCIETE_NOM; ?></title>
     
-    // Inclure template dashboard MVP 3.1
-    include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/validation/dashboard.tpl'; 
-    ?>
-</div>
+    <!-- OnsenUI CSS -->
+    <link rel="stylesheet" href="css/onsenui.min.css">
+    <link rel="stylesheet" href="css/onsen-css-components.min.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="css/font_awesome/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/index.css">
+    
+    <!-- Validation Manager specific styles -->
+    <style>
+    .validation-dashboard {
+        background-color: #f8f9fa;
+        min-height: 100vh;
+    }
+    
+    .validation-stat-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 15px;
+    }
+    
+    .validation-priority-indicator {
+        width: 6px;
+        height: 100%;
+        border-radius: 3px;
+        margin-right: 10px;
+    }
+    
+    .validation-notification-badge {
+        background-color: #ffc107;
+        color: #856404;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .validation-loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+    </style>
+</head>
+<body>
 
-<!-- JavaScript OnsenUI et App -->
+<!-- Application principale -->
+<ons-splitter id="mySplitter">
+    <ons-splitter-side id="sidemenu" side="right" width="250px" collapse="portrait" swipeable>
+        <!-- Menu latéral -->
+        <?php include 'tpl/parts/rightmenu.tpl'; ?>
+    </ons-splitter-side>
+    
+    <ons-splitter-content>
+        <ons-navigator id="myNavigator">
+            <ons-page id="validationPage">
+                
+                <!-- TopBar spécifique validation -->
+                <?php include 'tpl/parts/topbar-validation.tpl'; ?>
+                
+                <!-- Messages d'erreur/succès -->
+                <?php if ($error): ?>
+                <div style="background: #ffebee; color: #c62828; padding: 10px; margin: 10px; border-radius: 5px;">
+                    <?php foreach ($errors as $err): ?>
+                    <div><?php echo dol_escape_htmltag($err); ?></div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
+                <?php if (!empty($messages)): ?>
+                <div style="background: #e8f5e8; color: #2e7d32; padding: 10px; margin: 10px; border-radius: 5px;">
+                    <?php foreach ($messages as $msg): ?>
+                    <div><?php echo dol_escape_htmltag($msg); ?></div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
+                <!-- Contenu dashboard validation MVP 3.1 -->
+                <div class="validation-dashboard">
+                    <?php include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/validation/dashboard.tpl'; ?>
+                </div>
+                
+            </ons-page>
+        </ons-navigator>
+    </ons-splitter-content>
+</ons-splitter>
+
+<!-- OnsenUI JavaScript -->
+<script src="js/onsenui.min.js"></script>
+
+<!-- Navigation JavaScript -->
+<script src="js/navigation.js"></script>
+
+<!-- TimeClock API JavaScript -->
+<script src="js/timeclock-api.js"></script>
+
+<!-- Configuration globale pour validation -->
 <script>
-// Configuration app validation MVP 3.1
+// Configuration validation manager
+window.validationConfig = {
+    isManager: true,
+    totalPending: <?php echo count($data['pending_records'] ?? []); ?>,
+    withAnomalies: <?php echo $data['stats']['with_anomalies'] ?? 0; ?>,
+    urgentCount: <?php echo $data['stats']['urgent_count'] ?? 0; ?>,
+    token: '<?php echo newToken(); ?>'
+};
+
+// Initialisation app validation MVP 3.1
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Validation Manager MVP 3.1 initialized');
+    console.log('=== Validation Manager MVP 3.1 Initialized ===');
     
-    // Test des fonctionnalités MVP 3.1
+    // Log des données chargées
     console.log('Dashboard data loaded:');
-    console.log('- Pending records: <?php echo count($data['pending_records'] ?? []); ?>');
-    console.log('- Notifications: <?php echo count($data['notifications'] ?? []); ?>');
+    console.log('- Pending records: ' + window.validationConfig.totalPending);
+    console.log('- With anomalies: ' + window.validationConfig.withAnomalies);
+    console.log('- Urgent count: ' + window.validationConfig.urgentCount);
     console.log('- Statistics: <?php echo json_encode($data['stats'] ?? []); ?>');
     
     // Message de bienvenue MVP 3.1
-    <?php if (count($data['pending_records'] ?? []) > 0): ?>
-    ons.notification.toast('<?php echo $langs->trans("WelcomeValidationManager"); ?> - <?php echo count($data['pending_records']); ?> validation(s) en attente', {timeout: 3000});
-    <?php else: ?>
-    ons.notification.toast('<?php echo $langs->trans("WelcomeValidationManager"); ?> - Aucune validation en attente', {timeout: 3000});
-    <?php endif; ?>
+    setTimeout(function() {
+        <?php if (count($data['pending_records'] ?? []) > 0): ?>
+        ons.notification.toast('<?php echo $langs->trans("WelcomeValidationManager"); ?> - <?php echo count($data['pending_records']); ?> validation(s) en attente', {timeout: 3000});
+        <?php else: ?>
+        ons.notification.toast('<?php echo $langs->trans("WelcomeValidationManager"); ?> - Aucune validation en attente', {timeout: 3000});
+        <?php endif; ?>
+    }, 500);
+    
+    // Initialiser TimeclockAPI si disponible
+    if (window.TimeclockAPI) {
+        window.TimeclockAPI.init({
+            apiToken: window.validationConfig.token,
+            DEBUG: true
+        });
+        console.log('TimeclockAPI initialized for validation page');
+    }
 });
 
-// Token CSRF pour futures actions
-var token = '<?php echo newToken(); ?>';
+// Fonction globale pour actualiser le dashboard
+function refreshDashboard() {
+    console.log('Refreshing validation dashboard...');
+    ons.notification.toast('<?php echo $langs->trans("RefreshingData"); ?>...', {timeout: 1000});
+    
+    setTimeout(function() {
+        location.reload();
+    }, 500);
+}
+
+// Fonction globale pour actions futures MVP
+function showValidationActions() {
+    ons.notification.alert('Validation actions coming in MVP 3.2');
+}
+
+// Fonction pour navigation retour
+function goBackToHome() {
+    console.log('Navigating back to home...');
+    window.location.href = './home.php';
+}
+
+// Export fonctions globales
+window.refreshDashboard = refreshDashboard;
+window.showValidationActions = showValidationActions;
+window.goBackToHome = goBackToHome;
 </script>
 
-<!-- CSS spécifique validation -->
-<style>
-/* Styles MVP 3.1 pour dashboard manager */
-.validation-dashboard {
-    background-color: #f8f9fa;
-    min-height: 100vh;
-}
-
-.stat-card {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 20px;
-    margin-bottom: 15px;
-}
-
-.priority-indicator {
-    width: 6px;
-    height: 100%;
-    border-radius: 3px;
-    margin-right: 10px;
-}
-
-.notification-badge {
-    background-color: #ffc107;
-    color: #856404;
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-/* Responsive pour mobile */
-@media (max-width: 768px) {
-    .stat-card {
-        margin: 10px;
-        padding: 15px;
-    }
-}
-</style>
+</body>
+</html>
 
 <?php
-llxFooter();
-
 // Log MVP 3.1 complet
 dol_syslog("ValidationManager MVP 3.1 page loaded for user " . $user->id . " with " . count($data['pending_records'] ?? []) . " pending records", LOG_INFO);
 ?>
