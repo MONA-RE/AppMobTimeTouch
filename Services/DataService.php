@@ -33,7 +33,7 @@ class DataService implements DataServiceInterface
     {
         $timeclockRecord = new TimeclockRecord($this->db);
         
-        $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockrecord";
+        $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "timeclock_records";
         $sql .= " WHERE fk_user = " . ((int) $userId);
         $sql .= " AND DATE(clock_in_time) = CURDATE()";
         $sql .= " ORDER BY clock_in_time DESC";
@@ -58,7 +58,7 @@ class DataService implements DataServiceInterface
      */
     public function getWeeklyRecords(int $userId, int $year, int $week): array 
     {
-        $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockrecord";
+        $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "timeclock_records";
         $sql .= " WHERE fk_user = " . ((int) $userId);
         $sql .= " AND YEAR(clock_in_time) = " . ((int) $year);
         $sql .= " AND WEEK(clock_in_time, 1) = " . ((int) $week);
@@ -80,14 +80,13 @@ class DataService implements DataServiceInterface
     }
     
     /**
-     * Récupérer les enregistrements récents
+     * Récupérer les enregistrements récents (tous statuts)
      */
     public function getRecentRecords(int $userId, int $limit = 5): array 
     {
-        $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockrecord";
+        $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "timeclock_records";
         $sql .= " WHERE fk_user = " . ((int) $userId);
-        $sql .= " AND status = " . TimeclockConstants::STATUS_COMPLETED;
-        $sql .= " ORDER BY clock_out_time DESC";
+        $sql .= " ORDER BY clock_in_time DESC";
         $sql .= " LIMIT " . ((int) $limit);
         
         $result = $this->db->query($sql);
@@ -194,7 +193,7 @@ class DataService implements DataServiceInterface
     {
         $timeclockType = new TimeclockType($this->db);
         
-        $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclocktype";
+        $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "timeclock_types";
         $sql .= " WHERE status = 1"; // Actif
         $sql .= " ORDER BY position ASC, label ASC";
         
@@ -218,7 +217,7 @@ class DataService implements DataServiceInterface
      */
     public function getDefaultTimeclockType(): int 
     {
-        $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclocktype";
+        $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "timeclock_types";
         $sql .= " WHERE status = 1 AND is_default = 1";
         $sql .= " ORDER BY position ASC";
         $sql .= " LIMIT 1";
@@ -235,7 +234,7 @@ class DataService implements DataServiceInterface
         }
         
         // Fallback : premier type actif
-        $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclocktype";
+        $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "timeclock_types";
         $sql .= " WHERE status = 1";
         $sql .= " ORDER BY position ASC";
         $sql .= " LIMIT 1";

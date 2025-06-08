@@ -21,9 +21,16 @@
         if ($count >= 5) break; // Limit to 5 records
         $count++;
         
-        // Get type info
+        // Get type info - Gestion sécurisée des types
         $type = new TimeclockType($db);
-        $type->fetch($record->fk_timeclock_type);
+        $type_valid = false;
+        if (!empty($record->fk_timeclock_type) && $type->fetch($record->fk_timeclock_type) > 0) {
+            $type_valid = true;
+        } else {
+            // Fallback pour type par défaut
+            $type->label = 'Default';
+            $type->color = '#666666';
+        }
         
         $record_date = dol_print_date($db->jdate($record->clock_in_time), 'day');
         $clock_in = dol_print_date($db->jdate($record->clock_in_time), 'hour');
@@ -42,7 +49,7 @@
             $status_class = 'status-draft';
         }
       ?>
-      <ons-list-item tappable onclick="viewRecord(<?php echo $record->id; ?>)">
+      <ons-list-item tappable onclick="viewRecord(<?php echo $record->rowid; ?>)">
         <div class="left">
           <div style="width: 8px; height: 40px; background-color: <?php echo $type->color; ?>; border-radius: 4px;"></div>
         </div>
