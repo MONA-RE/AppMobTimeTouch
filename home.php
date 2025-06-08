@@ -105,6 +105,10 @@ try {
     // Variables pour compatibilité template (extraction des données)
     extract($templateData);
     
+    // Debug: Vérifier les types de pointage
+    dol_syslog("HOME.PHP: Timeclock types count: " . count($timeclock_types ?? []), LOG_DEBUG);
+    dol_syslog("HOME.PHP: Default type ID: " . ($default_type_id ?? 'undefined'), LOG_DEBUG);
+    
     dol_syslog("HOME.PHP SOLID: Controller processing completed successfully", LOG_DEBUG);
     
     // Inclusion du template avec les données préparées

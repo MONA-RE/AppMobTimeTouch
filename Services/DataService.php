@@ -200,7 +200,7 @@ class DataService implements DataServiceInterface
         $timeclockType = new TimeclockType($this->db);
         
         $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "timeclock_types";
-        $sql .= " WHERE status = 1"; // Actif
+        $sql .= " WHERE active = 1"; // Actif
         $sql .= " ORDER BY position ASC, label ASC";
         
         $result = $this->db->query($sql);
@@ -223,25 +223,9 @@ class DataService implements DataServiceInterface
      */
     public function getDefaultTimeclockType(): int 
     {
+        // Fallback : premier type actif (pas de colonne is_default dans cette table)
         $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "timeclock_types";
-        $sql .= " WHERE status = 1 AND is_default = 1";
-        $sql .= " ORDER BY position ASC";
-        $sql .= " LIMIT 1";
-        
-        $result = $this->db->query($sql);
-        
-        if ($result) {
-            $obj = $this->db->fetch_object($result);
-            if ($obj) {
-                $this->db->free($result);
-                return (int) $obj->rowid;
-            }
-            $this->db->free($result);
-        }
-        
-        // Fallback : premier type actif
-        $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "timeclock_types";
-        $sql .= " WHERE status = 1";
+        $sql .= " WHERE active = 1";
         $sql .= " ORDER BY position ASC";
         $sql .= " LIMIT 1";
         
