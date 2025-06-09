@@ -1,19 +1,17 @@
-<?php
-/* Copyright (C) 2025 SuperAdmin
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
+# Copyright (C) 2025 SuperAdmin
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #
 # Générique
@@ -405,7 +403,9 @@ LargeText = Texte agrandi
 VoiceControl = Contrôle vocal
 ScreenReader = Lecteur décran
 
-
+#
+# Sessions et options
+#
 SessionSummary = Résumé de session
 SessionOptions = Options de session  
 CompleteSession = Session complète
@@ -415,3 +415,89 @@ TemporaryBreak = Pause temporaire
 EarlyLeave = Sortie anticipée
 ExplanationRequired = Explication requise
 ReadyToClockOut = Pret a pointer la sortie
+
+#
+# Validation Manager MVP 3.1-3.2
+#
+ValidationDashboard = Tableau de bord validation
+ValidationManager = Gestionnaire de validation
+ValidationStatistics = Statistiques de validation
+PendingValidation = En attente de validation
+WithAnomalies = Avec anomalies
+UrgentValidation = Urgent (>2 jours)
+TodayPending = Aujourd'hui
+RecentNotifications = Notifications récentes
+RecentPendingRecords = Enregistrements récents en attente
+AllValidated = Tout validé !
+NoValidationPending = Aucune validation en attente
+QuickActions = Actions rapides
+ViewAll = Voir tout
+ViewAllPendingRecords = Voir tous les enregistrements en attente
+RefreshingData = Actualisation des données
+FeatureComingInMVP32 = Fonctionnalité disponible dans MVP 3.2
+WelcomeValidationManager = Bienvenue dans le gestionnaire de validation
+
+#
+# Actions de validation MVP 3.2
+#
+ValidationActions = Actions de validation
+Approve = Approuver
+Reject = Rejeter
+Partial = Partiel
+AddComment = Ajouter un commentaire
+ValidationComment = Commentaire de validation
+EnterValidationComment = Saisissez votre commentaire de validation ici...
+ApproveWithComment = Approuver avec commentaire
+RejectWithComment = Rejeter avec commentaire
+ProcessingValidation = Traitement de la validation
+ValidationCompleted = Validation terminée
+ValidationFailed = Échec de la validation
+RecordApproved = Enregistrement approuvé
+RecordRejected = Enregistrement rejeté
+RecordPartiallyApproved = Enregistrement partiellement approuvé
+InvalidAction = Action invalide
+CommentRequired = Commentaire requis
+ValidationError = Erreur de validation
+NoRecordForValidation = Aucun enregistrement fourni pour la validation
+InvalidValidationAction = Action de validation invalide
+InsufficientPermissionsForRecord = Permissions insuffisantes pour cet enregistrement
+
+#
+# Détails d'enregistrement MVP 3.2
+#
+WorkHours = Heures de travail
+ClockIn = Pointage entrée
+ClockOut = Pointage sortie
+NotClockedOut = Pas encore pointé la sortie
+AnomaliesDetected = Anomalies détectées
+RecordNotFound = Enregistrement introuvable
+RecordNotFoundDescription = L'enregistrement demandé est introuvable ou vous n'avez pas la permission de le voir
+GoBack = Retour
+minutes = minutes
+
+#
+# Types d'anomalies
+#
+Overtime = Heures supplémentaires
+MissingClockOut = Pointage sortie manquant
+ExtendedBreak = Pause prolongée
+OvertimeDetected = Heures supplémentaires détectées
+AnomalyOvertime = Heures supplémentaires
+AnomalyMissingClockout = Pointage de sortie manquant
+AnomalyLongBreak = Pause prolongée
+AnomalyLocationMismatch = Incohérence de localisation
+
+#
+# Détail enregistrement employé
+#
+ValidationInformation = Informations de validation
+RecordPendingValidation = Cet enregistrement est en attente de validation par votre manager
+RecordAlreadyValidated = Cet enregistrement a été validé par votre manager
+
+#
+# Statuts de validation
+#
+ValidationPending = En attente de validation
+ValidationApproved = Validation approuvée
+ValidationRejected = Validation rejetée
+ValidationPartial = Validation partielle
