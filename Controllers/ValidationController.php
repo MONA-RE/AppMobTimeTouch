@@ -56,11 +56,17 @@ class ValidationController extends BaseController
         
         try {
             // Récupérer données de base pour dashboard minimal (MVP 3.1)
+            dol_syslog("ValidationController: Starting dashboard for manager " . $this->user->id, LOG_DEBUG);
+            
             $pendingRecords = $this->validationService->getPendingValidations($this->user->id);
+            dol_syslog("ValidationController: Found " . count($pendingRecords) . " pending records", LOG_INFO);
+            
             $notifications = $this->notificationService->getUnreadNotifications($this->user->id);
+            dol_syslog("ValidationController: Found " . count($notifications) . " notifications", LOG_DEBUG);
             
             // Calcul statistiques essentielles pour MVP 3.1
             $stats = $this->calculateBasicStats($pendingRecords);
+            dol_syslog("ValidationController: Stats calculated - with_anomalies: " . $stats['with_anomalies'], LOG_INFO);
             
             dol_syslog("ValidationController: Dashboard loaded for manager " . $this->user->id, LOG_INFO);
             
@@ -97,13 +103,20 @@ class ValidationController extends BaseController
         $today = date('Y-m-d');
         
         foreach ($pendingRecords as $record) {
+            dol_syslog("ValidationController: Processing record ID " . (is_array($record) ? $record['rowid'] : $record->rowid), LOG_DEBUG);
+            
             // Compter anomalies
-            if (!empty($record->anomalies)) {
+            $anomalies = is_array($record) ? ($record['anomalies'] ?? []) : ($record->anomalies ?? []);
+            if (!empty($anomalies)) {
                 $stats['with_anomalies']++;
+                dol_syslog("ValidationController: Record has " . count($anomalies) . " anomalies", LOG_DEBUG);
+            } else {
+                dol_syslog("ValidationController: Record has no anomalies", LOG_DEBUG);
             }
             
             // Compter urgents (plus de 2 jours)
-            $recordDate = date('Y-m-d', strtotime($record->clock_in_time));
+            $clockInTime = is_array($record) ? $record['clock_in_time'] : $record->clock_in_time;
+            $recordDate = date('Y-m-d', strtotime($clockInTime));
             $daysDiff = (strtotime($today) - strtotime($recordDate)) / (60 * 60 * 24);
             if ($daysDiff > 2) {
                 $stats['urgent_count']++;

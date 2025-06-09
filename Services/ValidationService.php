@@ -13,6 +13,7 @@ if (!defined('DOL_DOCUMENT_ROOT')) {
 
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Constants/ValidationConstants.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/Constants.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/TimeHelper.php';
 
 class ValidationService implements ValidationServiceInterface 
 {
@@ -45,11 +46,12 @@ class ValidationService implements ValidationServiceInterface
             return [];
         }
         
-        // 2. Récupérer les enregistrements non validés
+        // 2. Récupérer les enregistrements non validés (inclut ceux en cours avec anomalies)
         $sql = "SELECT r.* FROM " . MAIN_DB_PREFIX . "timeclock_records r";
         $sql .= " WHERE r.fk_user IN (" . implode(',', array_map('intval', $teamMembers)) . ")";
-        $sql .= " AND r.validation_status = " . ValidationConstants::VALIDATION_PENDING;
-        $sql .= " AND r.status = " . TimeclockConstants::STATUS_COMPLETED;
+        $sql .= " AND r.validated_by IS NULL"; // Enregistrements non validés
+        $sql .= " AND (r.status = " . TimeclockConstants::STATUS_COMPLETED;
+        $sql .= " OR r.status = " . TimeclockConstants::STATUS_IN_PROGRESS . ")"; // Inclure sessions en cours
         $sql .= " ORDER BY r.clock_in_time DESC";
         
         $result = $this->db->query($sql);
@@ -68,7 +70,7 @@ class ValidationService implements ValidationServiceInterface
             $this->db->free($result);
         }
         
-        dol_syslog("ValidationService: Found " . count($pendingRecords) . " pending validations", LOG_DEBUG);
+        dol_syslog("ValidationService: Found " . count($pendingRecords) . " pending validations", LOG_INFO);
         return $pendingRecords;
     }
     
@@ -98,14 +100,13 @@ class ValidationService implements ValidationServiceInterface
             return false;
         }
         
-        // 3. Mettre à jour l'enregistrement
+        // 3. Mettre à jour l'enregistrement (adapter au schéma existant)
         $sql = "UPDATE " . MAIN_DB_PREFIX . "timeclock_records SET";
-        $sql .= " validation_status = " . ((int) $newStatus);
-        $sql .= ", validated_by = " . ((int) $validatorId);
-        $sql .= ", validated_at = NOW()";
+        $sql .= " validated_by = " . ((int) $validatorId);
+        $sql .= ", validated_date = NOW()";
         
         if ($comment) {
-            $sql .= ", validation_comment = '" . $this->db->escape($comment) . "'";
+            $sql .= ", note_private = '" . $this->db->escape($comment) . "'";
         }
         
         $sql .= " WHERE rowid = " . ((int) $recordId);
@@ -183,7 +184,7 @@ class ValidationService implements ValidationServiceInterface
      */
     public function getValidationStatus(int $recordId): array 
     {
-        $sql = "SELECT validation_status, validated_by, validated_at, validation_comment";
+        $sql = "SELECT validated_by, validated_date, note_private";
         $sql .= " FROM " . MAIN_DB_PREFIX . "timeclock_records";
         $sql .= " WHERE rowid = " . ((int) $recordId);
         
@@ -192,12 +193,15 @@ class ValidationService implements ValidationServiceInterface
         if ($result && $obj = $this->db->fetch_object($result)) {
             $this->db->free($result);
             
+            // Déterminer le statut basé sur validated_by
+            $status = $obj->validated_by ? ValidationConstants::VALIDATION_APPROVED : ValidationConstants::VALIDATION_PENDING;
+            
             return [
-                'status' => (int) $obj->validation_status,
+                'status' => $status,
                 'validated_by' => (int) $obj->validated_by,
-                'validated_at' => $obj->validated_at,
-                'comment' => $obj->validation_comment,
-                'status_label' => $this->getValidationStatusLabel((int) $obj->validation_status)
+                'validated_at' => $obj->validated_date,
+                'comment' => $obj->note_private,
+                'status_label' => $this->getValidationStatusLabel($status)
             ];
         }
         
@@ -223,7 +227,7 @@ class ValidationService implements ValidationServiceInterface
         
         // 3. Vérifier que l'utilisateur a des droits de validation
         global $user;
-        if (!$user->hasRight('timeclock', 'validate')) {
+        if (empty($user->rights->appmobtimetouch->timeclock->validate)) {
             return false;
         }
         
@@ -251,12 +255,15 @@ class ValidationService implements ValidationServiceInterface
         // Construire la condition de période
         $periodCondition = $this->buildPeriodCondition($period);
         
-        $sql = "SELECT validation_status, COUNT(*) as count";
+        // Compter les enregistrements validés et non validés
+        $sql = "SELECT";
+        $sql .= " SUM(CASE WHEN validated_by IS NULL THEN 1 ELSE 0 END) as pending,";
+        $sql .= " SUM(CASE WHEN validated_by IS NOT NULL THEN 1 ELSE 0 END) as approved,";
+        $sql .= " COUNT(*) as total";
         $sql .= " FROM " . MAIN_DB_PREFIX . "timeclock_records";
         $sql .= " WHERE fk_user IN (" . implode(',', array_map('intval', $teamMembers)) . ")";
         $sql .= " AND status = " . TimeclockConstants::STATUS_COMPLETED;
         $sql .= $periodCondition;
-        $sql .= " GROUP BY validation_status";
         
         $result = $this->db->query($sql);
         $stats = [
@@ -267,21 +274,10 @@ class ValidationService implements ValidationServiceInterface
             'total' => 0
         ];
         
-        if ($result) {
-            while ($obj = $this->db->fetch_object($result)) {
-                $statusLabel = match((int) $obj->validation_status) {
-                    ValidationConstants::VALIDATION_PENDING => 'pending',
-                    ValidationConstants::VALIDATION_APPROVED => 'approved',
-                    ValidationConstants::VALIDATION_REJECTED => 'rejected',
-                    ValidationConstants::VALIDATION_PARTIAL => 'partial',
-                    default => 'unknown'
-                };
-                
-                if (isset($stats[$statusLabel])) {
-                    $stats[$statusLabel] = (int) $obj->count;
-                    $stats['total'] += (int) $obj->count;
-                }
-            }
+        if ($result && $obj = $this->db->fetch_object($result)) {
+            $stats['pending'] = (int) $obj->pending;
+            $stats['approved'] = (int) $obj->approved;
+            $stats['total'] = (int) $obj->total;
             $this->db->free($result);
         }
         
@@ -293,15 +289,28 @@ class ValidationService implements ValidationServiceInterface
      */
     public function getTeamMembers(int $managerId): array 
     {
-        // Pour cette implémentation simplifiée, on utilise le système de hiérarchie Dolibarr
+        // Pour cette implémentation simplifiée, un manager avec droits validate peut valider tous les employés
         // Dans une version avancée, on pourrait avoir une table dédiée aux équipes
         
-        $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "user";
-        $sql .= " WHERE fk_user = " . ((int) $managerId); // Manager direct
-        $sql .= " AND statut = 1"; // Utilisateur actif
+        global $user;
+        $teamMembers = [];
+        
+        // Vérifier que l'utilisateur actuel a les droits de validation
+        if (empty($user->rights->appmobtimetouch->timeclock->validate)) {
+            dol_syslog("ValidationService: User $managerId has no validation rights", LOG_DEBUG);
+            return [];
+        }
+        dol_syslog("ValidationService: User $managerId has validation rights, proceeding", LOG_DEBUG);
+        
+        // Si admin, peut valider tous les utilisateurs
+        if ($user->admin) {
+            $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "user WHERE statut = 1 AND rowid != " . ((int) $managerId);
+        } else {
+            // Si manager non-admin, peut valider tous les employés (non-admin)
+            $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "user WHERE statut = 1 AND admin = 0 AND rowid != " . ((int) $managerId);
+        }
         
         $result = $this->db->query($sql);
-        $teamMembers = [];
         
         if ($result) {
             while ($obj = $this->db->fetch_object($result)) {
@@ -310,20 +319,7 @@ class ValidationService implements ValidationServiceInterface
             $this->db->free($result);
         }
         
-        // Fallback: Si pas de hiérarchie définie, le manager peut valider tous les utilisateurs (droits admin)
-        global $user;
-        if (empty($teamMembers) && $user->admin) {
-            $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "user WHERE statut = 1 AND rowid != " . ((int) $managerId);
-            $result = $this->db->query($sql);
-            
-            if ($result) {
-                while ($obj = $this->db->fetch_object($result)) {
-                    $teamMembers[] = (int) $obj->rowid;
-                }
-                $this->db->free($result);
-            }
-        }
-        
+        dol_syslog("ValidationService: Manager $managerId can validate " . count($teamMembers) . " team members", LOG_DEBUG);
         return $teamMembers;
     }
     
