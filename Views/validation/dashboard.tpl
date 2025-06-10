@@ -129,7 +129,7 @@
       <div class="title" style="padding: 15px; background-color: #e3f2fd; border-bottom: 1px solid #90caf9;">
         <h4 style="margin: 0; color: #1565c0;">
           <ons-icon icon="md-schedule" style="color: #2196f3; margin-right: 8px;"></ons-icon>
-          <?php echo $langs->trans('RecentPendingRecords'); ?>
+          <?php echo $langs->trans('TodaysRecords'); ?>
         </h4>
       </div>
       <ons-list style="margin: 0;">

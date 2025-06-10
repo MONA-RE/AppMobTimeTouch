@@ -75,6 +75,49 @@ class ValidationService implements ValidationServiceInterface
     }
     
     /**
+     * Récupérer les enregistrements d'aujourd'hui pour un manager
+     */
+    public function getTodaysRecords(int $managerId): array 
+    {
+        dol_syslog("ValidationService: Getting today's records for manager $managerId", LOG_DEBUG);
+        
+        // 1. Récupérer les équipes du manager
+        $teamMembers = $this->getTeamMembers($managerId);
+        
+        if (empty($teamMembers)) {
+            dol_syslog("ValidationService: No team members found for manager $managerId", LOG_DEBUG);
+            return [];
+        }
+        
+        // 2. Récupérer tous les enregistrements d'aujourd'hui (validés et non validés)
+        $sql = "SELECT r.* FROM " . MAIN_DB_PREFIX . "timeclock_records r";
+        $sql .= " WHERE r.fk_user IN (" . implode(',', array_map('intval', $teamMembers)) . ")";
+        $sql .= " AND DATE(r.clock_in_time) = CURDATE()"; // Enregistrements d'aujourd'hui
+        $sql .= " AND (r.status = " . TimeclockConstants::STATUS_COMPLETED;
+        $sql .= " OR r.status = " . TimeclockConstants::STATUS_IN_PROGRESS . ")"; // Sessions terminées ou en cours
+        $sql .= " ORDER BY r.clock_in_time DESC";
+        
+        $result = $this->db->query($sql);
+        $todaysRecords = [];
+        
+        if ($result) {
+            while ($obj = $this->db->fetch_object($result)) {
+                // Enrichir avec informations utilisateur et anomalies
+                $record = $this->enrichRecordData($obj);
+                
+                // Détecter anomalies pour cet enregistrement
+                $record['anomalies'] = $this->detectRecordAnomalies($obj);
+                
+                $todaysRecords[] = $record;
+            }
+            $this->db->free($result);
+        }
+        
+        dol_syslog("ValidationService: Found " . count($todaysRecords) . " today's records", LOG_INFO);
+        return $todaysRecords;
+    }
+    
+    /**
      * Valider un temps de travail
      */
     public function validateRecord(int $recordId, int $validatorId, string $action, ?string $comment = null): bool 

@@ -429,6 +429,7 @@ UrgentValidation = Urgent (>2 jours)
 TodayPending = Aujourd'hui
 RecentNotifications = Notifications récentes
 RecentPendingRecords = Enregistrements récents en attente
+TodaysRecords = Enregistrements d'aujourd'hui
 AllValidated = Tout validé !
 NoValidationPending = Aucune validation en attente
 QuickActions = Actions rapides

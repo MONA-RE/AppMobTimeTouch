@@ -61,6 +61,10 @@ class ValidationController extends BaseController
             $pendingRecords = $this->validationService->getPendingValidations($this->user->id);
             dol_syslog("ValidationController: Found " . count($pendingRecords) . " pending records", LOG_INFO);
             
+            // Récupérer les enregistrements d'aujourd'hui pour affichage dans la section récents
+            $todaysRecords = $this->validationService->getTodaysRecords($this->user->id);
+            dol_syslog("ValidationController: Found " . count($todaysRecords) . " today's records", LOG_INFO);
+            
             $notifications = $this->notificationService->getUnreadNotifications($this->user->id);
             dol_syslog("ValidationController: Found " . count($notifications) . " notifications", LOG_DEBUG);
             
@@ -72,7 +76,7 @@ class ValidationController extends BaseController
             
             return $this->prepareTemplateData([
                 'page_title' => $this->langs->trans('ValidationDashboard'),
-                'pending_records' => array_slice($pendingRecords, 0, 5), // Limite pour MVP 3.1
+                'pending_records' => array_slice($todaysRecords, 0, 10), // Enregistrements d'aujourd'hui
                 'notifications' => array_slice($notifications, 0, 3), // Limite pour MVP 3.1  
                 'stats' => $stats,
                 'is_manager' => true,
