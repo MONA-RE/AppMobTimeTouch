@@ -145,10 +145,10 @@
             <div style="width: 6px; height: 40px; background-color: <?php echo $priorityColor; ?>; border-radius: 3px;"></div>
           </div>
           <div class="center">
-            <div style="font-weight: 500; margin-bottom: 8px;">
+            <div style="font-weight: 500; margin-bottom: 8px;padding: 2px 6px;">
               <?php echo dol_escape_htmltag($userName); ?>
             </div>
-            <div style="font-size: 14px; color: #6c757d; margin-bottom: 8px;">
+            <div style="font-size: 14px; color: #6c757d; margin-bottom: 8px;padding: 2px 6px;">
               <?php echo dol_print_date($record['clock_in_time'], 'day'); ?>
               <?php if ($hasAnomalies): ?>
               <span style="background-color: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 8px;">
