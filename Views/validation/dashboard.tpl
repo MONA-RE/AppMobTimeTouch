@@ -166,7 +166,7 @@
             <?php if (!empty($record['work_duration'])): ?>
             <div style="font-size: 11px; color: #28a745; font-weight: 500;">
               <ons-icon icon="md-schedule" style="font-size: 12px; margin-right: 3px;"></ons-icon>
-              Durée: <?php echo TimeHelper::formatDuration((int)$record['work_duration'] * 60); ?>
+              Durée: <?php echo TimeHelper::formatDuration((int)$record['work_duration']); ?>
             </div>
             <?php endif; ?>
           </div>

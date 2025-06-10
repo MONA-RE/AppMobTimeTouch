@@ -385,7 +385,7 @@ class ValidationService implements ValidationServiceInterface
         
         // Ajouter durée formatée
         if (!empty($enriched['work_duration'])) {
-            $enriched['formatted_duration'] = TimeHelper::formatDuration((int) $enriched['work_duration'] * 60);
+            $enriched['formatted_duration'] = TimeHelper::formatDuration((int) $enriched['work_duration']);
         }
         
         // Ajouter type de pointage
