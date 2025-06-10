@@ -419,14 +419,25 @@ class ValidationService implements ValidationServiceInterface
             }
         }
         
-        // 2. Vérifier clock-out manquant
+        // 2. Vérifier clock-out manquant (seulement si plus d'une journée)
         if (empty($record->clock_out_time) && $record->status == TimeclockConstants::STATUS_IN_PROGRESS) {
-            $anomalies[] = [
-                'type' => ValidationConstants::ANOMALY_MISSING_CLOCKOUT,
-                'level' => ValidationConstants::ALERT_CRITICAL,
-                'message' => "Missing clock-out time",
-                'data' => ['clock_in_time' => $record->clock_in_time]
-            ];
+            // Vérifier si le clock-in est d'un jour précédent
+            $clockInDate = date('Y-m-d', strtotime($record->clock_in_time));
+            $currentDate = date('Y-m-d');
+            
+            if ($clockInDate < $currentDate) {
+                $daysDiff = (strtotime($currentDate) - strtotime($clockInDate)) / (60 * 60 * 24);
+                $anomalies[] = [
+                    'type' => ValidationConstants::ANOMALY_MISSING_CLOCKOUT,
+                    'level' => ValidationConstants::ALERT_CRITICAL,
+                    'message' => "Missing clock-out time ({$daysDiff} day(s) ago)",
+                    'data' => [
+                        'clock_in_time' => $record->clock_in_time,
+                        'days_ago' => $daysDiff,
+                        'clock_in_date' => $clockInDate
+                    ]
+                ];
+            }
         }
         
         // 3. Vérifier pause trop longue
