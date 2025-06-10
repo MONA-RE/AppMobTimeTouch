@@ -9,12 +9,33 @@ Module Dolibarr pour la gestion du temps et pointage mobile des employés. Inter
 
 ## 📱 Fonctionnalités
 
+### ✅ Pour les Employés (MVP 2.0 - COMPLET) :
 - **Pointage mobile** : Clock-in/Clock-out avec géolocalisation
 - **Types de travail** : Bureau, télétravail, mission configurables
 - **Suivi temps réel** : Calcul automatique des heures travaillées
 - **Résumés** : Journalier et hebdomadaire avec alertes heures sup.
 - **Historique** : Consultation des enregistrements récents
-- **Responsive** : Interface optimisée mobile/tablette/desktop
+- **Détails** : Accès aux détails de chaque enregistrement personnel
+
+### ✅ Pour les Managers (MVP 3.1-3.2 - COMPLET) :
+- **Dashboard validation** : Interface manager pour validation d'équipe
+- **Anomalies auto-détectées** : Heures supplémentaires, clock-out manquant, pauses prolongées
+- **Actions validation** : Approuver, rejeter, partiel avec commentaires
+- **Vue d'ensemble** : Statistiques et enregistrements en attente avec nom employé
+- **Gestion équipe** : Validation des employés sous responsabilité
+- **Notifications** : Alertes temps réel pour validations urgentes
+
+### 🚧 En Développement (MVP 3.3+) :
+- **Validation en lot** : Sélection multiple et actions groupées
+- **Rapports avancés** : Export PDF/Excel avec filtres
+- **Workflow multi-niveaux** : Validation hiérarchique manager → directeur
+- **Analytics** : Graphiques de productivité et tendances
+
+### ✅ Interface (COMPLET) :
+- **Responsive** : Optimisé mobile/tablette/desktop
+- **Multilingue** : Français et anglais complets (44 traductions)
+- **PWA Ready** : Installation comme application mobile
+- **Architecture SOLID** : Code maintenable et extensible
 
 ## 🏗️ Architecture SOLID
 
@@ -25,29 +46,40 @@ Le module utilise une **architecture SOLID moderne** respectant tous les princip
 ```
 appmobtimetouch/
 ├── Constants/                    # Constantes métier (SRP)
-│   └── TimeclockConstants.php   # Configuration centralisée
+│   ├── TimeclockConstants.php   # Configuration centralisée
+│   └── ValidationConstants.php  # Configuration validation
 ├── Controllers/                  # Contrôleurs MVC (SRP + OCP + DIP)
 │   ├── BaseController.php       # Contrôleur de base abstrait
-│   └── HomeController.php       # Logique page accueil
-├── Helpers/                      # Utilitaires métier (SRP)
-│   └── TimeHelper.php          # Calculs temporels
+│   ├── HomeController.php       # Logique page accueil
+│   └── ValidationController.php # Logique validation manager
+├── Utils/                        # Utilitaires métier (SRP)
+│   ├── TimeHelper.php          # Calculs temporels
+│   └── LocationHelper.php      # Utilitaires géolocalisation
 ├── Services/                     # Services métier (DIP + ISP)
 │   ├── Interfaces/              # Abstractions (DIP)
 │   │   ├── TimeclockServiceInterface.php
-│   │   └── DataServiceInterface.php
+│   │   ├── DataServiceInterface.php
+│   │   ├── ValidationServiceInterface.php
+│   │   └── NotificationServiceInterface.php
 │   ├── TimeclockService.php     # Logique pointage
-│   └── DataService.php          # Accès données
+│   ├── DataService.php          # Accès données
+│   ├── ValidationService.php    # Logique validation manager
+│   └── NotificationService.php  # Gestion notifications
 ├── Views/                        # Templates modulaires (SRP + ISP)
-│   └── components/              # Composants réutilisables
-│       ├── Messages.tpl         # Affichage messages
-│       ├── StatusCard.tpl       # Statut pointage
-│       ├── SummaryCard.tpl      # Résumé journalier
-│       ├── WeeklySummary.tpl    # Résumé hebdomadaire
-│       ├── RecordsList.tpl      # Liste enregistrements
-│       ├── ActiveStatus.tpl     # État actif
-│       ├── InactiveStatus.tpl   # État inactif
-│       ├── ClockInModal.tpl     # Modal pointage entrée
-│       └── ClockOutModal.tpl    # Modal pointage sortie
+│   ├── components/              # Composants réutilisables
+│   │   ├── Messages.tpl         # Affichage messages
+│   │   ├── StatusCard.tpl       # Statut pointage
+│   │   ├── SummaryCard.tpl      # Résumé journalier
+│   │   ├── WeeklySummary.tpl    # Résumé hebdomadaire
+│   │   ├── RecordsList.tpl      # Liste enregistrements
+│   │   ├── ValidationActions.tpl # Actions validation
+│   │   ├── ActiveStatus.tpl     # État actif
+│   │   ├── InactiveStatus.tpl   # État inactif
+│   │   ├── ClockInModal.tpl     # Modal pointage entrée
+│   │   └── ClockOutModal.tpl    # Modal pointage sortie
+│   └── validation/              # Templates validation manager
+│       ├── dashboard.tpl        # Dashboard manager
+│       └── record-detail.tpl    # Détail enregistrement
 ├── class/                        # Entités Dolibarr
 ├── tpl/                         # Templates principaux
 └── home.php                     # Point d'entrée principal
