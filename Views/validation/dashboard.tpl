@@ -172,8 +172,26 @@
           </div>
           <div class="right">
             <div style="text-align: right;">
-              <div style="font-size: 12px; color: #28a745; font-weight: 500;">
-                <?php echo $langs->trans('PendingValidation'); ?>
+              <?php 
+                // Déterminer le statut et la couleur selon le status du record
+                $recordStatus = (int)$record['status'];
+                if ($recordStatus == 2) { // STATUS_IN_PROGRESS
+                  $statusLabel = $langs->trans('InProgress');
+                  $statusColor = '#007bff'; // Bleu pour en cours
+                  $statusIcon = 'md-play-circle';
+                } elseif ($recordStatus == 3) { // STATUS_COMPLETED  
+                  $statusLabel = $langs->trans('PendingValidation');
+                  $statusColor = '#28a745'; // Vert pour validation
+                  $statusIcon = 'md-schedule';
+                } else {
+                  $statusLabel = $langs->trans('Unknown');
+                  $statusColor = '#6c757d'; // Gris pour inconnu
+                  $statusIcon = 'md-help';
+                }
+              ?>
+              <div style="font-size: 12px; color: <?php echo $statusColor; ?>; font-weight: 500;">
+                <ons-icon icon="<?php echo $statusIcon; ?>" style="font-size: 12px; margin-right: 2px;"></ons-icon>
+                <?php echo $statusLabel; ?>
               </div>
               <ons-icon icon="md-chevron-right" style="color: #6c757d; margin-top: 5px;"></ons-icon>
             </div>

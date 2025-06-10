@@ -138,3 +138,10 @@ MyPageName = My page name
 #
 MyWidget = My widget
 MyWidgetDescription = My widget description
+
+#
+# Record Status
+#
+InProgress = In Progress
+PendingValidation = Pending Validation
+Unknown = Unknown

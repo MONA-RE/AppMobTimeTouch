@@ -270,6 +270,7 @@ NoRecordsToday = Aucun enregistrement aujourdhui
 NoRecordsThisWeek = Aucun enregistrement cette semaine
 CompletedToday = Terminé aujourdhui
 InProgressToday = En cours aujourdhui
+InProgress = En cours
 
 #
 # Formulaires
