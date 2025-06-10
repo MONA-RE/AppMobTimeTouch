@@ -373,9 +373,19 @@ class ValidationService implements ValidationServiceInterface
         $userInfo = $this->getUserInfo((int) $record->fk_user);
         $enriched['user'] = $userInfo;
         
+        // Calculer work_duration si manquant et que clock_out existe
+        if (empty($record->work_duration) && !empty($record->clock_out_time) && !empty($record->clock_in_time)) {
+            $clockIn = strtotime($record->clock_in_time);
+            $clockOut = strtotime($record->clock_out_time);
+            if ($clockIn && $clockOut && $clockOut > $clockIn) {
+                $durationMinutes = round(($clockOut - $clockIn) / 60);
+                $enriched['work_duration'] = $durationMinutes;
+            }
+        }
+        
         // Ajouter durée formatée
-        if (!empty($record->work_duration)) {
-            $enriched['formatted_duration'] = TimeHelper::formatDuration((int) $record->work_duration * 60);
+        if (!empty($enriched['work_duration'])) {
+            $enriched['formatted_duration'] = TimeHelper::formatDuration((int) $enriched['work_duration'] * 60);
         }
         
         // Ajouter type de pointage

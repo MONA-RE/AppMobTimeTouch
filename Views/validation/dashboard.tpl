@@ -145,24 +145,30 @@
             <div style="width: 6px; height: 40px; background-color: <?php echo $priorityColor; ?>; border-radius: 3px;"></div>
           </div>
           <div class="center">
-            <div style="font-weight: 500; margin-bottom: 3px;">
+            <div style="font-weight: 500; margin-bottom: 8px;">
               <?php echo dol_escape_htmltag($userName); ?>
             </div>
-            <div style="font-size: 14px; color: #6c757d; margin-bottom: 2px;">
+            <div style="font-size: 14px; color: #6c757d; margin-bottom: 8px;">
               <?php echo dol_print_date($record['clock_in_time'], 'day'); ?>
               <?php if ($hasAnomalies): ?>
-              <span style="background-color: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 5px;">
+              <span style="background-color: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 8px;">
                 <ons-icon icon="md-warning" style="font-size: 12px;"></ons-icon>
                 <?php echo count($record['anomalies']); ?> anomalie(s)
               </span>
               <?php endif; ?>
             </div>
-            <div style="font-size: 12px; color: #007bff;">
+            <div style="font-size: 12px; color: #007bff; margin-bottom: 6px;">
               <?php echo dol_print_date($record['clock_in_time'], 'hour'); ?>
               <?php if (!empty($record['clock_out_time'])): ?>
               - <?php echo dol_print_date($record['clock_out_time'], 'hour'); ?>
               <?php endif; ?>
             </div>
+            <?php if (!empty($record['work_duration'])): ?>
+            <div style="font-size: 11px; color: #28a745; font-weight: 500;">
+              <ons-icon icon="md-schedule" style="font-size: 12px; margin-right: 3px;"></ons-icon>
+              Durée: <?php echo TimeHelper::formatDuration((int)$record['work_duration'] * 60); ?>
+            </div>
+            <?php endif; ?>
           </div>
           <div class="right">
             <div style="text-align: right;">
