@@ -473,6 +473,7 @@ ClockOut = Pointage sortie
 NotClockedOut = Pas encore pointé la sortie
 AnomaliesDetected = Anomalies détectées
 RecordNotFound = Enregistrement introuvable
+InvalidRecordId = ID d'enregistrement invalide
 RecordNotFoundDescription = L'enregistrement demandé est introuvable ou vous n'avez pas la permission de le voir
 GoBack = Retour
 minutes = minutes

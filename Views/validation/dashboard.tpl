@@ -278,10 +278,16 @@
   }
   
   /**
-   * Afficher détails d'un enregistrement (MVP 3.2+)
+   * Afficher détails d'un enregistrement (MVP 3.2)
    */
   function showRecordDetails(recordId) {
-    ons.notification.alert('<?php echo $langs->trans("RecordDetails"); ?> #' + recordId + '\n<?php echo $langs->trans("FeatureComingInMVP32"); ?>');
+    if (!recordId) {
+      ons.notification.alert('<?php echo $langs->trans("InvalidRecordId"); ?>');
+      return;
+    }
+    
+    // Navigation vers la page de détail avec validation actions
+    window.location.href = '<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/validation.php?action=viewRecord&id=' + recordId;
   }
   
   // Debug MVP 3.1

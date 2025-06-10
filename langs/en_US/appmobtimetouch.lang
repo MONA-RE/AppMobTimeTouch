@@ -146,3 +146,4 @@ InProgress = In Progress
 PendingValidation = Pending Validation
 Unknown = Unknown
 TodaysRecords = Today's Records
+InvalidRecordId = Invalid Record ID

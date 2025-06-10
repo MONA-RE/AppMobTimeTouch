@@ -80,6 +80,18 @@ try {
             echo json_encode($result);
             exit;
             break;
+            
+        case 'viewRecord':
+            // MVP 3.2 : Affichage page détail enregistrement avec actions validation
+            $recordId = GETPOST('id', 'int');
+            if (!$recordId) {
+                setEventMessages($langs->trans('InvalidRecordId'), null, 'errors');
+                header('Location: validation.php');
+                exit;
+            }
+            
+            $data = $controller->viewRecord($recordId);
+            break;
     }
     
     // Merger données et messages
@@ -219,9 +231,20 @@ extract($data);
                 </div>
                 <?php endif; ?>
 
-                <!-- Contenu dashboard validation MVP 3.1 -->
-                <div class="validation-dashboard">
-                    <?php include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/validation/dashboard.tpl'; ?>
+                <!-- Contenu dynamique selon view_type -->
+                <div class="validation-content">
+                    <?php 
+                    $viewType = $data['view_type'] ?? 'dashboard';
+                    switch ($viewType) {
+                        case 'record_detail':
+                            include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/validation/record-detail.tpl';
+                            break;
+                        case 'dashboard':
+                        default:
+                            include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/validation/dashboard.tpl';
+                            break;
+                    }
+                    ?>
                 </div>
                 
             </ons-page>

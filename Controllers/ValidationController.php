@@ -359,6 +359,61 @@ class ValidationController extends BaseController
     }
     
     /**
+     * Afficher détails d'un enregistrement avec actions validation (MVP 3.2)
+     * Responsabilité unique : Préparer données pour vue détaillée (SRP)
+     * 
+     * @param int $recordId ID de l'enregistrement
+     * @return array Données pour template record-detail
+     */
+    public function viewRecord(int $recordId): array 
+    {
+        // Vérification module et droits
+        $this->checkModuleEnabled();
+        $this->checkUserRights('validate');
+        
+        try {
+            // Vérifier permissions sur cet enregistrement
+            if (!$this->validationService->canValidate($this->user->id, $recordId)) {
+                return [
+                    'error' => 1,
+                    'errors' => [$this->langs->trans('InsufficientPermissionsForRecord')]
+                ];
+            }
+            
+            // Récupérer détails via le service
+            $recordDetails = $this->validationService->getRecordData($recordId);
+            
+            if (!$recordDetails) {
+                return [
+                    'error' => 1,
+                    'errors' => [$this->langs->trans('RecordNotFound')]
+                ];
+            }
+            
+            // Enrichir avec informations utilisateur
+            $enrichedRecord = $this->validationService->enrichRecordData((object)$recordDetails);
+            
+            // Détecter anomalies
+            $anomalies = $this->validationService->detectRecordAnomalies((object)$recordDetails);
+            
+            // Statut de validation
+            $validationStatus = $this->validationService->getValidationStatus($recordId);
+            
+            return $this->prepareTemplateData([
+                'page_title' => $this->langs->trans('RecordDetails'),
+                'record' => $enrichedRecord,
+                'anomalies' => $anomalies,
+                'validation_status' => $validationStatus,
+                'is_manager' => true,
+                'view_type' => 'record_detail'
+            ]);
+            
+        } catch (Exception $e) {
+            return $this->handleError($e);
+        }
+    }
+    
+    /**
      * Helper pour vérifier si utilisateur est manager
      * 
      * @return bool True si manager

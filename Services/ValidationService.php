@@ -502,9 +502,9 @@ class ValidationService implements ValidationServiceInterface
     }
     
     /**
-     * Récupérer les données d'un enregistrement
+     * Récupérer les données d'un enregistrement (public pour controller)
      */
-    private function getRecordData(int $recordId): ?array 
+    public function getRecordData(int $recordId): ?array 
     {
         $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "timeclock_records WHERE rowid = " . ((int) $recordId);
         $result = $this->db->query($sql);
