@@ -216,9 +216,11 @@
           echo $validator->getFullName($langs);
           ?>
         </div>
+        <?php if (!empty($record['validation_status']['validated_date'])): ?>
         <div style="font-size: 14px; color: #6c757d;">
           <?php echo dol_print_date($record['validation_status']['validated_date'], 'dayhour'); ?>
         </div>
+        <?php endif; ?>
         <?php endif; ?>
         
         <?php if (!empty($record['validation_status']['comment'])): ?>
@@ -249,7 +251,9 @@
     </div>
   <?php else: ?>
     <!-- Vue manager : Actions de validation -->
-    <?php if ($record['validation_status']['status'] == 0): // Seulement si en attente ?>
+    
+    
+    <?php if (isset($record['validation_status']['status']) && $record['validation_status']['status'] == 0): // Seulement si en attente ?>
     <?php include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/components/ValidationActions.tpl'; ?>
     <?php endif; ?>
   <?php endif; ?>

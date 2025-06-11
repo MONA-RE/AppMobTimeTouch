@@ -49,7 +49,7 @@ class ValidationService implements ValidationServiceInterface
         // 2. Récupérer les enregistrements non validés (inclut ceux en cours avec anomalies)
         $sql = "SELECT r.* FROM " . MAIN_DB_PREFIX . "timeclock_records r";
         $sql .= " WHERE r.fk_user IN (" . implode(',', array_map('intval', $teamMembers)) . ")";
-        $sql .= " AND r.validated_by IS NULL"; // Enregistrements non validés
+        $sql .= " AND (r.validated_by IS NULL OR r.validated_by = 0)"; // Enregistrements non validés (NULL ou 0)
         $sql .= " AND (r.status = " . TimeclockConstants::STATUS_COMPLETED;
         $sql .= " OR r.status = " . TimeclockConstants::STATUS_IN_PROGRESS . ")"; // Inclure sessions en cours
         $sql .= " ORDER BY r.clock_in_time DESC";
@@ -236,19 +236,29 @@ class ValidationService implements ValidationServiceInterface
         if ($result && $obj = $this->db->fetch_object($result)) {
             $this->db->free($result);
             
-            // Déterminer le statut basé sur validated_by
-            $status = $obj->validated_by ? ValidationConstants::VALIDATION_APPROVED : ValidationConstants::VALIDATION_PENDING;
+            // Déterminer le statut basé sur validated_by - doit être > 0 pour être considéré comme validé
+            $status = ($obj->validated_by && (int)$obj->validated_by > 0) ? ValidationConstants::VALIDATION_APPROVED : ValidationConstants::VALIDATION_PENDING;
+            
+            // Debug: Log validation status determination
+            dol_syslog("ValidationService DEBUG: Record $recordId - validated_by='" . $obj->validated_by . "', status determined as: " . $status, LOG_DEBUG);
             
             return [
                 'status' => $status,
                 'validated_by' => (int) $obj->validated_by,
-                'validated_at' => $obj->validated_date,
+                'validated_date' => $obj->validated_date,
                 'comment' => $obj->note_private,
                 'status_label' => $this->getValidationStatusLabel($status)
             ];
         }
         
-        return [];
+        // Return default pending status structure when no record found
+        return [
+            'status' => ValidationConstants::VALIDATION_PENDING,
+            'validated_by' => 0,
+            'validated_date' => null,
+            'comment' => '',
+            'status_label' => $this->getValidationStatusLabel(ValidationConstants::VALIDATION_PENDING)
+        ];
     }
     
     /**

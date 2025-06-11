@@ -137,10 +137,11 @@ function validateRecord(recordId, action) {
     disableValidationButtons(recordId);
     
     // Envoyer requête validation
-    fetch('<?php echo $_SERVER["PHP_SELF"]; ?>', {
+    fetch('<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/validation.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest',
         },
         body: new URLSearchParams({
             'action': 'validate_record',
@@ -182,10 +183,11 @@ function validateWithComment(recordId, action) {
     disableValidationButtons(recordId);
     
     // Envoyer requête validation avec commentaire
-    fetch('<?php echo $_SERVER["PHP_SELF"]; ?>', {
+    fetch('<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/validation.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest',
         },
         body: new URLSearchParams({
             'action': 'validate_record',
