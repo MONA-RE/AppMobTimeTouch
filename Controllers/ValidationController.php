@@ -399,9 +399,24 @@ class ValidationController extends BaseController
             // Statut de validation
             $validationStatus = $this->validationService->getValidationStatus($recordId);
             
+            // Structurer les données pour correspondre aux templates
+            $record = [
+                'id' => $recordId,
+                'rowid' => $recordId,
+                'user_name' => $enrichedRecord['user']['fullname'] ?? 'Utilisateur inconnu',
+                'clock_in_time' => $enrichedRecord['clock_in_time'],
+                'clock_out_time' => $enrichedRecord['clock_out_time'],
+                'work_duration' => $enrichedRecord['work_duration'],
+                'location_in' => $enrichedRecord['location_in'] ?? '',
+                'location_out' => $enrichedRecord['location_out'] ?? '',
+                'note' => $enrichedRecord['note'] ?? '',
+                'type' => $enrichedRecord['timeclock_type'] ?? ['label' => 'Type inconnu', 'color' => '#6c757d'],
+                'validation_status' => $validationStatus ?? ['status' => 0, 'status_label' => 'En attente']
+            ];
+            
             return $this->prepareTemplateData([
                 'page_title' => $this->langs->trans('RecordDetails'),
-                'record' => $enrichedRecord,
+                'record' => $record,
                 'anomalies' => $anomalies,
                 'validation_status' => $validationStatus,
                 'is_manager' => true,

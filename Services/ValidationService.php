@@ -593,7 +593,7 @@ class ValidationService implements ValidationServiceInterface
             ];
         }
         
-        return ['label' => 'Unknown Type'];
+        return ['label' => 'Type inconnu', 'color' => '#6c757d', 'code' => 'unknown'];
     }
     
     /**
