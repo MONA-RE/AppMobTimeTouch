@@ -75,8 +75,8 @@ window.TimeclockAPI = (function() {
         
         // Get CSRF token using AppMobTimeTouch storage method
         getToken: function() {
-            // Use the same method as order-quantity.js
-            const token = localGetData('api_token');
+            // Use localStorage.getItem instead of undefined localGetData
+            const token = localStorage.getItem('api_token');
             utils.log('Retrieved token from localStorage', token ? 'Token found' : 'No token');
             return token;
         },
@@ -84,7 +84,7 @@ window.TimeclockAPI = (function() {
         // Update token in localStorage
         updateToken: function(token) {
             if (token) {
-                localStoreData('api_token', token);
+                localStorage.setItem('api_token', token);
                 utils.log('Token updated in localStorage');
             }
         }

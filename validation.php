@@ -323,10 +323,23 @@ function goBackToHome() {
     window.location.href = './home.php';
 }
 
+// Fonction pour afficher détails d'un enregistrement (MVP 3.2)
+function showRecordDetails(recordId) {
+    if (!recordId) {
+        ons.notification.alert('ID d\'enregistrement invalide');
+        return;
+    }
+    
+    console.log('Navigating to record details for ID:', recordId);
+    // Navigation vers la page de détail avec validation actions
+    window.location.href = '<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/validation.php?action=viewRecord&id=' + recordId;
+}
+
 // Export fonctions globales
 window.refreshDashboard = refreshDashboard;
 window.showValidationActions = showValidationActions;
 window.goBackToHome = goBackToHome;
+window.showRecordDetails = showRecordDetails;
 </script>
 
 </body>

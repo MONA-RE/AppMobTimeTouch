@@ -405,9 +405,9 @@ class ValidationService implements ValidationServiceInterface
     // === MÉTHODES PRIVÉES UTILITAIRES ===
     
     /**
-     * Enrichir un enregistrement avec des données supplémentaires
+     * Enrichir un enregistrement avec des données supplémentaires (public pour controller)
      */
-    private function enrichRecordData(object $record): array 
+    public function enrichRecordData(object $record): array 
     {
         // Convertir l'objet en tableau
         $enriched = (array) $record;
@@ -440,9 +440,9 @@ class ValidationService implements ValidationServiceInterface
     }
     
     /**
-     * Détecter les anomalies d'un enregistrement spécifique
+     * Détecter les anomalies d'un enregistrement spécifique (public pour controller)
      */
-    private function detectRecordAnomalies(object $record): array 
+    public function detectRecordAnomalies(object $record): array 
     {
         $anomalies = [];
         $anomalyTypes = ValidationConstants::getAnomalyTypes();
