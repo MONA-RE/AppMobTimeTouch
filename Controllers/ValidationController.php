@@ -407,6 +407,7 @@ class ValidationController extends BaseController
                 'clock_in_time' => $enrichedRecord['clock_in_time'],
                 'clock_out_time' => $enrichedRecord['clock_out_time'],
                 'work_duration' => $enrichedRecord['work_duration'],
+                'break_duration' => $enrichedRecord['break_duration'] ?? 0,
                 'location_in' => $enrichedRecord['location_in'] ?? '',
                 'location_out' => $enrichedRecord['location_out'] ?? '',
                 'note' => $enrichedRecord['note'] ?? '',
