@@ -46,10 +46,10 @@ class ValidationService implements ValidationServiceInterface
             return [];
         }
         
-        // 2. Récupérer les enregistrements non validés (inclut ceux en cours avec anomalies)
+        // 2. Récupérer les enregistrements en attente de validation (validation_status = 0)
         $sql = "SELECT r.* FROM " . MAIN_DB_PREFIX . "timeclock_records r";
         $sql .= " WHERE r.fk_user IN (" . implode(',', array_map('intval', $teamMembers)) . ")";
-        $sql .= " AND (r.validated_by IS NULL OR r.validated_by = 0)"; // Enregistrements non validés (NULL ou 0)
+        $sql .= " AND (r.validation_status IS NULL OR r.validation_status = " . ValidationConstants::VALIDATION_PENDING . ")"; // Enregistrements en attente
         $sql .= " AND (r.status = " . TimeclockConstants::STATUS_COMPLETED;
         $sql .= " OR r.status = " . TimeclockConstants::STATUS_IN_PROGRESS . ")"; // Inclure sessions en cours
         $sql .= " ORDER BY r.clock_in_time DESC";
@@ -143,13 +143,14 @@ class ValidationService implements ValidationServiceInterface
             return false;
         }
         
-        // 3. Mettre à jour l'enregistrement (adapter au schéma existant)
+        // 3. Mettre à jour l'enregistrement avec le bon statut de validation
         $sql = "UPDATE " . MAIN_DB_PREFIX . "timeclock_records SET";
-        $sql .= " validated_by = " . ((int) $validatorId);
-        $sql .= ", validated_date = NOW()";
+        $sql .= " validation_status = " . ((int) $newStatus);
+        $sql .= ", validated_by = " . ((int) $validatorId);
+        $sql .= ", validated_at = NOW()";
         
         if ($comment) {
-            $sql .= ", note_private = '" . $this->db->escape($comment) . "'";
+            $sql .= ", validation_comment = '" . $this->db->escape($comment) . "'";
         }
         
         $sql .= " WHERE rowid = " . ((int) $recordId);
@@ -227,7 +228,7 @@ class ValidationService implements ValidationServiceInterface
      */
     public function getValidationStatus(int $recordId): array 
     {
-        $sql = "SELECT validated_by, validated_date, note_private";
+        $sql = "SELECT validation_status, validated_by, validated_at, validation_comment";
         $sql .= " FROM " . MAIN_DB_PREFIX . "timeclock_records";
         $sql .= " WHERE rowid = " . ((int) $recordId);
         
@@ -236,17 +237,17 @@ class ValidationService implements ValidationServiceInterface
         if ($result && $obj = $this->db->fetch_object($result)) {
             $this->db->free($result);
             
-            // Déterminer le statut basé sur validated_by - doit être > 0 pour être considéré comme validé
-            $status = ($obj->validated_by && (int)$obj->validated_by > 0) ? ValidationConstants::VALIDATION_APPROVED : ValidationConstants::VALIDATION_PENDING;
+            // Use the validation_status field directly (0=pending, 1=approved, 2=rejected, 3=partial)
+            $status = isset($obj->validation_status) ? (int)$obj->validation_status : ValidationConstants::VALIDATION_PENDING;
             
             // Debug: Log validation status determination
-            dol_syslog("ValidationService DEBUG: Record $recordId - validated_by='" . $obj->validated_by . "', status determined as: " . $status, LOG_DEBUG);
+            dol_syslog("ValidationService DEBUG: Record $recordId - validation_status='" . $obj->validation_status . "', validated_by='" . $obj->validated_by . "', status determined as: " . $status, LOG_DEBUG);
             
             return [
                 'status' => $status,
                 'validated_by' => (int) $obj->validated_by,
-                'validated_date' => $obj->validated_date,
-                'comment' => $obj->note_private,
+                'validated_date' => $obj->validated_at,
+                'comment' => $obj->validation_comment,
                 'status_label' => $this->getValidationStatusLabel($status)
             ];
         }
@@ -445,6 +446,9 @@ class ValidationService implements ValidationServiceInterface
         if (!empty($record->fk_timeclock_type)) {
             $enriched['timeclock_type'] = $this->getTimeclockTypeInfo((int) $record->fk_timeclock_type);
         }
+        
+        // Ajouter le statut de validation (utilise validation_status si disponible)
+        $enriched['validation_status'] = isset($record->validation_status) ? (int)$record->validation_status : 0;
         
         return $enriched;
     }

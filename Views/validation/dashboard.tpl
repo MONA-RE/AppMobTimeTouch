@@ -173,20 +173,32 @@
           <div class="right">
             <div style="text-align: right;">
               <?php 
-                // Déterminer le statut et la couleur selon le status du record
+                // Déterminer le statut et la couleur selon validation_status
+                $validationStatus = isset($record['validation_status']) ? (int)$record['validation_status'] : 0;
                 $recordStatus = (int)$record['status'];
-                if ($recordStatus == 2) { // STATUS_IN_PROGRESS
-                  $statusLabel = $langs->trans('InProgress');
-                  $statusColor = '#007bff'; // Bleu pour en cours
-                  $statusIcon = 'md-play-circle';
-                } elseif ($recordStatus == 3) { // STATUS_COMPLETED  
-                  $statusLabel = $langs->trans('PendingValidation');
-                  $statusColor = '#28a745'; // Vert pour validation
-                  $statusIcon = 'md-schedule';
-                } else {
-                  $statusLabel = $langs->trans('Unknown');
-                  $statusColor = '#6c757d'; // Gris pour inconnu
-                  $statusIcon = 'md-help';
+                
+                if ($validationStatus == 1) { // VALIDATION_APPROVED
+                  $statusLabel = $langs->trans('Approved');
+                  $statusColor = '#28a745'; // Vert pour approuvé
+                  $statusIcon = 'md-check-circle';
+                } elseif ($validationStatus == 2) { // VALIDATION_REJECTED
+                  $statusLabel = $langs->trans('Rejected');
+                  $statusColor = '#dc3545'; // Rouge pour rejeté
+                  $statusIcon = 'md-cancel';
+                } elseif ($validationStatus == 3) { // VALIDATION_PARTIAL
+                  $statusLabel = $langs->trans('Partial');
+                  $statusColor = '#ffc107'; // Orange pour partiel
+                  $statusIcon = 'md-remove-circle';
+                } else { // VALIDATION_PENDING
+                  if ($recordStatus == 2) { // STATUS_IN_PROGRESS
+                    $statusLabel = $langs->trans('InProgress');
+                    $statusColor = '#007bff'; // Bleu pour en cours
+                    $statusIcon = 'md-play-circle';
+                  } else { // STATUS_COMPLETED
+                    $statusLabel = $langs->trans('PendingValidation');
+                    $statusColor = '#6c757d'; // Gris pour en attente
+                    $statusIcon = 'md-schedule';
+                  }
                 }
               ?>
               <div style="font-size: 12px; color: <?php echo $statusColor; ?>; font-weight: 500;">
