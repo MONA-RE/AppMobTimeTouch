@@ -31,6 +31,21 @@
 
 **Tests** : Actions, redirections, validation
 
+#### ValidationController.php ✨ **MVP 3.3**
+**Responsabilité unique** : Interface validation manager
+- Dashboard validation avec statistiques
+- Actions validation individuelles et en lot
+- Gestion filtres avancés pour liste complète
+- Navigation entre vues validation
+
+**Dépendances** :
+- ValidationServiceInterface
+- NotificationServiceInterface
+- DataServiceInterface
+- BaseController
+
+**Tests** : Validation actions, filtres, batch operations
+
 #### AuthController.php
 **Responsabilité unique** : Authentification et autorisations
 - Vérification droits utilisateur
@@ -72,6 +87,35 @@
 - TimeclockRecord
 
 **Tests** : Requêtes, calculs, cache
+
+#### ValidationService.php ✨ **MVP 3.3**
+**Responsabilité unique** : Logique métier validation
+- Récupération enregistrements en attente
+- Validation individuelle et en lot (approve/reject/partial)
+- Détection automatique d'anomalies
+- Filtrage avancé avec critères multiples (statut, utilisateur, dates, anomalies)
+- Gestion équipes et permissions manager
+
+**Dépendances** :
+- DataServiceInterface
+- NotificationServiceInterface
+- TimeclockRecord
+- ValidationConstants
+
+**Tests** : Validations, filtres, anomalies, permissions
+
+#### NotificationService.php ✨ **MVP 3.3**
+**Responsabilité unique** : Gestion notifications validation
+- Notifications manager (validations en attente, anomalies)
+- Notifications employé (statut validation, commentaires)
+- Gestion état lu/non-lu
+- Système d'alertes par priorité
+
+**Dépendances** :
+- Database
+- User Dolibarr
+
+**Tests** : Notifications, alertes, états
 
 #### AuthService.php
 **Responsabilité unique** : Services authentification
@@ -126,6 +170,28 @@ class TimeclockConstants {
 }
 ```
 
+#### ValidationConstants.php ✨ **MVP 3.3**
+**Responsabilité unique** : Configuration workflow validation
+```php
+class ValidationConstants {
+    // Statuts de validation
+    const VALIDATION_PENDING = 0;
+    const VALIDATION_APPROVED = 1;
+    const VALIDATION_REJECTED = 2;
+    const VALIDATION_PARTIAL = 3;
+    
+    // Types d'anomalies
+    const ANOMALY_OVERTIME = 'overtime';
+    const ANOMALY_MISSING_CLOCKOUT = 'missing_clockout';
+    const ANOMALY_LONG_BREAK = 'long_break';
+    
+    // Niveaux d'alerte
+    const ALERT_INFO = 'info';
+    const ALERT_WARNING = 'warning';
+    const ALERT_CRITICAL = 'critical';
+}
+```
+
 ### Views/ - Présentation
 
 #### layouts/main.tpl
@@ -161,6 +227,38 @@ class TimeclockConstants {
 - Formulaire clock out
 - Résumé session
 - Confirmation action
+
+#### validation/ - Pages validation manager ✨ **MVP 3.3**
+
+**dashboard.tpl** : Dashboard manager avec batch validation
+- Statistiques temps réel (5 colonnes)
+- Liste enregistrements en attente avec checkboxes
+- Actions de validation en lot (approve/reject all)
+- Navigation vers liste complète
+
+**list-all.tpl** : Page liste complète avec filtres avancés
+- Interface de filtrage collapsible (statut, utilisateur, dates, anomalies)
+- Tri multiple (date, utilisateur, statut)
+- Affichage paginé avec statistiques
+- Navigation vers détails enregistrements
+
+**record-detail.tpl** : Détails enregistrement avec actions validation
+- Informations complètes record
+- Actions validation individuelles
+- Affichage anomalies détectées
+- Historique validation
+
+#### components/ - Composants validation ✨ **MVP 3.3**
+
+**ValidationActions.tpl** : Actions validation individuelles
+- Boutons approve/reject/partial
+- Modal commentaire
+- Feedback utilisateur immédiat
+
+**Messages.tpl** : Système de messages centralisé
+- Affichage erreurs et succès
+- Support multilingue
+- Styles adaptatifs
 
 #### pages/home.tpl
 **Responsabilité unique** : Assemblage composants page d'accueil
@@ -212,6 +310,30 @@ class TimeclockConstants {
 6. **DataService** → Mise à jour résumés
 7. **Templates** → Affichage statut déconnecté
 
+### Validation Manager Dashboard ✨ **MVP 3.3**
+1. **ValidationController** → dashboard() avec vérification permissions
+2. **ValidationService** → getPendingValidations() avec enrichissement
+3. **NotificationService** → getUnreadNotifications() pour manager
+4. **dashboard.tpl** → Affichage statistiques + liste avec checkboxes
+5. **JavaScript** → Gestion sélection multiple et batch actions
+6. **AJAX** → Actions validation avec feedback immédiat
+
+### Advanced Filtering ✨ **MVP 3.3**
+1. **gotoFullList()** → Navigation vers page dédiée
+2. **ValidationController** → listAll() avec traitement filtres
+3. **ValidationService** → getFilteredRecords() avec SQL avancé
+4. **list-all.tpl** → Interface filtres collapsible + résultats
+5. **JavaScript** → Gestion filtres et navigation
+6. **Backend** → Application filtres SQL avec sécurité
+
+### Individual Validation ✨ **MVP 3.3**
+1. **showRecordDetails()** → Navigation vers détail record
+2. **ValidationController** → viewRecord() avec permissions
+3. **ValidationService** → getRecordData() + detectAnomalies()
+4. **record-detail.tpl** → Affichage avec ValidationActions
+5. **AJAX** → validateRecord() avec commentaires
+6. **Database** → Mise à jour validation_status + notifications
+
 ## Points d'extension
 
 ### Nouveaux types de pointage
@@ -229,4 +351,17 @@ class TimeclockConstants {
 - **pages/** : Nouvelles compositions
 - **css/** : Styles modulaires associés
 
-Cette architecture garantit que chaque modification reste isolée dans son domaine de responsabilité.
+### Extensions Validation ✨ **MVP 3.3**
+- **ValidationService** : Nouveaux types d'anomalies via getAnomalyTypes()
+- **NotificationService** : Nouveaux canaux notification (email, SMS)
+- **ValidationConstants** : Nouvelles règles métier configurables
+- **list-all.tpl** : Nouveaux critères de filtrage
+- **dashboard.tpl** : Nouvelles métriques statistiques
+
+### API Extensions ✨ **MVP 3.3**
+- **api/validation.php** : Nouveaux endpoints REST
+- **ValidationController** : Nouvelles actions manager
+- **Filters** : Nouveaux types de filtres complexes
+- **Exports** : Génération rapports validation
+
+Cette architecture garantit que chaque modification reste isolée dans son domaine de responsabilité tout en supportant l'évolution vers des fonctionnalités avancées de validation et de gestion d'équipe.
