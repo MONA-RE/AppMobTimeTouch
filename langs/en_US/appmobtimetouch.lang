@@ -147,3 +147,31 @@ PendingValidation = Pending Validation
 Unknown = Unknown
 TodaysRecords = Today's Records
 InvalidRecordId = Invalid Record ID
+
+#
+# Complete List with Filters MVP 3.3
+#
+AllValidationRecords = All Validation Records
+ValidationRecords = Validation Records
+Filters = Filters
+Total = Total
+Pending = Pending
+Anomalies = Anomalies
+All = All
+AllUsers = All Users
+DateFrom = Date From
+DateTo = Date To
+WithAnomalies = With Anomalies
+WithoutAnomalies = Without Anomalies
+SortBy = Sort By
+DateDesc = Date Descending
+DateAsc = Date Ascending
+UserAsc = User Ascending
+ApplyFilters = Apply Filters
+ClearFilters = Clear Filters
+ApplyingFilters = Applying filters
+NoRecordsFound = No records found
+TryDifferentFilters = Try different filters
+LoadingAllRecords = Loading all records
+ShowingAllRecords = Showing all records
+ErrorLoadingRecords = Error loading records

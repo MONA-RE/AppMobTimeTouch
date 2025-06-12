@@ -504,3 +504,31 @@ ValidationPending = En attente de validation
 ValidationApproved = Validation approuvée
 ValidationRejected = Validation rejetée
 ValidationPartial = Validation partielle
+
+#
+# Liste complète avec filtres MVP 3.3
+#
+AllValidationRecords = Tous les enregistrements de validation
+ValidationRecords = Enregistrements de validation
+Filters = Filtres
+Total = Total
+Pending = En attente
+Anomalies = Anomalies
+All = Tous
+AllUsers = Tous les utilisateurs
+DateFrom = Date de début
+DateTo = Date de fin
+WithAnomalies = Avec anomalies
+WithoutAnomalies = Sans anomalies
+SortBy = Trier par
+DateDesc = Date décroissante
+DateAsc = Date croissante
+UserAsc = Utilisateur croissant
+ApplyFilters = Appliquer les filtres
+ClearFilters = Effacer les filtres
+ApplyingFilters = Application des filtres
+NoRecordsFound = Aucun enregistrement trouvé
+TryDifferentFilters = Essayez des filtres différents
+LoadingAllRecords = Chargement de tous les enregistrements
+ShowingAllRecords = Affichage de tous les enregistrements
+ErrorLoadingRecords = Erreur lors du chargement des enregistrements
