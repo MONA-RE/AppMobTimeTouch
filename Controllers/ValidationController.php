@@ -341,17 +341,100 @@ class ValidationController extends BaseController
     }
 
     /**
-     * Action placeholder pour MVP futures (OCP - Ouvert à l'extension)
+     * Validation en lot (MVP 3.3)
+     * Responsabilité unique : Traitement validation groupée (SRP)
      * 
-     * @return array Réponse JSON  
+     * @return array Réponse JSON avec résultats validation en lot
      */
     public function batchValidate(): array 
     {
-        // MVP 3.3 : Implémentation validation en lot
-        return [
-            'error' => 1,
-            'errors' => ['Feature coming in MVP 3.3']
-        ];
+        // Vérification module et droits
+        $this->checkModuleEnabled();
+        $this->checkUserRights('validate');
+        
+        try {
+            // Validation des paramètres requis pour MVP 3.3
+            $recordIds = GETPOST('record_ids', 'array');
+            $action = GETPOST('batch_action', 'alpha');
+            $comment = GETPOST('batch_comment', 'restricthtml'); // Optionnel
+            
+            if (empty($recordIds) || empty($action)) {
+                return [
+                    'error' => 1,
+                    'errors' => [$this->langs->trans('MissingRequiredParameters')]
+                ];
+            }
+            
+            // Validation de l'action
+            $allowedActions = ['approve', 'reject', 'partial'];
+            if (!in_array($action, $allowedActions)) {
+                return [
+                    'error' => 1,
+                    'errors' => [$this->langs->trans('InvalidBatchAction')]
+                ];
+            }
+            
+            // Vérifier que l'utilisateur peut valider tous ces enregistrements
+            foreach ($recordIds as $recordId) {
+                if (!$this->validationService->canValidate($this->user->id, (int)$recordId)) {
+                    return [
+                        'error' => 1,
+                        'errors' => [$this->langs->trans('InsufficientPermissionsForSomeRecords')]
+                    ];
+                }
+            }
+            
+            // Effectuer la validation en lot via le service (DIP)
+            $results = $this->validationService->batchValidate(
+                array_map('intval', $recordIds),
+                $this->user->id,
+                $action,
+                $comment
+            );
+            
+            // Analyser les résultats
+            $successCount = count(array_filter($results));
+            $totalCount = count($results);
+            $failedCount = $totalCount - $successCount;
+            
+            if ($successCount === $totalCount) {
+                // Tous les enregistrements validés avec succès
+                $actionLabels = [
+                    'approve' => $this->langs->trans('BatchApproved'),
+                    'reject' => $this->langs->trans('BatchRejected'),
+                    'partial' => $this->langs->trans('BatchPartiallyApproved')
+                ];
+                
+                dol_syslog("ValidationController: Batch validation successful - $successCount records validated as $action by user " . $this->user->id, LOG_INFO);
+                
+                return [
+                    'error' => 0,
+                    'messages' => [sprintf('%s (%d/%d)', $actionLabels[$action] ?? $this->langs->trans('BatchValidationCompleted'), $successCount, $totalCount)],
+                    'action' => $action,
+                    'success_count' => $successCount,
+                    'total_count' => $totalCount,
+                    'results' => $results,
+                    'validated_by' => $this->user->id,
+                    'timestamp' => dol_now()
+                ];
+            } else {
+                // Validation partielle
+                dol_syslog("ValidationController: Batch validation partial - $successCount/$totalCount records validated by user " . $this->user->id, LOG_WARNING);
+                
+                return [
+                    'error' => 1,
+                    'errors' => [sprintf($this->langs->trans('BatchValidationPartial'), $successCount, $totalCount, $failedCount)],
+                    'success_count' => $successCount,
+                    'total_count' => $totalCount,
+                    'failed_count' => $failedCount,
+                    'results' => $results
+                ];
+            }
+            
+        } catch (Exception $e) {
+            dol_syslog("ValidationController: Error in batchValidate - " . $e->getMessage(), LOG_ERROR);
+            return $this->handleError($e);
+        }
     }
     
     /**

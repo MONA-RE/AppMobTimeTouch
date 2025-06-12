@@ -122,16 +122,67 @@
   </div>
   <?php endif; ?>
 
-  <!-- Enregistrements Récents (limité pour MVP 3.1) -->
+  <!-- Enregistrements avec Validation en Lot (MVP 3.3) -->
   <?php if (!empty($pending_records)): ?>
   <div style="padding: 0 15px 15px 15px;">
     <ons-card>
       <div class="title" style="padding: 15px; background-color: #e3f2fd; border-bottom: 1px solid #90caf9;">
-        <h4 style="margin: 0; color: #1565c0;">
-          <ons-icon icon="md-schedule" style="color: #2196f3; margin-right: 8px;"></ons-icon>
-          <?php echo $langs->trans('TodaysRecords'); ?>
-        </h4>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h4 style="margin: 0; color: #1565c0;">
+            <ons-icon icon="md-schedule" style="color: #2196f3; margin-right: 8px;"></ons-icon>
+            <?php echo $langs->trans('TodaysRecords'); ?>
+          </h4>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <ons-checkbox 
+              id="select-all-checkbox" 
+              onchange="toggleSelectAll()"
+              style="margin-right: 5px;">
+            </ons-checkbox>
+            <label for="select-all-checkbox" style="font-size: 14px; color: #1565c0; cursor: pointer;">
+              <?php echo $langs->trans('SelectAll'); ?>
+            </label>
+          </div>
+        </div>
       </div>
+      
+      <!-- Batch Actions Bar (MVP 3.3) -->
+      <div id="batch-actions-bar" style="display: none; padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <span id="selected-count" style="font-weight: 500; color: #495057;">0 sélectionné(s)</span>
+            
+            <ons-button 
+              onclick="batchValidateRecords('approve')"
+              style="background-color: #28a745; color: white; border-radius: 6px; padding: 8px 12px;">
+              <ons-icon icon="md-check" style="margin-right: 5px;"></ons-icon>
+              <?php echo $langs->trans('ApproveAll'); ?>
+            </ons-button>
+            
+            <ons-button 
+              onclick="batchValidateRecords('reject')"
+              style="background-color: #dc3545; color: white; border-radius: 6px; padding: 8px 12px;">
+              <ons-icon icon="md-cancel" style="margin-right: 5px;"></ons-icon>
+              <?php echo $langs->trans('RejectAll'); ?>
+            </ons-button>
+            
+            <ons-button 
+              onclick="showBatchCommentModal()"
+              style="background-color: #007bff; color: white; border-radius: 6px; padding: 8px 12px;">
+              <ons-icon icon="md-comment" style="margin-right: 5px;"></ons-icon>
+              <?php echo $langs->trans('WithComment'); ?>
+            </ons-button>
+          </div>
+          
+          <ons-button 
+            onclick="clearSelection()"
+            modifier="quiet"
+            style="color: #6c757d;">
+            <ons-icon icon="md-close" style="margin-right: 5px;"></ons-icon>
+            <?php echo $langs->trans('Clear'); ?>
+          </ons-button>
+        </div>
+      </div>
+      
       <ons-list style="margin: 0;">
         <?php foreach ($pending_records as $record): 
           $hasAnomalies = !empty($record['anomalies']);
@@ -140,11 +191,19 @@
           // Utilisateur déjà enrichi dans le service
           $userName = isset($record['user']['fullname']) ? $record['user']['fullname'] : 'Utilisateur inconnu';
         ?>
-        <ons-list-item tappable onclick="showRecordDetails(<?php echo $record['rowid']; ?>)">
+        <ons-list-item>
           <div class="left">
-            <div style="width: 6px; height: 40px; background-color: <?php echo $priorityColor; ?>; border-radius: 3px;"></div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <ons-checkbox 
+                class="record-checkbox" 
+                value="<?php echo $record['rowid']; ?>"
+                onchange="updateSelection()"
+                onclick="event.stopPropagation();">
+              </ons-checkbox>
+              <div style="width: 6px; height: 40px; background-color: <?php echo $priorityColor; ?>; border-radius: 3px;"></div>
+            </div>
           </div>
-          <div class="center">
+          <div class="center" onclick="showRecordDetails(<?php echo $record['rowid']; ?>)" style="cursor: pointer;">
             <div style="font-weight: 500; margin-bottom: 8px;padding: 2px 6px;">
               <?php echo dol_escape_htmltag($userName); ?>
             </div>
@@ -289,11 +348,227 @@
     ons.notification.alert('<?php echo $langs->trans("FeatureComingInMVP32"); ?>');
   }
   
+  // === BATCH VALIDATION FUNCTIONS (MVP 3.3) ===
   
-  // Debug MVP 3.1
-  console.log('ValidationDashboard MVP 3.1 loaded');
+  /**
+   * Toggle select all checkboxes
+   */
+  function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    const recordCheckboxes = document.querySelectorAll('.record-checkbox');
+    
+    recordCheckboxes.forEach(checkbox => {
+      checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateSelection();
+  }
+  
+  /**
+   * Update selection count and show/hide batch actions
+   */
+  function updateSelection() {
+    const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+    const count = checkedBoxes.length;
+    const batchActionsBar = document.getElementById('batch-actions-bar');
+    const selectedCountSpan = document.getElementById('selected-count');
+    
+    if (count > 0) {
+      batchActionsBar.style.display = 'block';
+      selectedCountSpan.textContent = count + ' sélectionné(s)';
+    } else {
+      batchActionsBar.style.display = 'none';
+      // Uncheck select all if no items selected
+      document.getElementById('select-all-checkbox').checked = false;
+    }
+    
+    // Update select all checkbox state
+    const totalCheckboxes = document.querySelectorAll('.record-checkbox').length;
+    const selectAllCheckbox = document.getElementById('select-all-checkbox');
+    if (count === totalCheckboxes && count > 0) {
+      selectAllCheckbox.checked = true;
+    } else if (count === 0) {
+      selectAllCheckbox.checked = false;
+    } else {
+      selectAllCheckbox.indeterminate = true;
+    }
+  }
+  
+  /**
+   * Clear all selections
+   */
+  function clearSelection() {
+    document.querySelectorAll('.record-checkbox').forEach(checkbox => {
+      checkbox.checked = false;
+    });
+    document.getElementById('select-all-checkbox').checked = false;
+    updateSelection();
+  }
+  
+  /**
+   * Batch validate selected records
+   */
+  function batchValidateRecords(action) {
+    const selectedCheckboxes = document.querySelectorAll('.record-checkbox:checked');
+    const recordIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    
+    if (recordIds.length === 0) {
+      ons.notification.alert('<?php echo $langs->trans("NoRecordsSelected"); ?>');
+      return;
+    }
+    
+    // Confirmation dialog
+    const actionLabels = {
+      'approve': '<?php echo $langs->trans("Approve"); ?>',
+      'reject': '<?php echo $langs->trans("Reject"); ?>',
+      'partial': '<?php echo $langs->trans("Partial"); ?>'
+    };
+    
+    const confirmMessage = `<?php echo $langs->trans("ConfirmBatchValidation"); ?> ${recordIds.length} enregistrement(s) - ${actionLabels[action]}?`;
+    
+    ons.notification.confirm({
+      message: confirmMessage,
+      callback: function(confirmed) {
+        if (confirmed) {
+          performBatchValidation(recordIds, action);
+        }
+      }
+    });
+  }
+  
+  /**
+   * Perform the actual batch validation
+   */
+  function performBatchValidation(recordIds, action, comment = null) {
+    // Show loading
+    ons.notification.toast('<?php echo $langs->trans("ProcessingBatchValidation"); ?>...', {timeout: 1000});
+    
+    // Disable batch actions during processing
+    const batchButtons = document.querySelectorAll('#batch-actions-bar ons-button');
+    batchButtons.forEach(btn => btn.disabled = true);
+    
+    const formData = new FormData();
+    formData.append('action', 'batch_validate');
+    formData.append('batch_action', action);
+    recordIds.forEach(id => formData.append('record_ids[]', id));
+    if (comment) {
+      formData.append('batch_comment', comment);
+    }
+    formData.append('token', '<?php echo newToken(); ?>');
+    
+    fetch('<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/validation.php', {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      batchButtons.forEach(btn => btn.disabled = false);
+      
+      if (data.error === 0) {
+        // Success
+        ons.notification.toast(data.messages[0], {timeout: 3000});
+        // Refresh page after 2 seconds
+        setTimeout(() => {
+          location.reload();
+        }, 2000);
+      } else {
+        // Error
+        ons.notification.alert(data.errors[0]);
+      }
+    })
+    .catch(error => {
+      batchButtons.forEach(btn => btn.disabled = false);
+      console.error('Batch validation error:', error);
+      ons.notification.alert('<?php echo $langs->trans("BatchValidationError"); ?>');
+    });
+  }
+  
+  /**
+   * Show batch comment modal
+   */
+  function showBatchCommentModal() {
+    const selectedCheckboxes = document.querySelectorAll('.record-checkbox:checked');
+    const recordIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    
+    if (recordIds.length === 0) {
+      ons.notification.alert('<?php echo $langs->trans("NoRecordsSelected"); ?>');
+      return;
+    }
+    
+    document.getElementById('batch-comment-modal').show();
+  }
+  
+  // Debug MVP 3.3
+  console.log('ValidationDashboard MVP 3.3 loaded - Batch validation enabled');
   console.log('Stats:', <?php echo json_encode($stats); ?>);
   console.log('Pending records:', <?php echo count($pending_records); ?>);
   console.log('Notifications:', <?php echo count($notifications); ?>);
+  </script>
+
+  <!-- Batch Comment Modal (MVP 3.3) -->
+  <ons-modal id="batch-comment-modal" var="batchCommentModal">
+    <div style="text-align: center; padding: 20px; background-color: white; border-radius: 10px; margin: 20px;">
+      <h3 style="margin: 0 0 20px 0; color: #333;">
+        <ons-icon icon="md-comment" style="color: #007bff; margin-right: 8px;"></ons-icon>
+        <?php echo $langs->trans('BatchValidationComment'); ?>
+      </h3>
+      
+      <textarea 
+        id="batch-comment-textarea"
+        placeholder="<?php echo $langs->trans('EnterValidationComment'); ?>"
+        rows="4"
+        style="width: 100%; border: 1px solid #ced4da; border-radius: 6px; padding: 10px; font-family: inherit; margin-bottom: 20px;">
+      </textarea>
+      
+      <div style="display: flex; justify-content: space-between; gap: 10px;">
+        <ons-button 
+          onclick="closeBatchCommentModal()"
+          modifier="quiet"
+          style="flex: 1; border: 1px solid #6c757d; border-radius: 6px;">
+          <?php echo $langs->trans('Cancel'); ?>
+        </ons-button>
+        
+        <ons-button 
+          onclick="submitBatchWithComment('approve')"
+          style="flex: 1; background-color: #28a745; color: white; border-radius: 6px;">
+          <ons-icon icon="md-check" style="margin-right: 5px;"></ons-icon>
+          <?php echo $langs->trans('Approve'); ?>
+        </ons-button>
+        
+        <ons-button 
+          onclick="submitBatchWithComment('reject')"
+          style="flex: 1; background-color: #dc3545; color: white; border-radius: 6px;">
+          <ons-icon icon="md-cancel" style="margin-right: 5px;"></ons-icon>
+          <?php echo $langs->trans('Reject'); ?>
+        </ons-button>
+      </div>
+    </div>
+  </ons-modal>
+
+  <script>
+  /**
+   * Additional functions for batch comment modal
+   */
+  function closeBatchCommentModal() {
+    document.getElementById('batch-comment-modal').hide();
+    document.getElementById('batch-comment-textarea').value = '';
+  }
+  
+  function submitBatchWithComment(action) {
+    const comment = document.getElementById('batch-comment-textarea').value.trim();
+    const selectedCheckboxes = document.querySelectorAll('.record-checkbox:checked');
+    const recordIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    
+    if (!comment) {
+      ons.notification.alert('<?php echo $langs->trans("CommentRequired"); ?>');
+      return;
+    }
+    
+    closeBatchCommentModal();
+    performBatchValidation(recordIds, action, comment);
+  }
   </script>
 </ons-page>

@@ -179,19 +179,24 @@ class ValidationService implements ValidationServiceInterface
     /**
      * Valider en lot plusieurs enregistrements
      */
-    public function batchValidate(array $recordIds, int $validatorId, string $action): array 
+    public function batchValidate(array $recordIds, int $validatorId, string $action, ?string $comment = null): array 
     {
-        dol_syslog("ValidationService: Batch validating " . count($recordIds) . " records", LOG_DEBUG);
+        dol_syslog("ValidationService: Batch validating " . count($recordIds) . " records with action: $action", LOG_DEBUG);
         
         $results = [];
         
-        // Valider chaque enregistrement individuellement
+        // Valider chaque enregistrement individuellement avec commentaire si fourni
         foreach ($recordIds as $recordId) {
-            $results[$recordId] = $this->validateRecord((int) $recordId, $validatorId, $action);
+            try {
+                $results[$recordId] = $this->validateRecord((int) $recordId, $validatorId, $action, $comment);
+            } catch (Exception $e) {
+                dol_syslog("ValidationService: Failed to validate record $recordId: " . $e->getMessage(), LOG_ERROR);
+                $results[$recordId] = false;
+            }
         }
         
         $successCount = count(array_filter($results));
-        dol_syslog("ValidationService: Batch validation completed: $successCount/" . count($recordIds) . " successful", LOG_DEBUG);
+        dol_syslog("ValidationService: Batch validation completed: $successCount/" . count($recordIds) . " successful", LOG_INFO);
         
         return $results;
     }
