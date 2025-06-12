@@ -633,5 +633,119 @@ class ValidationService implements ValidationServiceInterface
         $this->error = $message;
     }
     
+    /**
+     * Récupérer enregistrements filtrés pour liste complète (MVP 3.3)
+     * Responsabilité unique : Récupération données avec filtres avancés (SRP)
+     * 
+     * @param int $managerId ID du manager
+     * @param array $filters Filtres à appliquer
+     * @return array Enregistrements filtrés et enrichis
+     */
+    public function getFilteredRecords(int $managerId, array $filters): array 
+    {
+        dol_syslog("ValidationService: Getting filtered records for manager $managerId with filters: " . json_encode($filters), LOG_DEBUG);
+        
+        // 1. Récupérer les équipes du manager
+        $teamMembers = $this->getTeamMembers($managerId);
+        
+        if (empty($teamMembers)) {
+            dol_syslog("ValidationService: No team members found for manager $managerId", LOG_DEBUG);
+            return [];
+        }
+        
+        // 2. Construire la requête SQL avec filtres
+        $sql = "SELECT r.* FROM " . MAIN_DB_PREFIX . "timeclock_records r";
+        $sql .= " WHERE r.fk_user IN (" . implode(',', array_map('intval', $teamMembers)) . ")";
+        
+        // Filtrer par statut de validation
+        if (!empty($filters['status']) && $filters['status'] !== 'all') {
+            switch ($filters['status']) {
+                case 'pending':
+                    $sql .= " AND (r.validation_status IS NULL OR r.validation_status = " . ValidationConstants::VALIDATION_PENDING . ")";
+                    break;
+                case 'approved':
+                    $sql .= " AND r.validation_status = " . ValidationConstants::VALIDATION_APPROVED;
+                    break;
+                case 'rejected':
+                    $sql .= " AND r.validation_status = " . ValidationConstants::VALIDATION_REJECTED;
+                    break;
+                case 'partial':
+                    $sql .= " AND r.validation_status = " . ValidationConstants::VALIDATION_PARTIAL;
+                    break;
+            }
+        }
+        
+        // Filtrer par utilisateur spécifique
+        if (!empty($filters['user_id'])) {
+            $sql .= " AND r.fk_user = " . ((int) $filters['user_id']);
+        }
+        
+        // Filtrer par plage de dates
+        if (!empty($filters['date_from'])) {
+            $sql .= " AND DATE(r.clock_in_time) >= '" . $this->db->escape($filters['date_from']) . "'";
+        }
+        if (!empty($filters['date_to'])) {
+            $sql .= " AND DATE(r.clock_in_time) <= '" . $this->db->escape($filters['date_to']) . "'";
+        }
+        
+        // Inclure seulement les sessions terminées ou en cours
+        $sql .= " AND (r.status = " . TimeclockConstants::STATUS_COMPLETED;
+        $sql .= " OR r.status = " . TimeclockConstants::STATUS_IN_PROGRESS . ")";
+        
+        // Tri selon les paramètres
+        $sortBy = $filters['sort_by'] ?? 'date_desc';
+        switch ($sortBy) {
+            case 'date_asc':
+                $sql .= " ORDER BY r.clock_in_time ASC";
+                break;
+            case 'user_asc':
+                $sql .= " ORDER BY r.fk_user ASC, r.clock_in_time DESC";
+                break;
+            case 'status':
+                $sql .= " ORDER BY r.validation_status ASC, r.clock_in_time DESC";
+                break;
+            case 'date_desc':
+            default:
+                $sql .= " ORDER BY r.clock_in_time DESC";
+                break;
+        }
+        
+        // Limite pour pagination
+        $limit = $filters['limit'] ?? 50;
+        $sql .= " LIMIT " . ((int) $limit);
+        
+        dol_syslog("ValidationService: Executing filtered query: " . $sql, LOG_DEBUG);
+        
+        $result = $this->db->query($sql);
+        $records = [];
+        
+        if ($result) {
+            while ($obj = $this->db->fetch_object($result)) {
+                // Enrichir avec informations utilisateur et anomalies
+                $record = $this->enrichRecordData($obj);
+                
+                // Détecter anomalies pour cet enregistrement
+                $anomalies = $this->detectRecordAnomalies($obj);
+                $record['anomalies'] = $anomalies;
+                
+                // Filtrer par anomalies si demandé
+                if (!empty($filters['has_anomalies'])) {
+                    if ($filters['has_anomalies'] === 'yes' && empty($anomalies)) {
+                        continue; // Exclure les enregistrements sans anomalies
+                    }
+                    if ($filters['has_anomalies'] === 'no' && !empty($anomalies)) {
+                        continue; // Exclure les enregistrements avec anomalies
+                    }
+                }
+                
+                $records[] = $record;
+            }
+            $this->db->free($result);
+        }
+        
+        dol_syslog("ValidationService: Found " . count($records) . " filtered records", LOG_INFO);
+        return $records;
+    }
+    
     public $error = '';
 }

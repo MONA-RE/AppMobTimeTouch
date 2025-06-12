@@ -342,11 +342,18 @@
   }
   
   /**
-   * Aller vers liste complète (MVP 3.2+)
+   * Aller vers liste complète - Navigate to dedicated list page (MVP 3.3)
    */
   function gotoFullList() {
-    ons.notification.alert('<?php echo $langs->trans("FeatureComingInMVP32"); ?>');
+    // Show loading message
+    ons.notification.toast('<?php echo $langs->trans("LoadingAllRecords"); ?>...', {timeout: 1000});
+    
+    // Navigate to dedicated list page
+    setTimeout(() => {
+      window.location.href = '<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/validation.php?action=list_all';
+    }, 500);
   }
+  
   
   // === BATCH VALIDATION FUNCTIONS (MVP 3.3) ===
   

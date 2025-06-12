@@ -104,6 +104,25 @@ try {
             $data = $controller->dashboard();
             break;
             
+        case 'get_all_pending':
+            // MVP 3.3 : Récupération de tous les enregistrements en attente
+            try {
+                $result = $controller->getAllPending();
+                header('Content-Type: application/json');
+                echo json_encode($result);
+                exit;
+            } catch (Exception $e) {
+                dol_syslog("validation.php: Error in get_all_pending - " . $e->getMessage(), LOG_ERROR);
+                header('Content-Type: application/json');
+                http_response_code(500);
+                echo json_encode([
+                    'error' => 1,
+                    'errors' => ['Internal server error: ' . $e->getMessage()]
+                ]);
+                exit;
+            }
+            break;
+            
         case 'viewRecord':
             // MVP 3.2 : Affichage page détail enregistrement avec actions validation
             $recordId = GETPOST('id', 'int');
@@ -114,6 +133,11 @@ try {
             }
             
             $data = $controller->viewRecord($recordId);
+            break;
+            
+        case 'list_all':
+            // MVP 3.3 : Page liste complète avec filtres
+            $data = $controller->listAll();
             break;
     }
     
@@ -261,6 +285,9 @@ extract($data);
                     switch ($viewType) {
                         case 'record_detail':
                             include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/validation/record-detail.tpl';
+                            break;
+                        case 'list_all':
+                            include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/validation/list-all.tpl';
                             break;
                         case 'dashboard':
                         default:

@@ -509,6 +509,163 @@ class ValidationController extends BaseController
     }
     
     /**
+     * Récupérer tous les enregistrements en attente (MVP 3.3)
+     * Responsabilité unique : Fournir liste complète pour vue étendue (SRP)
+     * 
+     * @return array Données JSON avec tous les enregistrements en attente
+     */
+    public function getAllPending(): array 
+    {
+        // Vérification module et droits
+        $this->checkModuleEnabled();
+        $this->checkUserRights('validate');
+        
+        try {
+            // Récupérer tous les enregistrements en attente (déjà enrichis avec anomalies)
+            $pendingRecords = $this->validationService->getPendingValidations($this->user->id);
+            
+            dol_syslog("ValidationController: getAllPending returned " . count($pendingRecords) . " records for manager " . $this->user->id, LOG_INFO);
+            
+            return [
+                'error' => 0,
+                'records' => $pendingRecords, // Already enriched by ValidationService
+                'count' => count($pendingRecords),
+                'manager_id' => $this->user->id,
+                'timestamp' => dol_now()
+            ];
+            
+        } catch (Exception $e) {
+            dol_syslog("ValidationController: Error in getAllPending - " . $e->getMessage(), LOG_ERROR);
+            return $this->handleError($e);
+        }
+    }
+    
+    /**
+     * Page liste complète avec filtres (MVP 3.3)
+     * Responsabilité unique : Affichage liste filtrée pour managers (SRP)
+     * 
+     * @return array Données pour template liste complète
+     */
+    public function listAll(): array 
+    {
+        // Vérification module et droits
+        $this->checkModuleEnabled();
+        $this->checkUserRights('validate');
+        
+        try {
+            // Récupérer les filtres
+            $filters = $this->getListFilters();
+            
+            // Récupérer tous les enregistrements selon les filtres
+            $records = $this->validationService->getFilteredRecords($this->user->id, $filters);
+            
+            // Récupérer les utilisateurs d'équipe pour le filtre
+            $teamMembers = $this->getTeamMembersForFilter();
+            
+            // Statistiques pour la liste filtrée
+            $stats = $this->calculateFilteredStats($records);
+            
+            dol_syslog("ValidationController: listAll returned " . count($records) . " records with filters: " . json_encode($filters), LOG_INFO);
+            
+            return $this->prepareTemplateData([
+                'page_title' => $this->langs->trans('AllValidationRecords'),
+                'records' => $records,
+                'filters' => $filters,
+                'team_members' => $teamMembers,
+                'stats' => $stats,
+                'is_manager' => true,
+                'view_type' => 'list_all'
+            ]);
+            
+        } catch (Exception $e) {
+            dol_syslog("ValidationController: Error in listAll - " . $e->getMessage(), LOG_ERROR);
+            return $this->handleError($e);
+        }
+    }
+    
+    /**
+     * Récupérer les filtres de la requête
+     */
+    private function getListFilters(): array 
+    {
+        return [
+            'status' => GETPOST('filter_status', 'alpha'), // all, pending, approved, rejected, partial
+            'user_id' => GETPOST('filter_user', 'int'),
+            'date_from' => GETPOST('filter_date_from', 'alpha'),
+            'date_to' => GETPOST('filter_date_to', 'alpha'),
+            'has_anomalies' => GETPOST('filter_anomalies', 'alpha'), // yes, no, all
+            'sort_by' => GETPOST('sort_by', 'alpha') ?: 'date_desc', // date_desc, date_asc, user_asc, status
+            'limit' => GETPOST('limit', 'int') ?: 50 // pagination
+        ];
+    }
+    
+    /**
+     * Récupérer membres équipe pour filtre utilisateur
+     */
+    private function getTeamMembersForFilter(): array 
+    {
+        $sql = "SELECT u.rowid, u.firstname, u.lastname FROM " . MAIN_DB_PREFIX . "user u";
+        $sql .= " WHERE u.statut = 1"; // Utilisateurs actifs
+        $sql .= " ORDER BY u.lastname, u.firstname";
+        
+        $result = $this->db->query($sql);
+        $members = [];
+        
+        if ($result) {
+            while ($obj = $this->db->fetch_object($result)) {
+                $members[] = [
+                    'id' => $obj->rowid,
+                    'name' => trim($obj->firstname . ' ' . $obj->lastname)
+                ];
+            }
+            $this->db->free($result);
+        }
+        
+        return $members;
+    }
+    
+    /**
+     * Calculer statistiques pour liste filtrée
+     */
+    private function calculateFilteredStats(array $records): array 
+    {
+        $stats = [
+            'total' => count($records),
+            'pending' => 0,
+            'approved' => 0,
+            'rejected' => 0,
+            'partial' => 0,
+            'with_anomalies' => 0,
+            'today' => 0
+        ];
+        
+        $today = date('Y-m-d');
+        
+        foreach ($records as $record) {
+            // Compter par statut de validation
+            switch ($record['validation_status']) {
+                case 0: $stats['pending']++; break;
+                case 1: $stats['approved']++; break;
+                case 2: $stats['rejected']++; break;
+                case 3: $stats['partial']++; break;
+            }
+            
+            // Compter anomalies
+            if (!empty($record['anomalies'])) {
+                $stats['with_anomalies']++;
+            }
+            
+            // Compter aujourd'hui
+            $recordDate = date('Y-m-d', strtotime($record['clock_in_time']));
+            if ($recordDate === $today) {
+                $stats['today']++;
+            }
+        }
+        
+        return $stats;
+    }
+    
+    /**
      * Helper pour vérifier si utilisateur est manager
      * 
      * @return bool True si manager
