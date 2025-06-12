@@ -34,10 +34,10 @@
           <ons-col width="20%">
             <div style="text-align: center;">
               <div style="font-size: 20px; font-weight: bold; color: #007bff;">
-                <?php echo $stats['total']; ?>
+                <?php echo $stats['today']; ?>
               </div>
               <div style="font-size: 12px; color: #6c757d;">
-                <?php echo $langs->trans('Total'); ?>
+                <?php echo $langs->trans('Today'); ?>
               </div>
             </div>
           </ons-col>
