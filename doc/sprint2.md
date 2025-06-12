@@ -668,8 +668,8 @@ Implémentation du ValidationController suivant les principes SOLID avec découp
    - Critères de validation : Validation d'un enregistrement avec feedback visuel
 
 3. **MVP 3.3** : Validation en lot et filtres
-   - Fonctionnalité core : Sélection multiple + validation groupée
-   - Interface graphique : Checkboxes + actions en lot + filtres
+   - Fonctionnalité core : Affichage de tous les enregistrement, Sélection multiple + validation groupée
+   - Interface graphique : Checkboxes + actions en lot + filtres (par defaut sur le jour = today())
    - Critères de validation : Validation de plusieurs enregistrements simultanément
 
 ### Points de contrôle MVP :
