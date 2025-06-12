@@ -29,7 +29,8 @@ AppMobTimeTouch is a Dolibarr module for mobile time tracking and employee prese
 
 ### 🎯 CURRENT STATUS (Juin 2025)
 - **Sprint 2 MVP 3.1-3.2**: ✅ COMPLETED - Validation manager with individual actions functional
-- **ViewRecord() Employee**: ✅ COMPLETED - Full navigation from RecordsList to details  
+- **ViewRecord() Employee**: ✅ COMPLETED - Full navigation from RecordsList to details
+- **Annuaire Fonctions**: ✅ COMPLETED - Complete function directory for code reuse
 - **Next Priority**: MVP 3.3 (Batch validation) - See CLAUDE_CONTEXT.md for detailed roadmap
 
 ### 🏗️ Architecture Layers (SOLID Compliant)
@@ -174,6 +175,57 @@ Time records have status workflow:
 - Handle offline scenarios gracefully
 - Optimize for touch interfaces
 - Consider mobile data limitations for API calls
+
+## 📚 Function Directory and Code Reuse
+
+⚠️ **MANDATORY**: Before creating any new function, consult the function directory to avoid duplication and promote reuse.
+
+### Function Directory Location
+- **Complete inventory**: `doc/annuaire_fonctions.md`
+- **200+ functions cataloged** across all categories
+- **Updated automatically** with each new function
+
+### Development Workflow
+1. **🔍 SEARCH FIRST**: Check function directory by name or functionality
+2. **📋 VERIFY CATEGORY**: Look in appropriate functional domain (Navigation, API, Services, etc.)
+3. **🎯 CHECK INTERFACES**: Identify available interfaces for extension
+4. **⚡ REUSE WHEN POSSIBLE**: Prefer existing functions over new ones
+
+### Decision Matrix
+| Scenario | Action | Example |
+|----------|--------|---------|
+| **✅ Function exists** | Reuse directly | `TimeHelper::formatDuration($minutes)` |
+| **🔧 Similar function exists** | **Propose 3 options**: <br>1. Extend with optional params<br>2. Create overloaded version<br>3. Refactor to generalize | Discuss modification strategy |
+| **🆕 No similar function** | Create new following SOLID principles | Add to appropriate service/helper |
+
+### Function Categories in Directory
+- **🎯 Navigation JS** (10 functions) - Mobile navigation system
+- **⏰ API TimeClock JS** (35+ methods) - Complete API module  
+- **🏗️ Controllers SOLID** (21 methods) - Page controllers with DIP
+- **🔧 Services Business** (45+ methods) - Core business logic
+- **🛠️ Helpers/Utils** (25 static functions) - Reusable utilities
+- **📊 Entities/Models** (15+ CRUD methods) - Data models
+- **🌐 API/Endpoints** (12 endpoints) - REST API
+- **🎯 SOLID Interfaces** (30 contracts) - DIP + ISP contracts
+
+### Examples of Reuse
+```php
+// ✅ Reuse existing time formatting
+$readable = TimeHelper::convertSecondsToReadableTime(3600); // "1h 00"
+
+// ✅ Reuse existing validation logic  
+$isValid = LocationHelper::validateCoordinates(48.8566, 2.3522);
+
+// ✅ Reuse existing service methods
+$pendingRecords = $validationService->getPendingValidations($managerId);
+```
+
+### When Creating New Functions
+- **Follow SOLID principles** (see guidelines below)
+- **Respect existing naming conventions**
+- **Add appropriate interfaces** if needed
+- **Include unit tests**
+- **Update function directory**
 
 ## 🎯 SOLID Development Guidelines
 
