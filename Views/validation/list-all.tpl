@@ -198,37 +198,37 @@
     <ons-card>
       <div style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="display: flex; align-items: center; gap: 15px;">
-            <span id="selected-count" style="font-weight: 500; color: #495057;">0 sélectionné(s)</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="selected-count" style="font-weight: 500; color: #495057; font-size: 14px;">0 sélectionné(s)</span>
             
             <ons-button 
               onclick="batchValidateRecords('approve')"
-              style="background-color: #28a745; color: white; border-radius: 6px; padding: 8px 12px;">
-              <ons-icon icon="md-check" style="margin-right: 5px;"></ons-icon>
-              <?php echo $langs->trans('ApproveAll'); ?>
+              title="<?php echo $langs->trans('ApproveAll'); ?>"
+              style="background-color: #28a745; color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; min-width: 40px; display: flex; align-items: center; justify-content: center;">
+              <ons-icon icon="md-check" style="font-size: 18px;"></ons-icon>
             </ons-button>
             
             <ons-button 
               onclick="batchValidateRecords('reject')"
-              style="background-color: #dc3545; color: white; border-radius: 6px; padding: 8px 12px;">
-              <ons-icon icon="md-cancel" style="margin-right: 5px;"></ons-icon>
-              <?php echo $langs->trans('RejectAll'); ?>
+              title="<?php echo $langs->trans('RejectAll'); ?>"
+              style="background-color: #dc3545; color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; min-width: 40px; display: flex; align-items: center; justify-content: center;">
+              <ons-icon icon="md-cancel" style="font-size: 18px;"></ons-icon>
             </ons-button>
             
             <ons-button 
               onclick="showBatchCommentModal()"
-              style="background-color: #007bff; color: white; border-radius: 6px; padding: 8px 12px;">
-              <ons-icon icon="md-comment" style="margin-right: 5px;"></ons-icon>
-              <?php echo $langs->trans('WithComment'); ?>
+              title="<?php echo $langs->trans('WithComment'); ?>"
+              style="background-color: #007bff; color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; min-width: 40px; display: flex; align-items: center; justify-content: center;">
+              <ons-icon icon="md-comment" style="font-size: 18px;"></ons-icon>
             </ons-button>
           </div>
           
           <ons-button 
             onclick="clearSelection()"
             modifier="quiet"
-            style="color: #6c757d;">
-            <ons-icon icon="md-close" style="margin-right: 5px;"></ons-icon>
-            <?php echo $langs->trans('Clear'); ?>
+            title="<?php echo $langs->trans('Clear'); ?>"
+            style="color: #6c757d; width: 36px; height: 36px; padding: 0; min-width: 36px; display: flex; align-items: center; justify-content: center;">
+            <ons-icon icon="md-close" style="font-size: 16px;"></ons-icon>
           </ons-button>
         </div>
       </div>
