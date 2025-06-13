@@ -57,9 +57,9 @@ session_cache_limiter('public');
 
 // Chargement de l'environnement Dolibarr
 $res = 0;
+if (!$res && file_exists("../../main.inc.php")) $res = include '../../main.inc.php';
 if (!$res && file_exists("../../../main.inc.php")) $res = include '../../../main.inc.php';
 if (!$res && file_exists("../../../../main.inc.php")) $res = include '../../../../main.inc.php';
-if (!$res && file_exists("../main.inc.php")) $res = include '../main.inc.php';
 if (!$res) die("Include of main fails");
 
 // Define js type

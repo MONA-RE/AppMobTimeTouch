@@ -67,7 +67,7 @@
 
     <?php if (!empty($user->rights->appmobtimetouch->timeclock->export)): ?>
     <!-- Rapports -->
-    <ons-list-item onclick="gotoPage('reports');" tappable modifier="nodivider">
+    <ons-list-item onclick="loadReports();" tappable modifier="nodivider">
       <div class="left">
         <ons-icon icon="fa-bar-chart" style="color: #795548;"></ons-icon>
       </div>

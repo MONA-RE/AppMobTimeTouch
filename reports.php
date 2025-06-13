@@ -14,9 +14,7 @@ if (!$res && file_exists("../../../main.inc.php")) $res = include '../../../main
 if (!$res) die("Include of main fails");
 
 // Chargement classes nécessaires
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Controllers/BaseController.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/TimeclockService.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Helpers/TimeHelper.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/TimeHelper.php';
 
 // Vérification module activé
 if (!isModEnabled('appmobtimetouch')) {
@@ -31,8 +29,8 @@ if (empty($user->rights->appmobtimetouch->timeclock->export)) {
 // Chargement traductions
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch"));
 
-// Initialisation service
-$timeclockService = new TimeclockService($db, $user, $langs, $conf);
+// Note: Services SOLID disponibles mais non utilisés pour cette page
+// Le code utilise directement les requêtes SQL pour les rapports
 
 // Variables pour template
 $data = [];
@@ -122,8 +120,11 @@ function getMonthlyReports($db, $user, $month, $year) {
     return $reports;
 }
 
-// Configuration page
+// Configuration page et extraction des variables pour le template
 $page_title = $data['page_title'] ?? $langs->trans('Reports');
+$monthly_reports = $data['monthly_reports'] ?? [];
+$filter_month = $data['filter_month'] ?? date('n');
+$filter_year = $data['filter_year'] ?? date('Y');
 ?>
 
 <!DOCTYPE html>

@@ -50,6 +50,12 @@ function goToCustomApp(appName) {
 function detectBaseUrl() {
     var baseUrl = '';
     
+    console.log('=== detectBaseUrl DEBUG ===');
+    console.log('window.location.href:', window.location.href);
+    console.log('window.location.pathname:', window.location.pathname);
+    console.log('window.location.protocol:', window.location.protocol);
+    console.log('window.location.host:', window.location.host);
+    
     // Méthode 1: Depuis les variables globales spécifiques à chaque app
     if (typeof window.appMobTimeTouch !== 'undefined' && window.appMobTimeTouch.DOL_URL_ROOT) {
         baseUrl = window.appMobTimeTouch.DOL_URL_ROOT;
@@ -71,6 +77,7 @@ function detectBaseUrl() {
     
     // Chercher 'custom' dans le chemin pour construire la base
     var customIndex = pathArray.indexOf('custom');
+    console.log('customIndex:', customIndex);
     if (customIndex > 0) {
         baseUrl = window.location.protocol + '//' + window.location.host + pathArray.slice(0, customIndex).join('/');
         console.log('Base URL detected from custom path:', baseUrl);
@@ -79,6 +86,7 @@ function detectBaseUrl() {
     
     // Chercher 'htdocs' dans le chemin
     var htdocsIndex = pathArray.indexOf('htdocs');
+    console.log('htdocsIndex:', htdocsIndex);
     if (htdocsIndex >= 0) {
         baseUrl = window.location.protocol + '//' + window.location.host + pathArray.slice(0, htdocsIndex + 1).join('/');
         console.log('Base URL detected from htdocs path:', baseUrl);
@@ -88,9 +96,11 @@ function detectBaseUrl() {
     // Méthode 3: Analyse des patterns courants Dolibarr
     // Pattern: /dolibarr/htdocs/ ou /htdocs/
     var pathname = window.location.pathname;
+    console.log('pathname for pattern matching:', pathname);
     
     // Cas 1: /quelquechose/htdocs/custom/app/
     var htdocsMatch = pathname.match(/^(.*\/htdocs)\//);
+    console.log('htdocsMatch:', htdocsMatch);
     if (htdocsMatch) {
         baseUrl = window.location.protocol + '//' + window.location.host + htdocsMatch[1];
         console.log('Base URL detected from htdocs pattern:', baseUrl);
@@ -99,6 +109,7 @@ function detectBaseUrl() {
     
     // Cas 2: /custom/app/ directement sous la racine
     var customMatch = pathname.match(/^(.*)\/custom\//);
+    console.log('customMatch:', customMatch);
     if (customMatch) {
         baseUrl = window.location.protocol + '//' + window.location.host + customMatch[1];
         console.log('Base URL detected from custom pattern:', baseUrl);
@@ -108,6 +119,7 @@ function detectBaseUrl() {
     // Méthode 4: Fallback - racine du serveur
     baseUrl = window.location.protocol + '//' + window.location.host;
     console.log('Using fallback base URL (server root):', baseUrl);
+    console.log('=== END detectBaseUrl DEBUG ===');
     
     return baseUrl;
 }
@@ -234,6 +246,59 @@ function loadManagement() {
 }
 
 /**
+ * Navigation vers les rapports mensuels
+ * Fonction appelée depuis rightmenu.tpl
+ */
+function loadReports() {
+    console.log('=== DEBUG loadReports ===');
+    
+    try {
+        // Construction de l'URL vers reports.php
+        var currentUrl = window.location.href;
+        var currentPath = window.location.pathname;
+        
+        // Détecter si on est dans le module appmobtimetouch
+        if (currentPath.includes('/appmobtimetouch/')) {
+            // URL relative depuis le module actuel
+            var reportsUrl = './reports.php';
+        } else {
+            // URL absolue depuis detectBaseUrl
+            var baseUrl = detectBaseUrl();
+            var reportsUrl = baseUrl + '/custom/appmobtimetouch/reports.php';
+        }
+        
+        console.log('Current URL:', currentUrl);
+        console.log('Reports URL constructed:', reportsUrl);
+        
+        // Message de chargement
+        if (typeof ons !== 'undefined') {
+            ons.notification.toast('Chargement des rapports...', {timeout: 1500});
+        }
+        
+        // Navigation vers la page rapports
+        setTimeout(function() {
+            console.log('Navigating to reports page...');
+            window.location.href = reportsUrl;
+        }, 300);
+        
+    } catch (error) {
+        console.error('ERROR in loadReports:', error);
+        
+        // Fallback d'urgence
+        var fallbackUrl = './reports.php';
+        console.log('Using fallback URL:', fallbackUrl);
+        
+        if (typeof ons !== 'undefined') {
+            ons.notification.alert('Error loading reports. Trying fallback...');
+        }
+        
+        setTimeout(function() {
+            window.location.href = fallbackUrl;
+        }, 1000);
+    }
+}
+
+/**
  * Navigation vers les enregistrements de l'utilisateur
  * Placeholder pour futures implémentations
  */
@@ -282,6 +347,17 @@ function loadSettings() {
 function gotoPage(pageName) {
     console.log('=== DEBUG gotoPage ===');
     console.log('pageName parameter:', pageName);
+    console.log('Going to page:', pageName);
+    console.log('OnsenUI available:', typeof ons !== 'undefined');
+    console.log('Current location:', window.location.href);
+    
+    // Show loading notification
+    if (typeof ons !== 'undefined' && ons.notification) {
+        ons.notification.toast('Chargement de ' + pageName + '...', {timeout: 1500});
+        console.log('Toast notification shown');
+    } else {
+        console.log('OnsenUI not available, skipping toast');
+    }
     
     // Fermer le menu latéral si ouvert
     var splitter = document.getElementById('mySplitter');
@@ -300,6 +376,7 @@ function gotoPage(pageName) {
     switch(pageName) {
         case 'reports':
             finalUrl = baseUrl + '/custom/appmobtimetouch/reports.php';
+            console.log('Reports URL mapping completed:', finalUrl);
             break;
         case 'myTimeclockRecords':
             finalUrl = baseUrl + '/custom/appmobtimetouch/home.php?action=myRecords';
@@ -321,7 +398,9 @@ function gotoPage(pageName) {
             break;
         default:
             console.error('Unknown page:', pageName);
-            ons.notification.toast('Page non trouvée: ' + pageName, {timeout: 2000});
+            if (typeof ons !== 'undefined' && ons.notification) {
+                ons.notification.toast('Page non trouvée: ' + pageName, {timeout: 2000});
+            }
             return;
     }
     
@@ -329,12 +408,33 @@ function gotoPage(pageName) {
     
     // Validation et navigation
     try {
-        console.log('Navigating to:', finalUrl);
-        window.location.href = finalUrl;
+        console.log('About to navigate to:', finalUrl);
+        
+        // Vérification de l'URL
+        var testUrl = new URL(finalUrl);
+        console.log('URL validation successful:', testUrl.href);
+        
+        // Navigation avec délai pour permettre au toast de s'afficher
+        setTimeout(function() {
+            console.log('Executing navigation to:', finalUrl);
+            try {
+                window.location.href = finalUrl;
+                console.log('Navigation call completed');
+            } catch (navError) {
+                console.error('Navigation execution failed:', navError);
+                if (typeof ons !== 'undefined' && ons.notification) {
+                    ons.notification.alert('Navigation execution failed: ' + navError.message);
+                }
+            }
+        }, 200);
         
     } catch (error) {
         console.error('ERROR: Navigation failed:', error);
-        ons.notification.alert('Erreur de navigation vers: ' + pageName);
+        if (typeof ons !== 'undefined' && ons.notification) {
+            ons.notification.alert('Erreur de navigation vers: ' + pageName + '\nErreur: ' + error.message);
+        } else {
+            alert('Erreur de navigation vers: ' + pageName + '\nErreur: ' + error.message);
+        }
     }
 }
 
@@ -346,6 +446,7 @@ function initNavigation() {
     
     // Exposer les fonctions de navigation globalement
     window.loadManagement = loadManagement;
+    window.loadReports = loadReports;
     window.loadMyRecords = loadMyRecords;
     window.loadSummary = loadSummary;
     window.loadSettings = loadSettings;

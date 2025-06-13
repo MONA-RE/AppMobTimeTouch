@@ -62,7 +62,7 @@
               <option value="<?php echo $year; ?>" <?php echo ($filter_year == $year) ? 'selected' : ''; ?>>
                 <?php echo $year; ?>
               </option>
-              <?php endforeach; ?>
+              <?php endfor; ?>
             </select>
           </ons-col>
         </ons-row>

@@ -11,6 +11,10 @@
 dol_include_once('/appmobtimetouch/class/timeclockrecord.class.php');
 dol_include_once('/appmobtimetouch/class/timeclocktype.class.php');
 
+// Import interfaces
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/TimeclockServiceInterface.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/DataServiceInterface.php';
+
 // Import helpers
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/LocationHelper.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/TimeHelper.php';
