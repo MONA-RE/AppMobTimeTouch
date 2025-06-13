@@ -112,6 +112,44 @@ OptionalNote = Note optionnelle
 ReadyToStart = Pret a commencer
 
 #
+# Rapports
+#
+Reports = Rapports
+MonthlyReports = Rapports mensuels
+ReportFilters = Filtres de rapport
+Month = Mois
+Year = Année
+January = Janvier
+February = Février
+March = Mars
+April = Avril
+May = Mai
+June = Juin
+July = Juillet
+August = Août
+September = Septembre
+October = Octobre
+November = Novembre
+December = Décembre
+MonthlyReport = Rapport mensuel
+TotalUsers = Total utilisateurs
+ActiveUsers = Utilisateurs actifs
+TotalHours = Total heures
+AverageHours = Moyenne heures
+UsersHours = Heures utilisateurs
+Records = Enregistrements
+Hours = Heures
+NoActivity = Aucune activité
+Incomplete = Incomplet
+Complete = Complet
+NoDataFound = Aucune donnée trouvée
+NoActivityForPeriod = Aucune activité pour cette période
+ExportOptions = Options d'export
+FeatureComingSoon = Fonctionnalité à venir
+LoadingReports = Chargement des rapports
+RefreshingData = Actualisation des données
+
+#
 # Statuts
 #
 Draft = Brouillon

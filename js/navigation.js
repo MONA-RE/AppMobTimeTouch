@@ -276,6 +276,69 @@ function loadSettings() {
 }
 
 /**
+ * Navigate to specific pages within the application
+ * @param {string} pageName - Name of the page to navigate to
+ */
+function gotoPage(pageName) {
+    console.log('=== DEBUG gotoPage ===');
+    console.log('pageName parameter:', pageName);
+    
+    // Fermer le menu latéral si ouvert
+    var splitter = document.getElementById('mySplitter');
+    if (splitter && splitter.right) {
+        splitter.right.close();
+        console.log('Side menu closed');
+    }
+    
+    // Détection de l'URL de base
+    var baseUrl = detectBaseUrl();
+    console.log('Base URL detected:', baseUrl);
+    
+    var finalUrl;
+    
+    // Mapping des pages
+    switch(pageName) {
+        case 'reports':
+            finalUrl = baseUrl + '/custom/appmobtimetouch/reports.php';
+            break;
+        case 'myTimeclockRecords':
+            finalUrl = baseUrl + '/custom/appmobtimetouch/home.php?action=myRecords';
+            break;
+        case 'weeklySummaries':
+            finalUrl = baseUrl + '/custom/appmobtimetouch/home.php?action=summaries';
+            break;
+        case 'teamManagement':
+            finalUrl = baseUrl + '/custom/appmobtimetouch/home.php?action=teamManagement';
+            break;
+        case 'preferences':
+            finalUrl = baseUrl + '/custom/appmobtimetouch/home.php?action=preferences';
+            break;
+        case 'moncompteApplication':
+            finalUrl = baseUrl + '/user/card.php?id=' + (window.userId || '');
+            break;
+        case 'aproposApplication':
+            finalUrl = baseUrl + '/custom/appmobtimetouch/home.php?action=about';
+            break;
+        default:
+            console.error('Unknown page:', pageName);
+            ons.notification.toast('Page non trouvée: ' + pageName, {timeout: 2000});
+            return;
+    }
+    
+    console.log('Final URL constructed:', finalUrl);
+    
+    // Validation et navigation
+    try {
+        console.log('Navigating to:', finalUrl);
+        window.location.href = finalUrl;
+        
+    } catch (error) {
+        console.error('ERROR: Navigation failed:', error);
+        ons.notification.alert('Erreur de navigation vers: ' + pageName);
+    }
+}
+
+/**
  * Initialize navigation system
  */
 function initNavigation() {
@@ -286,8 +349,9 @@ function initNavigation() {
     window.loadMyRecords = loadMyRecords;
     window.loadSummary = loadSummary;
     window.loadSettings = loadSettings;
+    window.gotoPage = gotoPage;
     
-    console.log('Navigation functions exposed: loadManagement(), loadMyRecords(), loadSummary(), loadSettings()');
+    console.log('Navigation functions exposed: loadManagement(), loadMyRecords(), loadSummary(), loadSettings(), gotoPage()');
     
     // Exposer les fonctions de debug en mode développement
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {

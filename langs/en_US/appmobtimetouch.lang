@@ -104,6 +104,45 @@ ValidationInformation=Validation Information
 RecordPendingValidation=This record is pending manager validation
 RecordAlreadyValidated=This record has been validated by your manager
 ViewAllRecords=View All Records
+
+#
+# Reports
+#
+Reports = Reports
+MonthlyReports = Monthly Reports
+ReportFilters = Report Filters
+Month = Month
+Year = Year
+January = January
+February = February
+March = March
+April = April
+May = May
+June = June
+July = July
+August = August
+September = September
+October = October
+November = November
+December = December
+MonthlyReport = Monthly Report
+TotalUsers = Total Users
+ActiveUsers = Active Users
+TotalHours = Total Hours
+AverageHours = Average Hours
+UsersHours = Users Hours
+Records = Records
+Hours = Hours
+NoActivity = No Activity
+Incomplete = Incomplete
+Complete = Complete
+NoDataFound = No Data Found
+NoActivityForPeriod = No activity for this period
+ExportOptions = Export Options
+FeatureComingSoon = Feature Coming Soon
+LoadingReports = Loading Reports
+RefreshingData = Refreshing Data
+
 ModuleAppMobTimeTouchName = AppMobTimeTouch
 # Module description 'ModuleAppMobTimeTouchDesc'
 ModuleAppMobTimeTouchDesc = AppMobTimeTouch description
