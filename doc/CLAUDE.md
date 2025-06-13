@@ -179,7 +179,7 @@ Time records have status workflow:
 - **Security**: CSRF token validation, permission checks, input sanitization
 
 ## Mobile Interface
-- **Framework**: OnsenUI for mobile UI components
+- **Framework**: OnsenUI for mobile UI components ⚠️ **MANDATORY** - Always use OnsenUI components and APIs
 - **Main entry**: `home.php` serves the mobile interface
 - **Validation entry**: `validation.php` serves manager validation interface
 - **Employee details**: `employee-record-detail.php` for employee record viewing
@@ -188,6 +188,7 @@ Time records have status workflow:
 - **JavaScript**: `js/timeclock-api.js` handles API interactions
 - **Navigation**: `js/navigation.js` handles mobile navigation and page loading
 - **CSS**: OnsenUI components + custom styles in `css/`
+- **Component Guidelines**: See "OnsenUI Framework Guidelines" section for mandatory usage patterns
 
 ## Dolibarr Integration
 - **Module class**: `core/modules/modAppMobTimeTouch.class.php` defines module structure
@@ -330,6 +331,104 @@ Time records have status workflow:
 - Handle offline scenarios gracefully
 - Optimize for touch interfaces
 - Consider mobile data limitations for API calls
+
+### OnsenUI Framework Guidelines
+
+⚠️ **CRITICAL**: Always use OnsenUI native APIs and methods for UI interactions. Never use standard HTML/DOM methods when OnsenUI equivalents exist.
+
+#### Initialization and Lifecycle
+- **Always use** `ons.ready()` instead of `DOMContentLoaded` for OnsenUI component initialization
+- **Check OnsenUI availability** with `typeof ons !== 'undefined'` before using OnsenUI APIs
+- **Implement fallback logic** for script loading order issues:
+```javascript
+if (typeof ons !== 'undefined') {
+  ons.ready(initializeFunction);
+} else {
+  document.addEventListener('DOMContentLoaded', function() {
+    function waitForOns() {
+      if (typeof ons !== 'undefined') {
+        ons.ready(initializeFunction);
+      } else {
+        setTimeout(waitForOns, 100);
+      }
+    }
+    waitForOns();
+  });
+}
+```
+
+#### Component Interaction Best Practices
+
+##### Checkboxes (`ons-checkbox`)
+- **Use** `ons-checkbox` elements instead of standard HTML checkboxes
+- **Access state** via `checkbox.checked` property (OnsenUI API)
+- **Attach events** using `addEventListener('change', ...)` on OnsenUI elements
+- **Never use** inline `onchange` attributes - always use proper event listeners
+- **Select elements** with `document.querySelectorAll('ons-checkbox.classname')`
+- **Data attributes** preferred over `value` attribute for record IDs:
+```html
+<!-- ✅ Correct -->
+<ons-checkbox class="record-checkbox" data-record-id="123"></ons-checkbox>
+
+<!-- ❌ Avoid -->
+<ons-checkbox class="record-checkbox" value="123" onchange="someFunction()"></ons-checkbox>
+```
+
+##### Buttons (`ons-button`)
+- **Use** `ons-button` for all interactive buttons
+- **Disable/enable** via `button.disabled = true/false`
+- **Style states** using `button.style.opacity` and `button.style.cursor` for visual feedback
+- **Handle loading states** by disabling buttons during async operations
+
+##### Modals (`ons-modal`)
+- **Show/hide** using `modal.show()` and `modal.hide()` methods
+- **Access modals** via `document.getElementById('modal-id')`
+- **Clear content** when hiding modals for better UX
+
+##### Notifications
+- **Use OnsenUI notifications** for user feedback:
+  - `ons.notification.alert(message)` for alerts
+  - `ons.notification.confirm({message, callback})` for confirmations  
+  - `ons.notification.toast(message, {timeout})` for temporary messages
+
+#### Event Handling Patterns
+```javascript
+// ✅ Correct OnsenUI pattern
+ons.ready(function() {
+  const checkbox = document.getElementById('my-checkbox');
+  checkbox.addEventListener('change', function() {
+    console.log('Checkbox state:', this.checked);
+  });
+});
+
+// ❌ Avoid standard DOM patterns
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('my-checkbox').onchange = function() {
+    // This may not work correctly with OnsenUI
+  };
+});
+```
+
+#### Common Pitfalls to Avoid
+1. **Script loading order**: OnsenUI must be loaded before using `ons` object
+2. **Mixed APIs**: Don't mix standard HTML form APIs with OnsenUI component APIs
+3. **Inline handlers**: Avoid `onclick`, `onchange` in HTML - use `addEventListener`
+4. **Missing fallbacks**: Always handle cases where OnsenUI isn't loaded yet
+5. **CSS selectors**: Use OnsenUI-specific selectors (`ons-checkbox`, not `input[type="checkbox"]`)
+
+#### Template Development Rules
+- **Component consistency**: All interactive elements should use OnsenUI components
+- **Event delegation**: Attach events after `ons.ready()` to ensure components are initialized
+- **State management**: Use OnsenUI component properties for state (not HTML attributes)
+- **Responsive design**: Leverage OnsenUI's built-in responsive utilities
+
+#### Debugging OnsenUI Issues
+- **Check console** for `ons is not defined` errors
+- **Verify initialization** with `console.log('OnsenUI ready')` in `ons.ready()`
+- **Test component state** via browser DevTools: `$0.checked` for checkboxes
+- **Validate selectors** ensure you're selecting OnsenUI elements, not wrapper HTML
+
+This framework-first approach ensures consistent behavior across all mobile interfaces and prevents JavaScript errors from DOM/OnsenUI API conflicts.
 
 ## Next Development Priorities
 
