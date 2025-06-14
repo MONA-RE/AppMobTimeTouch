@@ -72,7 +72,7 @@
               <?php echo $langs->trans('ClockIn'); ?>
             </div>
             <div style="font-size: 18px; font-weight: bold; color: #495057;">
-              <?php echo dol_print_date($record['clock_in_time'], 'hour'); ?>
+              <?php echo dol_print_date($record['clock_in_time'], 'hour', 'tzuser'); ?>
             </div>
             <?php if (!empty($record['location_in'])): ?>
             <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">
@@ -92,7 +92,7 @@
             </div>
             <?php if (!empty($record['clock_out_time'])): ?>
             <div style="font-size: 18px; font-weight: bold; color: #495057;">
-              <?php echo dol_print_date($record['clock_out_time'], 'hour'); ?>
+              <?php echo dol_print_date($record['clock_out_time'], 'hour', 'tzuser'); ?>
             </div>
             <?php if (!empty($record['location_out'])): ?>
             <div style="font-size: 12px; color: #6c757d; margin-top: 3px;">
