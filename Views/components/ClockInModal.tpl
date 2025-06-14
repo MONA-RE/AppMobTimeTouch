@@ -65,8 +65,25 @@
           </ons-list>
         </div>
         
+        <!-- Boutons d'action -->
+        <div style="display: flex; gap: 10px; margin-top: 25px;">
+          <ons-button 
+            onclick="clockInModal.hide()" 
+            style="flex: 1; background: #f5f5f5; color: #666; border: 1px solid #ddd; border-radius: 25px; padding: 12px; font-size: 16px; font-weight: 500;">
+            <ons-icon icon="md-close" style="margin-right: 8px;"></ons-icon>
+            <?php echo $langs->trans("Cancel"); ?>
+          </ons-button>
+          
+          <ons-button 
+            onclick="submitClockIn()" 
+            style="flex: 2; background: linear-gradient(45deg, #4CAF50, #45a049); color: white; border: none; border-radius: 25px; padding: 12px; font-size: 16px; font-weight: 500; box-shadow: 0 3px 6px rgba(76, 175, 80, 0.3);">
+            <ons-icon icon="md-play-arrow" style="margin-right: 8px;"></ons-icon>
+            <?php echo $langs->trans("ClockIn"); ?>
+          </ons-button>
+        </div>
+
         <!-- Localisation -->
-        <div style="margin-bottom: 20px;">
+        <div style="margin-bottom: 20px; margin-top: 25px;">
           <div style="font-weight: bold; margin-bottom: 8px; color: #333;">
             <ons-icon icon="md-place" style="color: #FF9800; margin-right: 8px;"></ons-icon>
             <?php echo $langs->trans("Location"); ?>:
@@ -99,23 +116,6 @@
         <div id="gps-status" style="margin-bottom: 20px; padding: 10px; background: #f5f5f5; border-radius: 6px; font-size: 14px; color: #666; text-align: center; min-height: 20px;">
           <ons-icon icon="md-gps-fixed" style="color: #666; margin-right: 5px;"></ons-icon>
           <span id="gps-status-text"><?php echo $langs->trans("ReadyToStart"); ?></span>
-        </div>
-        
-        <!-- Boutons d'action -->
-        <div style="display: flex; gap: 10px; margin-top: 25px;">
-          <ons-button 
-            onclick="clockInModal.hide()" 
-            style="flex: 1; background: #f5f5f5; color: #666; border: 1px solid #ddd; border-radius: 25px; padding: 12px; font-size: 16px; font-weight: 500;">
-            <ons-icon icon="md-close" style="margin-right: 8px;"></ons-icon>
-            <?php echo $langs->trans("Cancel"); ?>
-          </ons-button>
-          
-          <ons-button 
-            onclick="submitClockIn()" 
-            style="flex: 2; background: linear-gradient(45deg, #4CAF50, #45a049); color: white; border: none; border-radius: 25px; padding: 12px; font-size: 16px; font-weight: 500; box-shadow: 0 3px 6px rgba(76, 175, 80, 0.3);">
-            <ons-icon icon="md-play-arrow" style="margin-right: 8px;"></ons-icon>
-            <?php echo $langs->trans("ClockIn"); ?>
-          </ons-button>
         </div>
       </form>
     </div>

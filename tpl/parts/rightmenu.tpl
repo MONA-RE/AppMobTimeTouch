@@ -23,15 +23,6 @@
       </div>
     </ons-list-item>
 
-    <!-- Résumés -->
-    <ons-list-item onclick="gotoPage('weeklySummaries');" tappable modifier="nodivider">
-      <div class="left">
-        <ons-icon icon="fa-calendar" style="color: #FF9800;"></ons-icon>
-      </div>
-      <div class="center">
-        <span><?php echo $langs->trans("WeeklySummaries"); ?></span>
-      </div>
-    </ons-list-item>
 
     <?php if (!empty($user->rights->appmobtimetouch->timeclock->readall)): ?>
     <!-- Gestion Équipe (Managers seulement) -->

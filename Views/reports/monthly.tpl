@@ -185,7 +185,7 @@
 </div>
 
 <!-- Liste des utilisateurs et leurs heures -->
-<?php if (!empty($monthly_reports)): ?>
+<?php if (!empty($monthly_reports) && !$is_personal_view): ?>
 <div style="padding: 0 15px 15px 15px;">
   <ons-card>
     <div class="title" style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
