@@ -4,7 +4,7 @@
             <?php echo $langs->trans("AppMobTimeTouch"); ?>
         </span>
     </div>
-    <div id="home" class="left" onclick="">
+    <div id="home" class="left" onclick="goToHome()" style="cursor: pointer;">
         <img src="img/clock-icon.png" id="homeLogo" style="height: 30px; width: 30px; margin-left: 10px;" />
     </div>
     <div id="menuHautDroite" class="right">

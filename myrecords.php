@@ -52,6 +52,9 @@ try {
             // Calculer les statistiques personnelles
             $stats = calculatePersonalStats($records);
             
+            // Récupérer le statut de pointage pour la toolbar (comme index.php)
+            $is_clocked_in = getUserClockStatus($db, $user);
+            
             $data = [
                 'records' => $records,
                 'stats' => $stats,
@@ -60,7 +63,8 @@ try {
                 'is_personal_view' => true,
                 'show_user_column' => false,
                 'show_validation_actions' => false,
-                'filters' => [] // Pas de filtres complexes pour vue personnelle
+                'filters' => [], // Pas de filtres complexes pour vue personnelle
+                'is_clocked_in' => $is_clocked_in
             ];
             
             break;
@@ -169,6 +173,26 @@ function calculatePersonalStats($records) {
     return $stats;
 }
 
+/**
+ * Récupère le statut de pointage de l'utilisateur (pour toolbar)
+ */
+function getUserClockStatus($db, $user) {
+    $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "timeclock_records";
+    $sql .= " WHERE fk_user = " . (int)$user->id;
+    $sql .= " AND status = 2"; // Status 2 = En cours (pointé)
+    $sql .= " AND clock_out_time IS NULL";
+    $sql .= " ORDER BY clock_in_time DESC LIMIT 1";
+    
+    $resql = $db->query($sql);
+    if ($resql) {
+        $num = $db->num_rows($resql);
+        $db->free($resql);
+        return $num > 0;
+    }
+    
+    return false;
+}
+
 // Configuration page et extraction des variables pour le template
 $page_title = $data['page_title'] ?? $langs->trans('MyTimeclockRecords');
 $records = $data['records'] ?? [];
@@ -177,6 +201,7 @@ $filters = $data['filters'] ?? [];
 $is_personal_view = $data['is_personal_view'] ?? true;
 $show_user_column = $data['show_user_column'] ?? false;
 $show_validation_actions = $data['show_validation_actions'] ?? false;
+$is_clocked_in = $data['is_clocked_in'] ?? false;
 
 // Variables pour compatibilité rightmenu.tpl selon INDEX_HOME_COMPATIBILITY.md
 $pending_validation_count = 0; // Pas utilisé dans myrecords mais requis pour rightmenu.tpl
@@ -264,23 +289,8 @@ $pending_validation_count = 0; // Pas utilisé dans myrecords mais requis pour r
     <ons-splitter-content>
         <ons-page id="myRecordsPage">
             
-            <!-- TopBar Mes Enregistrements -->
-            <ons-toolbar>
-                <div class="left">
-                    <ons-toolbar-button onclick="goBackToHome()">
-                        <ons-icon icon="md-arrow-back"></ons-icon>
-                    </ons-toolbar-button>
-                </div>
-                <div class="center"><?php echo $page_title; ?></div>
-                <div class="right">
-                    <ons-toolbar-button onclick="refreshMyRecords()">
-                        <ons-icon icon="md-refresh"></ons-icon>
-                    </ons-toolbar-button>
-                    <ons-toolbar-button onclick="toggleMenu()">
-                        <ons-icon icon="md-menu"></ons-icon>
-                    </ons-toolbar-button>
-                </div>
-            </ons-toolbar>
+            <!-- TopBar avec même style que index.php -->
+            <?php include 'tpl/parts/topbar-home.tpl'; ?>
             
             <!-- Contenu scrollable -->
             <div class="page__content">
@@ -353,6 +363,14 @@ function goBackToHome() {
     setTimeout(function() {
         window.location.href = homeUrl;
     }, 300);
+}
+
+/**
+ * Go to home page (pour toolbar logo)
+ */
+function goToHome() {
+    console.log('Going to home page from toolbar');
+    goBackToHome(); // Réutilise la fonction existante
 }
 
 /**
@@ -449,6 +467,13 @@ if (typeof ons !== 'undefined') {
 } else {
     console.warn('OnsenUI not available');
 }
+
+// Exposer les fonctions globalement
+window.goToHome = goToHome;
+window.goBackToHome = goBackToHome;
+window.refreshMyRecords = refreshMyRecords;
+window.showEmployeeRecordDetails = showEmployeeRecordDetails;
+window.toggleMenu = toggleMenu;
 </script>
 
 </body>
