@@ -7,29 +7,30 @@
  * - OCP : Extensible via de nouveaux composants
  * - ISP : Interfaces spécialisées par composant
  * - DIP : Dépendances injectées via variables partagées
+ * 
+ * Note: Plus de balise ons-page ici car inclus dans home.php structure
  */
 ?>
-<ons-page id="ONSHome">
-  <?php include "tpl/parts/topbar-home.tpl"; ?>
-  
-  <ons-pull-hook id="pull-hook">
-    <?php echo $langs->trans("PullToRefresh"); ?>
-  </ons-pull-hook>
-  
-  <!-- Messages Component (SRP: Affichage messages) -->
-  <?php include 'Views/components/Messages.tpl'; ?>
-  
-  <!-- Status Card Component (SRP: Statut timeclock) -->
-  <?php include 'Views/components/StatusCard.tpl'; ?>
-  
-  <!-- Summary Card Component (SRP: Résumé journalier) -->
-  <?php include 'Views/components/SummaryCard.tpl'; ?>
-  
-  <!-- Weekly Summary Component (SRP: Résumé hebdomadaire) -->
-  <?php include 'Views/components/WeeklySummary.tpl'; ?>
-  
-  <!-- Recent Records Component (SRP: Liste enregistrements) -->
-  <?php include 'Views/components/RecordsList.tpl'; ?>
+
+<!-- Pull to refresh -->
+<ons-pull-hook id="pull-hook">
+  <?php echo $langs->trans("PullToRefresh"); ?>
+</ons-pull-hook>
+
+<!-- Messages Component (SRP: Affichage messages) -->
+<?php include 'Views/components/Messages.tpl'; ?>
+
+<!-- Status Card Component (SRP: Statut timeclock) -->
+<?php include 'Views/components/StatusCard.tpl'; ?>
+
+<!-- Summary Card Component (SRP: Résumé journalier) -->
+<?php include 'Views/components/SummaryCard.tpl'; ?>
+
+<!-- Weekly Summary Component (SRP: Résumé hebdomadaire) -->
+<?php include 'Views/components/WeeklySummary.tpl'; ?>
+
+<!-- Recent Records Component (SRP: Liste enregistrements) -->
+<?php include 'Views/components/RecordsList.tpl'; ?>
 
   <!-- Modal Components (ISP: Interfaces spécialisées) -->
   <?php include 'Views/components/ClockInModal.tpl'; ?>

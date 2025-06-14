@@ -76,13 +76,27 @@ else
 fi
 
 echo ""
+if grep -q "ons-page.*homePage" home.php; then
+    echo "✅ OnsenUI structure corrigée (ons-page)"
+else
+    echo "❌ OnsenUI structure non corrigée"
+fi
+
+if grep -q "page__content" home.php; then
+    echo "✅ Contenu scrollable ajouté"
+else
+    echo "❌ Contenu scrollable manquant"
+fi
+
+echo ""
 echo "ÉTAT MVP ACTUEL:"
 echo "✅ MVP Étape 1: Sauvegarde et préparation"
 echo "✅ MVP Étape 2: Refactorisation index.php"
 echo "✅ MVP Étape 3: Refactorisation home.php"
 echo "✅ MVP Étape 4: Corrections JavaScript OnsenUI"
+echo "✅ MVP Étape 5: Structure OnsenUI corrigée (clickable/scrollable)"
 echo ""
 echo "PROCHAINES ÉTAPES:"
-echo "- MVP Étape 5: Tests composants et templates"
 echo "- MVP Étape 6: Tests intégration complète"
-echo "- Test navigateur: Vérifier console errors corrigées"
+echo "- Test navigateur: Vérifier contenu clickable et scrollable"
+echo "- Test mobile: Valider tabbar et navigation"
