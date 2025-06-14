@@ -507,6 +507,25 @@ function submitClockIn() {
 function submitClockOut() {
     console.log('Submit Clock Out called');
     
+    // Debug: Check form existence
+    var form = document.getElementById('clockOutForm');
+    if (!form) {
+        console.error('ClockOutForm not found!');
+        ons.notification.alert('Erreur: Formulaire de sortie non trouvé');
+        return;
+    }
+    
+    console.log('ClockOut form found:', form);
+    console.log('ClockOut form action:', form.action);
+    console.log('ClockOut form method:', form.method);
+    
+    // Check form data
+    var formData = new FormData(form);
+    console.log('ClockOut form data:');
+    for (var pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+    }
+    
     // Validate required location if needed
     if (window.appMobTimeTouch && window.appMobTimeTouch.requireLocation) {
         var lat = document.getElementById('clockout_latitude').value;
@@ -518,6 +537,7 @@ function submitClockOut() {
         }
     }
     
+    console.log('Submitting clockOut form...');
     // Submit form directly (controller handles the action)
     document.getElementById('clockOutForm').submit();
 }

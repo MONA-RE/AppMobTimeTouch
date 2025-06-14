@@ -135,14 +135,15 @@ class HomeController extends BaseController
      */
     private function handleClockOut(): array 
     {
-        $validation = $this->validatePostParams([
-            'location' => 'alphanohtml',
-            'latitude' => 'float',
-            'longitude' => 'float',
-            'note' => 'restricthtml'
-        ]);
+        dol_syslog("HomeController: handleClockOut() called", LOG_DEBUG);
+        
+        // Clock out minimal - pas de paramètres obligatoires
+        $validation = $this->validatePostParams([]);
+        
+        dol_syslog("HomeController: ClockOut validation result - " . json_encode($validation), LOG_DEBUG);
         
         if (!empty($validation['errors'])) {
+            dol_syslog("HomeController: ClockOut validation errors - " . implode(', ', $validation['errors']), LOG_ERROR);
             return [
                 'error' => 1,
                 'errors' => $validation['errors']
@@ -150,9 +151,12 @@ class HomeController extends BaseController
         }
         
         // Utiliser le service avec gestion d'exceptions
+        dol_syslog("HomeController: Calling timeclockService->clockOut()", LOG_DEBUG);
         $result = $this->timeclockService->clockOut($this->user, $validation['params']);
+        dol_syslog("HomeController: clockOut service result - " . json_encode($result), LOG_DEBUG);
         
         // Redirection pour éviter la resoumission
+        dol_syslog("HomeController: Redirecting with clockout success", LOG_DEBUG);
         $this->redirectWithSuccess($_SERVER['PHP_SELF'], 'clockout_success');
     }
     
