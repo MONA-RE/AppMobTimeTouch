@@ -204,8 +204,29 @@ $now = dol_now();
 $moduleInstance = new modAppMobTimeTouch($db);
 $version = $moduleInstance->version;
 
+/**
+ * Récupère le statut de pointage de l'utilisateur (pour toolbar)
+ */
+function getUserClockStatus($db, $user) {
+    $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "timeclock_records";
+    $sql .= " WHERE fk_user = " . (int)$user->id;
+    $sql .= " AND status = 2"; // Status 2 = En cours (pointé)
+    $sql .= " AND clock_out_time IS NULL";
+    $sql .= " ORDER BY clock_in_time DESC LIMIT 1";
+    
+    $resql = $db->query($sql);
+    if ($resql) {
+        $num = $db->num_rows($resql);
+        $db->free($resql);
+        return $num > 0;
+    }
+    
+    return false;
+}
+
 // CORRECTION ÉTAPE 1 : Initialiser les variables par défaut pour les templates
-$is_clocked_in = false;
+// Récupérer le vrai statut de pointage
+$is_clocked_in = getUserClockStatus($db, $user);
 $clock_in_time = null;
 $current_duration = 0;
 $active_record = null;
@@ -219,6 +240,9 @@ $overtime_threshold = 8;
 $overtime_alert = false;
 $errors = array();
 $messages = array();
+
+// Variables pour compatibilité rightmenu.tpl
+$pending_validation_count = 0; // Pas utilisé dans index mais requis pour rightmenu.tpl
 
 // Prepare JavaScript data with default values for mobile interface
 $js_data = array(
@@ -263,56 +287,29 @@ $js_data = array(
 </head>
 
 <body>
-    <ons-navigator id="myNavigator" page="splitter.html">
-    </ons-navigator>
 
-    <template id="splitter.html">
-        <ons-page>
-            <ons-splitter id="mySplitter">
-                <ons-splitter-side page="rightmenu.html" id="rightmenu" side="right" width="220px" collapse swipeable swipe-target-width="50px">
-                </ons-splitter-side>
-                <ons-splitter-content page="tabbar.html">
-                </ons-splitter-content>
-            </ons-splitter>
-        </ons-page>
-    </template>
-
-    <template id="tabbar.html">
+<!-- Application principale avec même structure que les autres pages -->
+<ons-splitter id="mySplitter">
+    <ons-splitter-side id="sidemenu" side="right" width="250px" collapse="portrait" swipeable>
+        <!-- Menu latéral -->
+        <?php include 'tpl/parts/rightmenu.tpl'; ?>
+    </ons-splitter-side>
+    
+    <ons-splitter-content>
+        <!-- Contenu principal - include du template tabbar qui contient les pages avec toolbars -->
         <?php include "tpl/parts/tabbar.tpl"; ?>
-    </template>
+    </ons-splitter-content>
+</ons-splitter>
 
-    <template id="rightmenu.html">
-        <?php include "tpl/parts/rightmenu.tpl"; ?>
-    </template>
-
-    <ons-modal direction="up" id="sablier">
-        <div style="text-align: center;">
-            <p>
-                <ons-icon icon="md-spinner" size="45px" spin></ons-icon>
-            </p>
-            <p id="loadingmessage"><span><?php echo $langs->trans("loadingInProgress"); ?></span></p>
-        </div>
-    </ons-modal>
-
-    <?php
-    //Build complet de l'application via php
-    $dir = "tpl";
-    if ($dh = opendir($dir)) {
-        while (($file = readdir($dh)) !== false) {
-            // Skip non-files and parts directory
-            if ($file == '.' || $file == '..' || $file == 'parts' || is_dir($dir . '/' . $file)) {
-                continue;
-            }
-            // Only include .tpl files
-            if (pathinfo($file, PATHINFO_EXTENSION) === 'tpl') {
-                echo "<template id=\"" . str_replace(".tpl", "Application", $file) . "\">\n";
-                include $dir . '/' . $file;
-                echo "</template>\n";
-            }
-        }
-        closedir($dh);
-    }
-    ?>
+<!-- Modal de chargement -->
+<ons-modal direction="up" id="sablier">
+    <div style="text-align: center;">
+        <p>
+            <ons-icon icon="md-spinner" size="45px" spin></ons-icon>
+        </p>
+        <p id="loadingmessage"><span><?php echo $langs->trans("loadingInProgress"); ?></span></p>
+    </div>
+</ons-modal>
 
     <script type="text/javascript">
         // Variables globales pour le time tracking
@@ -337,23 +334,21 @@ $js_data = array(
             console.log("ONS ready in AppMobTimeTouch index.php");
 
             globalCurrentPage = "homeApplication";
-            globalMyNavigator = document.getElementById('myNavigator');
-
-            console.log('AppMobTimeTouch navigator initialized');
+            
+            console.log('AppMobTimeTouch initialized');
             console.log('User rights:', window.appMobTimeTouch.user_rights);
 
-            let onsRightMenu = document.getElementById('rightmenu');
-            if (onsRightMenu != undefined)
-                onsRightMenu.close();
-
-            //pour gérer les retours sur une page
-            globalMyNavigator.addEventListener('postpop', function (event) {
-                let lapage = event.enterPage.id;
-
-                if (lapage == 'ONSConfig') {
-                    return;
+            // S'assurer que le menu est fermé au chargement
+            let sideMenu = document.getElementById('sidemenu');
+            if (sideMenu) {
+                try {
+                    sideMenu.close();
+                } catch (e) {
+                    console.log('Menu already closed');
                 }
-            });
+            }
+
+            // Navigation simplifiée - plus besoin de gestionnaire postpop
 
             //On nettoie l'historique au lancement de l'appli
             cleanHistorique();
@@ -398,25 +393,95 @@ $js_data = array(
             return null;
         }
 
+        /**
+         * Go to home page (pour toolbar logo)
+         */
+        function goToHome() {
+            console.log('Already on index page - refreshing instead');
+            
+            // Si on est déjà sur la page d'accueil, on actualise
+            ons.notification.toast('<?php echo $langs->trans("RefreshingData"); ?>...', {timeout: 1000});
+            setTimeout(function() {
+                location.reload();
+            }, 500);
+        }
+        
+        /**
+         * Toggle hamburger menu
+         */
+        function toggleMenu() {
+            console.log('Toggle hamburger menu');
+            
+            var sideMenu = document.getElementById('sidemenu');
+            if (sideMenu) {
+                console.log('Found side menu, toggling...');
+                try {
+                    sideMenu.toggle();
+                    return;
+                } catch (e) {
+                    console.error('Side menu toggle failed:', e);
+                }
+            }
+            
+            var splitter = document.getElementById('mySplitter');
+            if (splitter && splitter.right) {
+                console.log('Using splitter.right API...');
+                try {
+                    splitter.right.toggle();
+                    return;
+                } catch (e) {
+                    console.error('Splitter right toggle failed:', e);
+                }
+            }
+            
+            if (splitter) {
+                console.log('Forcing splitter open...');
+                try {
+                    splitter.openSide('right');
+                } catch (e) {
+                    console.error('Force open failed:', e);
+                }
+            }
+            
+            console.error('All menu toggle methods failed');
+        }
+
         // Fonction pour fermer la session
         function closeSession() {
-            // Fermer le menu latéral
-            document.getElementById('rightmenu').close();
+            // Fermer le menu latéral avec nouvelle structure
+            var sideMenu = document.getElementById('sidemenu');
+            if (sideMenu) {
+                try {
+                    sideMenu.close();
+                } catch (e) {
+                    console.log('Menu already closed');
+                }
+            }
             // Rediriger vers la déconnexion
             window.location.href = '<?php echo DOL_URL_ROOT; ?>/user/logout.php';
         }
 
         // Fonction pour aller à une page
         function gotoPage(pageId) {
-            // Fermer le menu latéral
-            document.getElementById('rightmenu').close();
+            // Fermer le menu latéral avec nouvelle structure
+            var sideMenu = document.getElementById('sidemenu');
+            if (sideMenu) {
+                try {
+                    sideMenu.close();
+                } catch (e) {
+                    console.log('Menu already closed');
+                }
+            }
             
-            // Pour l'instant, juste un log
             console.log('Going to page:', pageId);
             
-            // Navigation vers la page (à implémenter)
-            // globalMyNavigator.pushPage(pageId);
+            // Navigation simplifiée vers les pages
+            // Cette fonction pourrait être étendue pour naviguer vers d'autres pages
         }
+        
+        // Exposer les fonctions globalement pour la toolbar
+        window.goToHome = goToHome;
+        window.toggleMenu = toggleMenu;
     </script>
 
 </body>

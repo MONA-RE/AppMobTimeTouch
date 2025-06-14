@@ -967,14 +967,46 @@ function showClockOutModal() {
     }
     
     /**
-     * Toggle menu (placeholder pour compatibilité toolbar)
-     * Note: home.tpl n'utilise pas de splitter menu
+     * Toggle menu - Compatible avec index.php et home.php standalone
      */
     function toggleMenu() {
-        console.log('Home page - no side menu available');
+        console.log('Toggle hamburger menu from home template');
         
-        // On pourrait ajouter ici une navigation vers une page avec menu
-        // Pour l'instant, on montre juste un message informatif
+        // Chercher le splitter parent (depuis index.php)
+        var sideMenu = document.getElementById('sidemenu');
+        if (sideMenu) {
+            console.log('Found parent sidemenu, toggling...');
+            try {
+                sideMenu.toggle();
+                return;
+            } catch (e) {
+                console.error('Side menu toggle failed:', e);
+            }
+        }
+        
+        var splitter = document.getElementById('mySplitter');
+        if (splitter && splitter.right) {
+            console.log('Using parent splitter.right API...');
+            try {
+                splitter.right.toggle();
+                return;
+            } catch (e) {
+                console.error('Splitter right toggle failed:', e);
+            }
+        }
+        
+        if (splitter) {
+            console.log('Forcing parent splitter open...');
+            try {
+                splitter.openSide('right');
+                return;
+            } catch (e) {
+                console.error('Force open failed:', e);
+            }
+        }
+        
+        // Fallback si pas de splitter parent
+        console.log('No parent splitter found - home page standalone');
         ons.notification.toast('<?php echo $langs->trans("MenuNotAvailable"); ?>', {timeout: 1500});
     }
     
