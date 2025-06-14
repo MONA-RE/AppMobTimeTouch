@@ -346,7 +346,21 @@ function refreshPage() {
 // Fonction pour navigation retour
 function goBackToHome() {
     console.log('Navigating back to home...');
-    window.location.href = './home.php';
+    
+    // Vérifier si on vient de myrecords.php via le referer ou un paramètre
+    var referrer = document.referrer;
+    var fromParam = new URLSearchParams(window.location.search).get('from');
+    
+    console.log('Referrer:', referrer);
+    console.log('From parameter:', fromParam);
+    
+    if (fromParam === 'myrecords' || (referrer && referrer.includes('myrecords.php'))) {
+        console.log('Returning to myrecords.php');
+        window.location.href = './myrecords.php';
+    } else {
+        console.log('Returning to home.php');
+        window.location.href = './home.php';
+    }
 }
 
 // Export fonctions globales

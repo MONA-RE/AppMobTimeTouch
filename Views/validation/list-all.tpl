@@ -339,7 +339,7 @@
               <div style="width: 6px; height: 40px; background-color: <?php echo $priorityColor; ?>; border-radius: 3px;"></div>
             </div>
           </div>
-          <div class="center" onclick="showRecordDetails(<?php echo $record['rowid']; ?>)" style="cursor: pointer;">
+          <div class="center" onclick="<?php if (isset($is_personal_view) && $is_personal_view): ?>showEmployeeRecordDetails(<?php echo $record['rowid']; ?>)<?php else: ?>showRecordDetails(<?php echo $record['rowid']; ?>)<?php endif; ?>" style="cursor: pointer;">
             <?php if (!isset($is_personal_view) || !$is_personal_view): ?>
             <div style="font-weight: 500; margin-bottom: 8px; padding: 2px 6px;">
               <?php echo dol_escape_htmltag($userName); ?>

@@ -356,6 +356,39 @@ function goBackToHome() {
 }
 
 /**
+ * Show employee record details
+ */
+function showEmployeeRecordDetails(recordId) {
+    console.log('=== showEmployeeRecordDetails ===');
+    console.log('Record ID:', recordId);
+    
+    // Construction de l'URL vers employee-record-detail.php
+    var currentPath = window.location.pathname;
+    var detailUrl;
+    
+    if (currentPath.includes('/appmobtimetouch/')) {
+        // URL relative depuis le module actuel
+        detailUrl = './employee-record-detail.php?id=' + recordId + '&from=myrecords';
+    } else {
+        // URL absolue depuis detectBaseUrl
+        var baseUrl = detectBaseUrl();
+        detailUrl = baseUrl + '/custom/appmobtimetouch/employee-record-detail.php?id=' + recordId + '&from=myrecords';
+    }
+    
+    console.log('Employee detail URL constructed:', detailUrl);
+    
+    // Message de chargement
+    if (typeof ons !== 'undefined') {
+        ons.notification.toast('Chargement des détails...', {timeout: 1000});
+    }
+    
+    // Navigation vers les détails de l'enregistrement
+    setTimeout(function() {
+        window.location.href = detailUrl;
+    }, 300);
+}
+
+/**
  * Toggle hamburger menu (réutilise la fonction reports.php)
  */
 function toggleMenu() {
