@@ -8,12 +8,18 @@
 ?>
 
 <ons-page id="ValidationListAll">
-  <!-- TopBar avec retour -->
+  <!-- TopBar avec retour (adapté selon vue) -->
   <ons-toolbar>
     <div class="left">
+      <?php if (isset($is_personal_view) && $is_personal_view): ?>
+      <ons-toolbar-button onclick="goBackToHome()">
+        <ons-icon icon="md-arrow-back"></ons-icon>
+      </ons-toolbar-button>
+      <?php else: ?>
       <ons-toolbar-button onclick="goBackToDashboard()">
         <ons-icon icon="md-arrow-back"></ons-icon>
       </ons-toolbar-button>
+      <?php endif; ?>
     </div>
     <div class="center"><?php echo $page_title; ?></div>
     <div class="right">
@@ -29,7 +35,53 @@
   <!-- Statistiques rapides -->
   <div style="padding: 15px;">
     <ons-card>
-      <div class="content" style="padding: 15px;">
+      <div class="content" style="padding: 15px; <?php if (isset($is_personal_view) && $is_personal_view): ?>background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;<?php endif; ?>">
+        <?php if (isset($is_personal_view) && $is_personal_view): ?>
+        <!-- Vue personnelle : statistiques simplifiées -->
+        <ons-row>
+          <ons-col width="25%">
+            <div style="text-align: center;">
+              <div style="font-size: 22px; font-weight: bold; color: #ffffff;">
+                <?php echo $stats['today']; ?>
+              </div>
+              <div style="font-size: 12px; color: rgba(255,255,255,0.9);">
+                <?php echo $langs->trans('Today'); ?>
+              </div>
+            </div>
+          </ons-col>
+          <ons-col width="25%">
+            <div style="text-align: center;">
+              <div style="font-size: 22px; font-weight: bold; color: #ffffff;">
+                <?php echo $stats['approved']; ?>
+              </div>
+              <div style="font-size: 12px; color: rgba(255,255,255,0.9);">
+                <?php echo $langs->trans('Approved'); ?>
+              </div>
+            </div>
+          </ons-col>
+          <ons-col width="25%">
+            <div style="text-align: center;">
+              <div style="font-size: 22px; font-weight: bold; color: <?php echo (isset($stats['with_anomalies']) && $stats['with_anomalies'] > 0) ? '#ffeb3b' : '#ffffff'; ?>;">
+                <?php echo $stats['with_anomalies'] ?? 0; ?>
+              </div>
+              <div style="font-size: 12px; color: rgba(255,255,255,0.9);">
+                <?php echo $langs->trans('Anomalies'); ?>
+              </div>
+            </div>
+          </ons-col>
+          <ons-col width="25%">
+            <div style="text-align: center;">
+              <div style="font-size: 22px; font-weight: bold; color: #ffffff;">
+                <?php echo ($stats['today'] + $stats['approved'] + $stats['pending'] + $stats['rejected']); ?>
+              </div>
+              <div style="font-size: 12px; color: rgba(255,255,255,0.9);">
+                <?php echo $langs->trans('Total'); ?>
+              </div>
+            </div>
+          </ons-col>
+        </ons-row>
+        <?php else: ?>
+        <!-- Vue manager : statistiques complètes -->
         <ons-row>
           <ons-col width="20%">
             <div style="text-align: center;">
@@ -82,6 +134,7 @@
             </div>
           </ons-col>
         </ons-row>
+        <?php endif; ?>
       </div>
     </ons-card>
   </div>
@@ -193,7 +246,8 @@
     </ons-card>
   </div>
 
-  <!-- Batch Actions Bar (MVP 3.3) - Positionée entre filtres et liste -->
+  <!-- Batch Actions Bar (MVP 3.3) - Masquée en vue personnelle -->
+  <?php if (!isset($is_personal_view) || !$is_personal_view): ?>
   <div id="batch-actions-bar" style="padding: 0 15px 15px 15px;">
     <ons-card>
       <div style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
@@ -234,6 +288,7 @@
       </div>
     </ons-card>
   </div>
+  <?php endif; ?>
 
   <!-- Liste des enregistrements -->
   <?php if (!empty($records)): ?>
@@ -243,8 +298,13 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 style="margin: 0; color: #1565c0;">
             <ons-icon icon="md-list" style="color: #2196f3; margin-right: 8px;"></ons-icon>
+            <?php if (isset($is_personal_view) && $is_personal_view): ?>
+            <?php echo $langs->trans('MyTimeclockRecords'); ?> (<?php echo count($records); ?>)
+            <?php else: ?>
             <?php echo $langs->trans('ValidationRecords'); ?> (<?php echo count($records); ?>)
+            <?php endif; ?>
           </h4>
+          <?php if (!isset($is_personal_view) || !$is_personal_view): ?>
           <div style="display: flex; align-items: center; gap: 10px;">
             <ons-checkbox 
               id="select-all-checkbox" 
@@ -254,6 +314,7 @@
               <?php echo $langs->trans('SelectAll'); ?>
             </label>
           </div>
+          <?php endif; ?>
         </div>
       </div>
       
@@ -268,18 +329,22 @@
         <ons-list-item>
           <div class="left">
             <div style="display: flex; align-items: center; gap: 8px;">
+              <?php if (!isset($is_personal_view) || !$is_personal_view): ?>
               <ons-checkbox 
                 class="record-checkbox" 
                 data-record-id="<?php echo $record['rowid']; ?>"
                 onclick="event.stopPropagation();">
               </ons-checkbox>
+              <?php endif; ?>
               <div style="width: 6px; height: 40px; background-color: <?php echo $priorityColor; ?>; border-radius: 3px;"></div>
             </div>
           </div>
           <div class="center" onclick="showRecordDetails(<?php echo $record['rowid']; ?>)" style="cursor: pointer;">
+            <?php if (!isset($is_personal_view) || !$is_personal_view): ?>
             <div style="font-weight: 500; margin-bottom: 8px; padding: 2px 6px;">
               <?php echo dol_escape_htmltag($userName); ?>
             </div>
+            <?php endif; ?>
             <div style="font-size: 14px; color: #6c757d; margin-bottom: 8px; padding: 2px 6px;">
               <?php echo dol_print_date($record['clock_in_time'], 'day'); ?>
               <?php if ($hasAnomalies): ?>

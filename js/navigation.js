@@ -299,16 +299,55 @@ function loadReports() {
 }
 
 /**
- * Navigation vers les enregistrements de l'utilisateur
- * Placeholder pour futures implémentations
+ * Navigation vers les enregistrements personnels du salarié
+ * Utilise myrecords.php avec réutilisation du template list-all.tpl
  */
 function loadMyRecords() {
-    console.log('=== DEBUG loadMyRecords ===');
+    console.log('=== DEBUG loadMyRecords (Personal Records) ===');
     
-    if (typeof ons !== 'undefined') {
-        ons.notification.alert('My Records feature coming soon!');
-    } else {
-        alert('My Records feature coming soon!');
+    try {
+        // Construction de l'URL vers myrecords.php
+        var currentUrl = window.location.href;
+        var currentPath = window.location.pathname;
+        
+        // Détecter si on est dans le module appmobtimetouch
+        if (currentPath.includes('/appmobtimetouch/')) {
+            // URL relative depuis le module actuel
+            var myRecordsUrl = './myrecords.php';
+        } else {
+            // URL absolue depuis detectBaseUrl
+            var baseUrl = detectBaseUrl();
+            var myRecordsUrl = baseUrl + '/custom/appmobtimetouch/myrecords.php';
+        }
+        
+        console.log('Current URL:', currentUrl);
+        console.log('My Records URL constructed:', myRecordsUrl);
+        
+        // Message de chargement
+        if (typeof ons !== 'undefined') {
+            ons.notification.toast('Chargement de mes enregistrements...', {timeout: 1500});
+        }
+        
+        // Navigation vers la page mes enregistrements
+        setTimeout(function() {
+            console.log('Navigating to my records page...');
+            window.location.href = myRecordsUrl;
+        }, 300);
+        
+    } catch (error) {
+        console.error('ERROR in loadMyRecords:', error);
+        
+        // Fallback d'urgence
+        var fallbackUrl = './myrecords.php';
+        console.log('Using fallback URL:', fallbackUrl);
+        
+        if (typeof ons !== 'undefined') {
+            ons.notification.alert('Error loading my records. Trying fallback...');
+        }
+        
+        setTimeout(function() {
+            window.location.href = fallbackUrl;
+        }, 1000);
     }
 }
 
