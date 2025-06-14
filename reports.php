@@ -13,8 +13,10 @@ if (!$res && file_exists("../../main.inc.php")) $res = include '../../main.inc.p
 if (!$res && file_exists("../../../main.inc.php")) $res = include '../../../main.inc.php';
 if (!$res) die("Include of main fails");
 
-// Chargement classes nécessaires
+// Chargement classes nécessaires selon architecture SOLID
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/Constants.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/TimeHelper.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/LocationHelper.php';
 
 // Vérification module activé
 if (!isModEnabled('appmobtimetouch')) {
@@ -125,6 +127,9 @@ $page_title = $data['page_title'] ?? $langs->trans('Reports');
 $monthly_reports = $data['monthly_reports'] ?? [];
 $filter_month = $data['filter_month'] ?? date('n');
 $filter_year = $data['filter_year'] ?? date('Y');
+
+// Variables pour compatibilité rightmenu.tpl selon INDEX_HOME_COMPATIBILITY.md
+$pending_validation_count = 0; // Pas utilisé dans reports mais requis pour rightmenu.tpl
 ?>
 
 <!DOCTYPE html>
@@ -139,16 +144,27 @@ $filter_year = $data['filter_year'] ?? date('Y');
     <title><?php echo $page_title; ?> - <?php echo $conf->global->MAIN_INFO_SOCIETE_NOM; ?></title>
     
     <!-- OnsenUI CSS -->
-    <link rel="stylesheet" href="css/onsenui.css">
+    <link rel="stylesheet" href="css/onsenui.min.css">
     <link rel="stylesheet" href="css/onsen-css-components.min.css">
     
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/index.css">
     
     <style>
+    /* Fix OnsenUI layout issues */
+    .page__content {
+        padding-top: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .reports-content {
+        padding-bottom: 20px;
+    }
+    
     .reports-card {
         background: white;
         border-radius: 8px;
@@ -169,6 +185,20 @@ $filter_year = $data['filter_year'] ?? date('Y');
         font-weight: bold;
         color: #2196f3;
     }
+    
+    /* Ensure toolbar is visible */
+    ons-toolbar {
+        z-index: 10;
+    }
+    
+    /* Hamburger menu button styling */
+    ons-toolbar-button {
+        color: #333;
+    }
+    
+    ons-toolbar-button:active {
+        background-color: rgba(0,0,0,0.1);
+    }
     </style>
 </head>
 <body>
@@ -181,24 +211,24 @@ $filter_year = $data['filter_year'] ?? date('Y');
     </ons-splitter-side>
     
     <ons-splitter-content>
-        <ons-navigator id="myNavigator">
-            <ons-page id="reportsPage">
-                
-                <!-- TopBar Rapports -->
-                <ons-toolbar>
-                    <div class="left">
-                        <ons-toolbar-button onclick="document.getElementById('mySplitter').right.toggle()">
-                            <ons-icon icon="md-menu"></ons-icon>
-                        </ons-toolbar-button>
-                    </div>
-                    <div class="center"><?php echo $page_title; ?></div>
-                    <div class="right">
-                        <ons-toolbar-button onclick="refreshReports()">
-                            <ons-icon icon="md-refresh"></ons-icon>
-                        </ons-toolbar-button>
-                    </div>
-                </ons-toolbar>
-                
+        <ons-page id="reportsPage">
+            
+            <!-- TopBar Rapports -->
+            <ons-toolbar>
+                <div class="left"></div>
+                <div class="center"><?php echo $page_title; ?></div>
+                <div class="right">
+                    <ons-toolbar-button onclick="refreshReports()">
+                        <ons-icon icon="md-refresh"></ons-icon>
+                    </ons-toolbar-button>
+                    <ons-toolbar-button onclick="toggleMenu()">
+                        <ons-icon icon="md-menu"></ons-icon>
+                    </ons-toolbar-button>
+                </div>
+            </ons-toolbar>
+            
+            <!-- Contenu scrollable -->
+            <div class="page__content">
                 <!-- Messages d'erreur/succès -->
                 <?php if ($error): ?>
                 <div style="background: #ffebee; color: #c62828; padding: 10px; margin: 10px; border-radius: 5px;">
@@ -220,9 +250,9 @@ $filter_year = $data['filter_year'] ?? date('Y');
                 <div class="reports-content">
                     <?php include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/reports/monthly.tpl'; ?>
                 </div>
-                
-            </ons-page>
-        </ons-navigator>
+            </div>
+            
+        </ons-page>
     </ons-splitter-content>
 </ons-splitter>
 
@@ -249,6 +279,49 @@ function refreshReports() {
 }
 
 /**
+ * Toggle hamburger menu
+ */
+function toggleMenu() {
+    console.log('Toggle hamburger menu');
+    
+    // Méthode 1: Via l'ID du splitter side
+    var sideMenu = document.getElementById('sidemenu');
+    if (sideMenu) {
+        console.log('Found side menu, toggling...');
+        try {
+            sideMenu.toggle();
+            return;
+        } catch (e) {
+            console.error('Side menu toggle failed:', e);
+        }
+    }
+    
+    // Méthode 2: Via le splitter
+    var splitter = document.getElementById('mySplitter');
+    if (splitter && splitter.right) {
+        console.log('Using splitter.right API...');
+        try {
+            splitter.right.toggle();
+            return;
+        } catch (e) {
+            console.error('Splitter right toggle failed:', e);
+        }
+    }
+    
+    // Méthode 3: Force open
+    if (splitter) {
+        console.log('Forcing splitter open...');
+        try {
+            splitter.openSide('right');
+        } catch (e) {
+            console.error('Force open failed:', e);
+        }
+    }
+    
+    console.error('All menu toggle methods failed');
+}
+
+/**
  * Apply filters
  */
 function applyFilters() {
@@ -264,11 +337,41 @@ function applyFilters() {
     }, 500);
 }
 
-// Debug
+// Debug et initialisation OnsenUI
 console.log('Reports page loaded');
 console.log('Month:', <?php echo $filter_month; ?>);
 console.log('Year:', <?php echo $filter_year; ?>);
 console.log('Reports count:', <?php echo count($data['monthly_reports'] ?? []); ?>);
+
+// S'assurer que OnsenUI est initialisé
+if (typeof ons !== 'undefined') {
+    ons.ready(function() {
+        console.log('OnsenUI ready on reports page');
+        
+        // S'assurer que le splitter fonctionne
+        var splitter = document.getElementById('mySplitter');
+        if (splitter) {
+            console.log('Splitter found and ready');
+            console.log('Splitter methods available:', Object.getOwnPropertyNames(splitter));
+            
+            // Vérifier le menu latéral
+            var sideMenu = document.getElementById('sidemenu');
+            if (sideMenu) {
+                console.log('Side menu found');
+                console.log('Side menu methods:', Object.getOwnPropertyNames(sideMenu));
+            } else {
+                console.error('Side menu not found!');
+            }
+        } else {
+            console.error('Splitter not found!');
+        }
+        
+        // Test direct du bouton hamburger
+        console.log('Testing hamburger button click...');
+    });
+} else {
+    console.warn('OnsenUI not available');
+}
 </script>
 
 </body>

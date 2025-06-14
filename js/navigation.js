@@ -439,6 +439,74 @@ function gotoPage(pageName) {
 }
 
 /**
+ * Fermer la session utilisateur
+ */
+function closeSession() {
+    console.log('=== DEBUG closeSession ===');
+    
+    try {
+        // Confirmation avant déconnexion
+        if (typeof ons !== 'undefined' && ons.notification) {
+            ons.notification.confirm({
+                message: 'Êtes-vous sûr de vouloir vous déconnecter ?',
+                callback: function(answer) {
+                    if (answer === 1) {
+                        // Redirection vers la page de déconnexion Dolibarr
+                        var baseUrl = detectBaseUrl();
+                        var logoutUrl = baseUrl + '/user/logout.php';
+                        console.log('Redirecting to logout:', logoutUrl);
+                        window.location.href = logoutUrl;
+                    }
+                }
+            });
+        } else {
+            // Fallback sans OnsenUI
+            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+                var baseUrl = detectBaseUrl();
+                var logoutUrl = baseUrl + '/user/logout.php';
+                console.log('Redirecting to logout:', logoutUrl);
+                window.location.href = logoutUrl;
+            }
+        }
+        
+    } catch (error) {
+        console.error('ERROR in closeSession:', error);
+        
+        // Fallback d'urgence
+        var fallbackUrl = '../user/logout.php';
+        console.log('Using fallback logout URL:', fallbackUrl);
+        window.location.href = fallbackUrl;
+    }
+}
+
+/**
+ * PWA Installation functions (placeholders)
+ */
+function startPwa(enable) {
+    console.log('=== DEBUG startPwa ===');
+    console.log('Enable PWA:', enable);
+    
+    if (typeof ons !== 'undefined' && ons.notification) {
+        ons.notification.toast('Fonctionnalité PWA à venir...', {timeout: 2000});
+    } else {
+        alert('Fonctionnalité PWA à venir...');
+    }
+}
+
+// Global installEvent object for PWA
+window.installEvent = {
+    prompt: function() {
+        console.log('=== DEBUG installEvent.prompt ===');
+        
+        if (typeof ons !== 'undefined' && ons.notification) {
+            ons.notification.toast('Installation PWA à venir...', {timeout: 2000});
+        } else {
+            alert('Installation PWA à venir...');
+        }
+    }
+};
+
+/**
  * Initialize navigation system
  */
 function initNavigation() {
@@ -451,6 +519,8 @@ function initNavigation() {
     window.loadSummary = loadSummary;
     window.loadSettings = loadSettings;
     window.gotoPage = gotoPage;
+    window.closeSession = closeSession;
+    window.startPwa = startPwa;
     
     console.log('Navigation functions exposed: loadManagement(), loadMyRecords(), loadSummary(), loadSettings(), gotoPage()');
     
