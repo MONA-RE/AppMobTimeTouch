@@ -107,8 +107,10 @@ class TimeclockRecord extends CommonObject
         'ip_address_out' => array('type'=>'varchar(45)', 'label'=>'IpAddressOut', 'enabled'=>'1', 'position'=>150, 'notnull'=>0, 'visible'=>0,),
         'status' => array('type'=>'integer', 'label'=>'Status', 'enabled'=>'1', 'position'=>160, 'notnull'=>1, 'visible'=>1, 'default'=>'2', 'index'=>1, 'arrayofkeyval'=>array('0'=>'Draft', '1'=>'Validated', '2'=>'InProgress', '3'=>'Completed', '9'=>'Cancelled')),
         'fk_timeclock_type' => array('type'=>'integer:TimeclockType:appmobtimetouch/class/timeclocktype.class.php', 'label'=>'TimeclockType', 'enabled'=>'1', 'position'=>170, 'notnull'=>1, 'visible'=>1, 'default'=>'1', 'css'=>'maxwidth200', 'help'=>"TimeclockTypeHelp"),
+        'validation_status' => array('type'=>'integer', 'label'=>'ValidationStatus', 'enabled'=>'1', 'position'=>175, 'notnull'=>1, 'visible'=>1, 'default'=>'0', 'index'=>1, 'arrayofkeyval'=>array('0'=>'Pending', '1'=>'Approved', '2'=>'Rejected', '3'=>'Partial')),
         'validated_by' => array('type'=>'integer:User:user/class/user.class.php', 'label'=>'ValidatedBy', 'enabled'=>'1', 'position'=>180, 'notnull'=>0, 'visible'=>2,),
         'validated_date' => array('type'=>'datetime', 'label'=>'ValidatedDate', 'enabled'=>'1', 'position'=>190, 'notnull'=>0, 'visible'=>2,),
+        'validation_comment' => array('type'=>'text', 'label'=>'ValidationComment', 'enabled'=>'1', 'position'=>195, 'notnull'=>0, 'visible'=>2,),
         'note_private' => array('type'=>'html', 'label'=>'NotePrivate', 'enabled'=>'1', 'position'=>400, 'notnull'=>0, 'visible'=>0,),
         'note_public' => array('type'=>'html', 'label'=>'NotePublic', 'enabled'=>'1', 'position'=>401, 'notnull'=>0, 'visible'=>0,),
         'import_key' => array('type'=>'varchar(14)', 'label'=>'ImportId', 'enabled'=>'1', 'position'=>1000, 'notnull'=>-1, 'visible'=>-2,),
@@ -137,8 +139,10 @@ class TimeclockRecord extends CommonObject
     public $ip_address_out;
     public $status;
     public $fk_timeclock_type;
+    public $validation_status;
     public $validated_by;
     public $validated_date;
+    public $validation_comment;
     public $note_private;
     public $note_public;
     public $import_key;
