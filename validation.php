@@ -41,6 +41,9 @@ $error = 0;
 $errors = [];
 $messages = [];
 
+// Récupérer le statut de pointage pour la toolbar (comme dans les autres pages)
+$is_clocked_in = getUserClockStatus($db, $user);
+
 // Gestion des actions
 try {
     switch ($action) {
@@ -48,6 +51,8 @@ try {
         default:
             // MVP 3.1 : Dashboard manager
             $data = $controller->dashboard();
+            // Ajouter le statut de pointage aux données
+            $data['is_clocked_in'] = $is_clocked_in;
             break;
             
         case 'validate_record':
@@ -186,6 +191,34 @@ if ($conf->global->MAIN_FEATURES_LEVEL >= 2) {
     dol_syslog('Notifications: ' . count($data['notifications'] ?? []), LOG_DEBUG);
 }
 
+/**
+ * Récupère le statut de pointage de l'utilisateur (pour toolbar)
+ */
+function getUserClockStatus($db, $user) {
+    $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "timeclock_records";
+    $sql .= " WHERE fk_user = " . (int)$user->id;
+    $sql .= " AND status = 2"; // Status 2 = En cours (pointé)
+    $sql .= " AND clock_out_time IS NULL";
+    $sql .= " ORDER BY clock_in_time DESC LIMIT 1";
+    
+    $resql = $db->query($sql);
+    if ($resql) {
+        $num = $db->num_rows($resql);
+        $db->free($resql);
+        return $num > 0;
+    }
+    
+    return false;
+}
+
+// S'assurer que $is_clocked_in est disponible pour le template
+if (!isset($data['is_clocked_in'])) {
+    $data['is_clocked_in'] = $is_clocked_in;
+}
+
+// Variables pour compatibilité rightmenu.tpl
+$pending_validation_count = count($data['pending_records'] ?? []);
+
 // Préparer les variables pour templates
 extract($data);
 ?>
@@ -258,8 +291,8 @@ extract($data);
         <ons-navigator id="myNavigator">
             <ons-page id="validationPage">
                 
-                <!-- TopBar spécifique validation -->
-                <?php include 'tpl/parts/topbar-validation.tpl'; ?>
+                <!-- TopBar avec même style que les autres pages -->
+                <?php include 'tpl/parts/topbar-home.tpl'; ?>
                 
                 <!-- Messages d'erreur/succès -->
                 <?php if ($error): ?>
@@ -362,6 +395,68 @@ function refreshDashboard() {
     }, 500);
 }
 
+/**
+ * Go to home page (pour toolbar logo)
+ */
+function goToHome() {
+    console.log('Going to home page from validation');
+    
+    // Navigation vers la page d'accueil
+    var homeUrl;
+    var currentPath = window.location.pathname;
+    
+    if (currentPath.includes('/appmobtimetouch/')) {
+        homeUrl = './home.php';
+    } else {
+        var baseUrl = detectBaseUrl();
+        homeUrl = baseUrl + '/custom/appmobtimetouch/home.php';
+    }
+    
+    setTimeout(function() {
+        window.location.href = homeUrl;
+    }, 300);
+}
+
+/**
+ * Toggle hamburger menu
+ */
+function toggleMenu() {
+    console.log('Toggle hamburger menu');
+    
+    var sideMenu = document.getElementById('sidemenu');
+    if (sideMenu) {
+        console.log('Found side menu, toggling...');
+        try {
+            sideMenu.toggle();
+            return;
+        } catch (e) {
+            console.error('Side menu toggle failed:', e);
+        }
+    }
+    
+    var splitter = document.getElementById('mySplitter');
+    if (splitter && splitter.right) {
+        console.log('Using splitter.right API...');
+        try {
+            splitter.right.toggle();
+            return;
+        } catch (e) {
+            console.error('Splitter right toggle failed:', e);
+        }
+    }
+    
+    if (splitter) {
+        console.log('Forcing splitter open...');
+        try {
+            splitter.openSide('right');
+        } catch (e) {
+            console.error('Force open failed:', e);
+        }
+    }
+    
+    console.error('All menu toggle methods failed');
+}
+
 // Fonction globale pour actions futures MVP
 function showValidationActions() {
     ons.notification.alert('Validation actions coming in MVP 3.2');
@@ -386,6 +481,8 @@ function showRecordDetails(recordId) {
 }
 
 // Export fonctions globales
+window.goToHome = goToHome;
+window.toggleMenu = toggleMenu;
 window.refreshDashboard = refreshDashboard;
 window.showValidationActions = showValidationActions;
 window.goBackToHome = goBackToHome;
