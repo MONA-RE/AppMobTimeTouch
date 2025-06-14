@@ -107,7 +107,7 @@ try {
     
     <!-- OnsenUI JavaScript -->
     <script src="js/onsenui.min.js"></script>
-    <script src="js/navigation.js"></script>
+    <script src="js/navigation.js?v=<?php echo time(); ?>"></script>
     <script src="js/timeclock-api.js"></script>
     
     <style>
@@ -342,7 +342,17 @@ try {
                                     </div>
                                     <div class="record-duration">
                                         <?php if ($work_duration): ?>
-                                            <?php echo gmdate('H:i', $work_duration); ?>
+                                            <?php 
+                                            // work_duration est stocké en minutes, convertir en secondes pour gmdate
+                                            $duration_seconds = $work_duration * 60;
+                                            echo gmdate('H:i', $duration_seconds); 
+                                            ?>
+                                        <?php elseif (!$clock_out_time && $clock_in_time): ?>
+                                            <?php 
+                                            // Calculer la durée en temps réel pour les sessions actives
+                                            $current_session_duration = dol_now() - $clock_in_time;
+                                            echo gmdate('H:i', $current_session_duration);
+                                            ?>
                                         <?php else: ?>
                                             <?php echo $langs->trans("Active"); ?>
                                         <?php endif; ?>
@@ -437,7 +447,8 @@ function selectTimeclockType(typeId, typeLabel, typeColor) {
 // Fonction pour mettre à jour la durée courante
 function updateCurrentDuration() {
     <?php if ($is_clocked_in && $clock_in_time): ?>
-    var startTime = <?php echo $clock_in_time; ?>;
+    // Utiliser le timestamp de base de données converti correctement
+    var startTime = <?php echo $raw_clock_in_timestamp ?: $clock_in_time; ?>;
     var now = Math.floor(Date.now() / 1000);
     var duration = now - startTime;
     var hours = Math.floor(duration / 3600);

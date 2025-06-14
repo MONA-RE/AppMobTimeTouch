@@ -325,7 +325,7 @@ $pending_validation_count = 0; // Pas utilisé dans myrecords mais requis pour r
 <script src="js/onsenui.min.js"></script>
 
 <!-- Navigation JavaScript -->
-<script src="js/navigation.js"></script>
+<script src="js/navigation.js?v=<?php echo time(); ?>"></script>
 
 <!-- TimeclockAPI JavaScript -->
 <script src="js/timeclock-api.js"></script>

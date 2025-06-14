@@ -109,6 +109,13 @@ class DataService implements DataServiceInterface
                     $record->rowid = $obj->rowid; // Force l'ID si nécessaire
                 }
                 
+                // Debug spécifique pour l'enregistrement 43
+                if ($obj->rowid == 43) {
+                    dol_syslog("DataService: Record 43 debug - work_duration in object: " . ($record->work_duration ?? 'NULL'), LOG_INFO);
+                    dol_syslog("DataService: Record 43 debug - clock_out_time in object: " . ($record->clock_out_time ?? 'NULL'), LOG_INFO);
+                    dol_syslog("DataService: Record 43 debug - status in object: " . ($record->status ?? 'NULL'), LOG_INFO);
+                }
+                
                 $records[] = $record;
             }
             $this->db->free($result);

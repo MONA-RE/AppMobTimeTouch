@@ -219,7 +219,8 @@ class HomeController extends BaseController
             'overtime_threshold' => $overtimeThreshold,
             'max_hours_per_day' => $maxHoursPerDay,
             'overtime_alert' => $todayTotalHours > $overtimeThreshold,
-            'js_data' => $this->prepareJavaScriptData($isClocked, $clockInTime, $requireLocation, $overtimeThreshold, $maxHoursPerDay)
+            'js_data' => $this->prepareJavaScriptData($isClocked, $clockInTime, $requireLocation, $overtimeThreshold, $maxHoursPerDay),
+            'raw_clock_in_timestamp' => $isClocked && $activeRecord ? $this->db->jdate($activeRecord->clock_in_time) : null
         ];
     }
     

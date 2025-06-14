@@ -416,7 +416,7 @@ function gotoPage(pageName) {
             console.log('Reports URL mapping completed:', finalUrl);
             break;
         case 'myTimeclockRecords':
-            finalUrl = baseUrl + '/custom/appmobtimetouch/home.php?action=myRecords';
+            finalUrl = baseUrl + '/custom/appmobtimetouch/myrecords.php';
             break;
         case 'weeklySummaries':
             finalUrl = baseUrl + '/custom/appmobtimetouch/home.php?action=summaries';
@@ -447,8 +447,8 @@ function gotoPage(pageName) {
     try {
         console.log('About to navigate to:', finalUrl);
         
-        // Vérification de l'URL
-        var testUrl = new URL(finalUrl);
+        // Vérification de l'URL avec base
+        var testUrl = new URL(finalUrl, window.location.origin);
         console.log('URL validation successful:', testUrl.href);
         
         // Navigation avec délai pour permettre au toast de s'afficher
