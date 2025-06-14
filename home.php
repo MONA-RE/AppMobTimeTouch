@@ -320,21 +320,22 @@ try {
                                 <div class="record-item" onclick="viewRecord(<?php echo $rowid; ?>)">
                                     <div class="record-time">
                                         <?php 
-                                        $record_date = date('Y-m-d', strtotime($clock_in_time));
-                                        $today = date('Y-m-d');
-                                        $yesterday = date('Y-m-d', strtotime('-1 day'));
+                                        // Utiliser les fonctions Dolibarr pour la gestion des dates
+                                        $record_date = dol_print_date($clock_in_time, '%Y-%m-%d', 'tzuser');
+                                        $today = dol_print_date(dol_now(), '%Y-%m-%d', 'tzuser');
+                                        $yesterday = dol_print_date(dol_now() - 86400, '%Y-%m-%d', 'tzuser');
                                         
                                         if ($record_date == $today) {
                                             echo $langs->trans("Today") . " ";
                                         } elseif ($record_date == $yesterday) {
                                             echo $langs->trans("Yesterday") . " ";
                                         } else {
-                                            echo date('d/m', strtotime($clock_in_time)) . " ";
+                                            echo dol_print_date($clock_in_time, '%d/%m', 'tzuser') . " ";
                                         }
                                         ?>
-                                        <?php echo date('H:i', strtotime($clock_in_time)); ?>
+                                        <?php echo dol_print_date($clock_in_time, 'hour', 'tzuser'); ?>
                                         <?php if ($clock_out_time): ?>
-                                            - <?php echo date('H:i', strtotime($clock_out_time)); ?>
+                                            - <?php echo dol_print_date($clock_out_time, 'hour', 'tzuser'); ?>
                                         <?php else: ?>
                                             - <span style="color: #4CAF50;"><?php echo $langs->trans("InProgress"); ?></span>
                                         <?php endif; ?>
