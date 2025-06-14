@@ -546,34 +546,49 @@ class ValidationController extends BaseController
      * 
      * @return array Données pour template liste complète
      */
-    public function listAll(): array 
+    public function listAll($isPersonalView = false): array 
     {
         // Vérification module et droits
         $this->checkModuleEnabled();
-        $this->checkUserRights('validate');
+        
+        if (!$isPersonalView) {
+            // Pour la vue manager, vérifier droits de validation
+            $this->checkUserRights('validate');
+        } else {
+            // Pour la vue personnelle, vérifier droits de lecture
+            if (empty($this->user->rights->appmobtimetouch->timeclock->read)) {
+                throw new Exception('Insufficient permissions for viewing personal records');
+            }
+        }
         
         try {
             // Récupérer les filtres
             $filters = $this->getListFilters();
             
-            // Récupérer tous les enregistrements selon les filtres
-            $records = $this->validationService->getFilteredRecords($this->user->id, $filters);
-            
-            // Récupérer les utilisateurs d'équipe pour le filtre
-            $teamMembers = $this->getTeamMembersForFilter();
+            if ($isPersonalView) {
+                // Vue personnelle : forcer le filtre sur l'utilisateur connecté
+                $filters['user_id'] = $this->user->id;
+                $records = $this->getPersonalFilteredRecords($filters);
+                $teamMembers = []; // Pas de filtre utilisateur dans la vue personnelle
+            } else {
+                // Vue manager : tous les enregistrements selon les filtres
+                $records = $this->validationService->getFilteredRecords($this->user->id, $filters);
+                $teamMembers = $this->getTeamMembersForFilter();
+            }
             
             // Statistiques pour la liste filtrée
             $stats = $this->calculateFilteredStats($records);
             
-            dol_syslog("ValidationController: listAll returned " . count($records) . " records with filters: " . json_encode($filters), LOG_INFO);
+            dol_syslog("ValidationController: listAll returned " . count($records) . " records with filters: " . json_encode($filters) . " (personal view: " . ($isPersonalView ? 'yes' : 'no') . ")", LOG_INFO);
             
             return $this->prepareTemplateData([
-                'page_title' => $this->langs->trans('AllValidationRecords'),
+                'page_title' => $isPersonalView ? $this->langs->trans('MyTimeclockRecords') : $this->langs->trans('AllValidationRecords'),
                 'records' => $records,
                 'filters' => $filters,
                 'team_members' => $teamMembers,
                 'stats' => $stats,
-                'is_manager' => true,
+                'is_manager' => !$isPersonalView,
+                'is_personal_view' => $isPersonalView,
                 'view_type' => 'list_all'
             ]);
             
@@ -597,6 +612,95 @@ class ValidationController extends BaseController
             'sort_by' => GETPOST('sort_by', 'alpha') ?: 'date_desc', // date_desc, date_asc, user_asc, status
             'limit' => GETPOST('limit', 'int') ?: 50 // pagination
         ];
+    }
+    
+    /**
+     * Récupérer les enregistrements personnels filtrés
+     */
+    private function getPersonalFilteredRecords(array $filters): array 
+    {
+        $sql = "SELECT r.*, u.firstname, u.lastname, u.login";
+        $sql .= " FROM " . MAIN_DB_PREFIX . "timeclock_records r";
+        $sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "user u ON r.fk_user = u.rowid";
+        $sql .= " WHERE r.fk_user = " . (int)$this->user->id;
+        $sql .= " AND r.status IN (1, 3)"; // Validé ou Terminé
+        
+        // Filtrage par statut de validation
+        if (!empty($filters['status']) && $filters['status'] !== 'all') {
+            switch ($filters['status']) {
+                case 'pending':
+                    $sql .= " AND r.validation_status = 0";
+                    break;
+                case 'approved':
+                    $sql .= " AND r.validation_status = 1";
+                    break;
+                case 'rejected':
+                    $sql .= " AND r.validation_status = 2";
+                    break;
+                case 'partial':
+                    $sql .= " AND r.validation_status = 3";
+                    break;
+            }
+        }
+        
+        // Filtrage par dates
+        if (!empty($filters['date_from'])) {
+            $sql .= " AND DATE(r.clock_in_time) >= '" . $this->db->escape($filters['date_from']) . "'";
+        }
+        if (!empty($filters['date_to'])) {
+            $sql .= " AND DATE(r.clock_in_time) <= '" . $this->db->escape($filters['date_to']) . "'";
+        }
+        
+        // Tri
+        switch ($filters['sort_by']) {
+            case 'date_asc':
+                $sql .= " ORDER BY r.clock_in_time ASC";
+                break;
+            case 'user_asc':
+                $sql .= " ORDER BY u.lastname ASC, u.firstname ASC, r.clock_in_time DESC";
+                break;
+            case 'status':
+                $sql .= " ORDER BY r.validation_status ASC, r.clock_in_time DESC";
+                break;
+            case 'date_desc':
+            default:
+                $sql .= " ORDER BY r.clock_in_time DESC";
+                break;
+        }
+        
+        // Limite
+        $sql .= " LIMIT " . (int)$filters['limit'];
+        
+        $resql = $this->db->query($sql);
+        $records = [];
+        
+        if ($resql) {
+            while ($obj = $this->db->fetch_object($resql)) {
+                // Enrichir avec informations utilisateur
+                $record = [
+                    'rowid' => $obj->rowid,
+                    'fk_user' => $obj->fk_user,
+                    'clock_in_time' => $obj->clock_in_time,
+                    'clock_out_time' => $obj->clock_out_time,
+                    'work_duration' => $obj->work_duration,
+                    'status' => $obj->status,
+                    'validation_status' => $obj->validation_status,
+                    'validated_by' => $obj->validated_by,
+                    'validated_date' => $obj->validated_date,
+                    'validation_comment' => $obj->validation_comment,
+                    'user' => [
+                        'fullname' => trim($obj->firstname . ' ' . $obj->lastname),
+                        'login' => $obj->login
+                    ],
+                    'anomalies' => [] // TODO: implémenter détection anomalies si nécessaire
+                ];
+                
+                $records[] = $record;
+            }
+            $this->db->free($resql);
+        }
+        
+        return $records;
     }
     
     /**

@@ -463,9 +463,17 @@
     // Afficher un indicateur de chargement
     ons.notification.toast('<?php echo $langs->trans("ApplyingFilters"); ?>...', {timeout: 1000});
     
-    // Rediriger avec les nouveaux filtres
+    // Rediriger avec les nouveaux filtres vers la page actuelle
     setTimeout(() => {
-      window.location.href = '<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/validation.php?' + params.toString();
+      // Détecter la page actuelle pour rediriger correctement
+      const currentPath = window.location.pathname;
+      let targetPage = '<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/validation.php';
+      
+      if (currentPath.includes('myrecords.php')) {
+        targetPage = '<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/myrecords.php';
+      }
+      
+      window.location.href = targetPage + '?' + params.toString();
     }, 500);
   }
   
@@ -480,8 +488,21 @@
     document.getElementById('filter_anomalies').value = 'all';
     document.getElementById('sort_by').value = 'date_desc';
     
-    // Appliquer les filtres vides
-    applyFilters();
+    // Afficher un indicateur de chargement
+    ons.notification.toast('<?php echo $langs->trans("ClearFilters"); ?>...', {timeout: 1000});
+    
+    // Rediriger avec les filtres vides vers la page actuelle
+    setTimeout(() => {
+      // Détecter la page actuelle pour rediriger correctement
+      const currentPath = window.location.pathname;
+      let targetPage = '<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/validation.php';
+      
+      if (currentPath.includes('myrecords.php')) {
+        targetPage = '<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/myrecords.php';
+      }
+      
+      window.location.href = targetPage + '?action=list_all&filter_status=all&filter_anomalies=all&sort_by=date_desc';
+    }, 500);
   }
   
   /**

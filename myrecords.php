@@ -39,33 +39,28 @@ $error = 0;
 $errors = [];
 $messages = [];
 
-// Action par défaut : récupérer tous les enregistrements personnels
-$action = GETPOST('action', 'alpha') ?: 'get_my_records';
+// Action par défaut : récupérer tous les enregistrements personnels avec filtres
+$action = GETPOST('action', 'alpha') ?: 'list_all';
 
 try {
     switch($action) {
+        case 'list_all':
         case 'get_my_records':
         default:
-            // Récupérer directement les enregistrements de l'utilisateur connecté
-            $records = getMyTimeclockRecords($db, $user);
+            // Utiliser le contrôleur de validation avec vue personnelle
+            $controller = new ValidationController($db, $user, $langs, $conf);
+            $data = $controller->listAll(true); // true = vue personnelle
             
-            // Calculer les statistiques personnelles
-            $stats = calculatePersonalStats($records);
-            
-            // Récupérer le statut de pointage pour la toolbar (comme index.php)
+            // Récupérer le statut de pointage pour la toolbar
             $is_clocked_in = getUserClockStatus($db, $user);
             
-            $data = [
-                'records' => $records,
-                'stats' => $stats,
-                'page_title' => $langs->trans('MyTimeclockRecords'),
-                'view_type' => 'list_all',
-                'is_personal_view' => true,
-                'show_user_column' => false,
-                'show_validation_actions' => false,
-                'filters' => [], // Pas de filtres complexes pour vue personnelle
-                'is_clocked_in' => $is_clocked_in
-            ];
+            // Adapter les données pour la vue personnelle
+            $data['page_title'] = $langs->trans('MyTimeclockRecords');
+            $data['view_type'] = 'list_all';
+            $data['is_personal_view'] = true;
+            $data['show_user_column'] = false;
+            $data['show_validation_actions'] = false;
+            $data['is_clocked_in'] = $is_clocked_in;
             
             break;
     }
