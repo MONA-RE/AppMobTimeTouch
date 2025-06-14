@@ -20,6 +20,17 @@ dol_include_once('/appmobtimetouch/lib/appmobtimetouch.lib.php');
 dol_include_once('/appmobtimetouch/class/timeclockrecord.class.php');
 dol_include_once('/appmobtimetouch/class/timeclocktype.class.php');
 
+// Load SOLID architecture components
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/Constants.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/TimeHelper.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/LocationHelper.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/TimeclockServiceInterface.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/DataServiceInterface.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/DataService.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/TimeclockService.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Controllers/BaseController.php';
+require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Controllers/HomeController.php';
+
 // Load translations
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch", "users", "companies", "errors"));
 
@@ -28,136 +39,50 @@ if (empty($user->rights->appmobtimetouch->timeclock->read)) {
     accessforbidden('Insufficient permissions for timeclock records');
 }
 
-// Function to get clock status
-function getUserClockStatus($db, $user) {
-    $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockrecord";
-    $sql .= " WHERE fk_user = " . (int)$user->id;
-    $sql .= " AND clock_out_time IS NULL";
-    $sql .= " ORDER BY clock_in_time DESC LIMIT 1";
+// Debug: Check user rights
+dol_syslog("HOME.PHP DEBUG: User rights - read: " . (empty($user->rights->appmobtimetouch->timeclock->read) ? 'NO' : 'YES'), LOG_DEBUG);
+dol_syslog("HOME.PHP DEBUG: User rights - write: " . (empty($user->rights->appmobtimetouch->timeclock->write) ? 'NO' : 'YES'), LOG_DEBUG);
+dol_syslog("HOME.PHP DEBUG: User rights - validate: " . (empty($user->rights->appmobtimetouch->timeclock->validate) ? 'NO' : 'YES'), LOG_DEBUG);
+
+// Handle POST actions using SOLID architecture
+$action = GETPOST('action', 'aZ09');
+$error = 0;
+$errors = [];
+$messages = [];
+
+// Initialize SOLID services and controller for action processing
+$dataService = new DataService($db);
+$timeclockService = new TimeclockService($db, $dataService);
+$controller = new HomeController(
+    $db, 
+    $user, 
+    $langs, 
+    $conf,
+    $timeclockService,
+    $dataService
+);
+
+// Debug: Log action and POST data
+dol_syslog("HOME.PHP DEBUG: Action = '$action', POST data = " . json_encode($_POST), LOG_DEBUG);
+
+// Process through controller using exact SOLID mechanism
+try {
+    // Traitement via le contrôleur SOLID
+    $templateData = $controller->index();
     
-    $resql = $db->query($sql);
-    if ($resql) {
-        return $db->num_rows($resql) > 0;
-    }
-    return false;
-}
-
-// Function to get today's records
-function getTodayRecords($db, $user) {
-    $today = date('Y-m-d');
-    $sql = "SELECT rowid, clock_in_time, clock_out_time, work_duration, status";
-    $sql .= " FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockrecord";
-    $sql .= " WHERE fk_user = " . (int)$user->id;
-    $sql .= " AND DATE(clock_in_time) = '" . $db->escape($today) . "'";
-    $sql .= " ORDER BY clock_in_time DESC";
+    // Variables pour compatibilité template (extraction des données) - mécanisme SOLID original
+    extract($templateData);
     
-    $resql = $db->query($sql);
-    $records = [];
-    if ($resql) {
-        while ($obj = $db->fetch_object($resql)) {
-            $records[] = [
-                'rowid' => $obj->rowid,
-                'clock_in_time' => $obj->clock_in_time,
-                'clock_out_time' => $obj->clock_out_time,
-                'work_duration' => $obj->work_duration,
-                'status' => $obj->status
-            ];
-        }
-    }
-    return $records;
-}
-
-// Function to get recent records (last 7 days)
-function getRecentRecords($db, $user) {
-    $sql = "SELECT rowid, clock_in_time, clock_out_time, work_duration, status";
-    $sql .= " FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockrecord";
-    $sql .= " WHERE fk_user = " . (int)$user->id;
-    $sql .= " AND clock_in_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-    $sql .= " ORDER BY clock_in_time DESC LIMIT 10";
+    // Debug: Vérifier les données extraites
+    dol_syslog("HOME.PHP: Timeclock types count: " . count($timeclock_types ?? []), LOG_DEBUG);
+    dol_syslog("HOME.PHP: Default type ID: " . ($default_type_id ?? 'undefined'), LOG_DEBUG);
     
-    $resql = $db->query($sql);
-    $records = [];
-    if ($resql) {
-        while ($obj = $db->fetch_object($resql)) {
-            $records[] = [
-                'rowid' => $obj->rowid,
-                'clock_in_time' => $obj->clock_in_time,
-                'clock_out_time' => $obj->clock_out_time,
-                'work_duration' => $obj->work_duration,
-                'status' => $obj->status
-            ];
-        }
-    }
-    return $records;
-}
-
-// Function to get weekly summary
-function getWeeklySummary($db, $user) {
-    $weekStart = date('Y-m-d', strtotime('monday this week'));
-    $weekEnd = date('Y-m-d', strtotime('sunday this week'));
+    dol_syslog("HOME.PHP SOLID: Controller processing completed successfully", LOG_DEBUG);
     
-    $sql = "SELECT SUM(work_duration) as total_seconds, COUNT(DISTINCT DATE(clock_in_time)) as days_worked";
-    $sql .= " FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockrecord";
-    $sql .= " WHERE fk_user = " . (int)$user->id;
-    $sql .= " AND DATE(clock_in_time) BETWEEN '" . $db->escape($weekStart) . "' AND '" . $db->escape($weekEnd) . "'";
-    $sql .= " AND status = 3"; // Completed records
-    
-    $resql = $db->query($sql);
-    if ($resql && $obj = $db->fetch_object($resql)) {
-        return [
-            'total_hours' => round($obj->total_seconds / 3600, 2),
-            'days_worked' => $obj->days_worked
-        ];
-    }
-    return ['total_hours' => 0, 'days_worked' => 0];
-}
-
-// Function to get timeclock types
-function getTimeclockTypes($db) {
-    $sql = "SELECT rowid, label, color FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclocktype";
-    $sql .= " WHERE active = 1 ORDER BY position, label";
-    
-    $resql = $db->query($sql);
-    $types = [];
-    if ($resql) {
-        while ($obj = $db->fetch_object($resql)) {
-            $types[] = [
-                'rowid' => $obj->rowid,
-                'label' => $obj->label,
-                'color' => $obj->color ?: '#4CAF50'
-            ];
-        }
-    }
-    return $types;
-}
-
-// Get data
-$is_clocked_in = getUserClockStatus($db, $user);
-$today_records = getTodayRecords($db, $user);
-$recent_records = getRecentRecords($db, $user);
-$weekly_summary = getWeeklySummary($db, $user);
-$timeclock_types = getTimeclockTypes($db);
-$pending_validation_count = 0;
-
-// Calculate today's total hours
-$today_total_hours = 0;
-foreach ($today_records as $record) {
-    if ($record['work_duration'] && $record['status'] == 3) {
-        $today_total_hours += $record['work_duration'] / 3600;
-    }
-}
-
-// Get current session info if clocked in
-$current_session_start = null;
-$current_duration = 0;
-if ($is_clocked_in && !empty($today_records)) {
-    foreach ($today_records as $record) {
-        if (!$record['clock_out_time']) {
-            $current_session_start = $record['clock_in_time'];
-            $current_duration = time() - strtotime($record['clock_in_time']);
-            break;
-        }
-    }
+} catch (Exception $e) {
+    // Gestion centralisée des erreurs comme dans l'original
+    dol_syslog("HOME.PHP SOLID: Controller error - " . $e->getMessage(), LOG_ERROR);
+    accessforbidden($e->getMessage());
 }
 
 ?>
@@ -301,9 +226,9 @@ if ($is_clocked_in && !empty($today_records)) {
                                 <p style="color: #4CAF50; font-size: 18px; margin-bottom: 15px;">
                                     <strong><?php echo $langs->trans("ClockedIn"); ?></strong>
                                 </p>
-                                <?php if ($current_session_start): ?>
+                                <?php if ($clock_in_time): ?>
                                     <p style="color: #666; margin-bottom: 15px;">
-                                        <?php echo $langs->trans("Since"); ?>: <?php echo date('H:i', strtotime($current_session_start)); ?>
+                                        <?php echo $langs->trans("Since"); ?>: <?php echo dol_print_date($clock_in_time, 'hour', 'tzuser'); ?>
                                         <br>
                                         <span id="current-duration"><?php echo gmdate('H:i', $current_duration); ?></span>
                                     </p>
@@ -339,7 +264,7 @@ if ($is_clocked_in && !empty($today_records)) {
                                     <div class="stat-label"><?php echo $langs->trans("HoursWorked"); ?></div>
                                 </div>
                                 <div class="stat-item">
-                                    <div class="stat-value"><?php echo count($today_records); ?></div>
+                                    <div class="stat-value"><?php echo count($today_summary['records'] ?? []); ?></div>
                                     <div class="stat-label"><?php echo $langs->trans("Sessions"); ?></div>
                                 </div>
                             </div>
@@ -356,11 +281,17 @@ if ($is_clocked_in && !empty($today_records)) {
                         <div class="content" style="padding: 0 15px 15px 15px;">
                             <div class="stats-grid">
                                 <div class="stat-item">
-                                    <div class="stat-value"><?php echo number_format($weekly_summary['total_hours'], 1); ?>h</div>
+                                    <div class="stat-value"><?php 
+                                        $total_hours = is_object($weekly_summary) ? ($weekly_summary->total_hours ?? 0) : ($weekly_summary['total_hours'] ?? 0);
+                                        echo number_format($total_hours, 1); 
+                                    ?>h</div>
                                     <div class="stat-label"><?php echo $langs->trans("TotalHours"); ?></div>
                                 </div>
                                 <div class="stat-item">
-                                    <div class="stat-value"><?php echo $weekly_summary['days_worked']; ?></div>
+                                    <div class="stat-value"><?php 
+                                        $days_worked = is_object($weekly_summary) ? ($weekly_summary->days_worked ?? 0) : ($weekly_summary['days_worked'] ?? 0);
+                                        echo $days_worked; 
+                                    ?></div>
                                     <div class="stat-label"><?php echo $langs->trans("DaysWorked"); ?></div>
                                 </div>
                             </div>
@@ -379,10 +310,17 @@ if ($is_clocked_in && !empty($today_records)) {
                             <?php if (!empty($recent_records)): ?>
                             <div class="records-list">
                                 <?php foreach ($recent_records as $record): ?>
-                                <div class="record-item" onclick="viewRecord(<?php echo $record['rowid']; ?>)">
+                                <?php
+                                // Handle both object and array formats
+                                $rowid = is_object($record) ? ($record->rowid ?? $record->id ?? 0) : ($record['rowid'] ?? 0);
+                                $clock_in_time = is_object($record) ? ($record->clock_in_time ?? '') : ($record['clock_in_time'] ?? '');
+                                $clock_out_time = is_object($record) ? ($record->clock_out_time ?? null) : ($record['clock_out_time'] ?? null);
+                                $work_duration = is_object($record) ? ($record->work_duration ?? 0) : ($record['work_duration'] ?? 0);
+                                ?>
+                                <div class="record-item" onclick="viewRecord(<?php echo $rowid; ?>)">
                                     <div class="record-time">
                                         <?php 
-                                        $record_date = date('Y-m-d', strtotime($record['clock_in_time']));
+                                        $record_date = date('Y-m-d', strtotime($clock_in_time));
                                         $today = date('Y-m-d');
                                         $yesterday = date('Y-m-d', strtotime('-1 day'));
                                         
@@ -391,19 +329,19 @@ if ($is_clocked_in && !empty($today_records)) {
                                         } elseif ($record_date == $yesterday) {
                                             echo $langs->trans("Yesterday") . " ";
                                         } else {
-                                            echo date('d/m', strtotime($record['clock_in_time'])) . " ";
+                                            echo date('d/m', strtotime($clock_in_time)) . " ";
                                         }
                                         ?>
-                                        <?php echo date('H:i', strtotime($record['clock_in_time'])); ?>
-                                        <?php if ($record['clock_out_time']): ?>
-                                            - <?php echo date('H:i', strtotime($record['clock_out_time'])); ?>
+                                        <?php echo date('H:i', strtotime($clock_in_time)); ?>
+                                        <?php if ($clock_out_time): ?>
+                                            - <?php echo date('H:i', strtotime($clock_out_time)); ?>
                                         <?php else: ?>
                                             - <span style="color: #4CAF50;"><?php echo $langs->trans("InProgress"); ?></span>
                                         <?php endif; ?>
                                     </div>
                                     <div class="record-duration">
-                                        <?php if ($record['work_duration']): ?>
-                                            <?php echo gmdate('H:i', $record['work_duration']); ?>
+                                        <?php if ($work_duration): ?>
+                                            <?php echo gmdate('H:i', $work_duration); ?>
                                         <?php else: ?>
                                             <?php echo $langs->trans("Active"); ?>
                                         <?php endif; ?>
@@ -430,101 +368,16 @@ if ($is_clocked_in && !empty($today_records)) {
     </ons-splitter-content>
 </ons-splitter>
 
-<!-- Clock In Modal -->
-<ons-modal direction="up" id="clockInModal">
-    <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h3><?php echo $langs->trans("ClockIn"); ?></h3>
-        </div>
-        
-        <form id="clockInForm" method="post" action="timeclock-action.php">
-            <input type="hidden" name="action" value="clock_in">
-            <input type="hidden" name="token" value="<?php echo newToken(); ?>">
-            <input type="hidden" id="clockin_latitude" name="latitude" value="">
-            <input type="hidden" id="clockin_longitude" name="longitude" value="">
-            <input type="hidden" id="selected_timeclock_type" name="timeclock_type_id" value="<?php echo !empty($timeclock_types) ? $timeclock_types[0]['rowid'] : 1; ?>">
-            
-            <!-- Type Selection -->
-            <?php if (!empty($timeclock_types)): ?>
-            <div style="margin-bottom: 15px;">
-                <label style="font-weight: bold; margin-bottom: 10px; display: block;"><?php echo $langs->trans("TimeclockType"); ?></label>
-                <?php foreach ($timeclock_types as $type): ?>
-                <ons-list-item class="timeclock-type-item" data-type-id="<?php echo $type['rowid']; ?>" 
-                               onclick="selectTimeclockType(<?php echo $type['rowid']; ?>, '<?php echo addslashes($type['label']); ?>', '<?php echo $type['color']; ?>')">
-                    <div class="left">
-                        <div style="width: 20px; height: 20px; background-color: <?php echo $type['color']; ?>; border-radius: 50%;"></div>
-                    </div>
-                    <div class="center">
-                        <div><?php echo $type['label']; ?></div>
-                    </div>
-                    <div class="right">
-                        <ons-icon icon="fa-check" class="type-selected-icon" style="display: none; color: <?php echo $type['color']; ?>;"></ons-icon>
-                    </div>
-                </ons-list-item>
-                <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-            
-            <!-- GPS Status -->
-            <div id="gps-status" style="padding: 10px; margin: 10px 0; border-radius: 5px; text-align: center;">
-                <ons-icon icon="md-gps-fixed"></ons-icon>
-                <span id="gps-status-text"><?php echo $langs->trans("ReadyToStart"); ?></span>
-            </div>
-            
-            <div style="text-align: center; margin-top: 20px;">
-                <ons-button onclick="document.getElementById('clockInModal').hide()" style="margin-right: 10px;">
-                    <?php echo $langs->trans("Cancel"); ?>
-                </ons-button>
-                <ons-button modifier="cta" onclick="submitClockIn()">
-                    <?php echo $langs->trans("ClockIn"); ?>
-                </ons-button>
-            </div>
-        </form>
-    </div>
-</ons-modal>
-
-<!-- Clock Out Modal -->
-<ons-modal direction="up" id="clockOutModal">
-    <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h3><?php echo $langs->trans("ClockOut"); ?></h3>
-            <?php if ($current_session_start): ?>
-            <p style="color: #666;">
-                <?php echo $langs->trans("SessionDuration"); ?>: <span id="session-duration"><?php echo gmdate('H:i', $current_duration); ?></span>
-            </p>
-            <?php endif; ?>
-        </div>
-        
-        <form id="clockOutForm" method="post" action="timeclock-action.php">
-            <input type="hidden" name="action" value="clock_out">
-            <input type="hidden" name="token" value="<?php echo newToken(); ?>">
-            <input type="hidden" id="clockout_latitude" name="latitude" value="">
-            <input type="hidden" id="clockout_longitude" name="longitude" value="">
-            
-            <!-- GPS Status -->
-            <div id="gps-status-out" style="padding: 10px; margin: 10px 0; border-radius: 5px; text-align: center;">
-                <ons-icon icon="md-gps-fixed"></ons-icon>
-                <span id="gps-status-out-text"><?php echo $langs->trans("ReadyToClockOut"); ?></span>
-            </div>
-            
-            <div style="text-align: center; margin-top: 20px;">
-                <ons-button onclick="document.getElementById('clockOutModal').hide()" style="margin-right: 10px;">
-                    <?php echo $langs->trans("Cancel"); ?>
-                </ons-button>
-                <ons-button modifier="cta" onclick="confirmClockOut()">
-                    <?php echo $langs->trans("ClockOut"); ?>
-                </ons-button>
-            </div>
-        </form>
-    </div>
-</ons-modal>
+<!-- Modal Components (Architecture SOLID) -->
+<?php include 'Views/components/ClockInModal.tpl'; ?>
+<?php include 'Views/components/ClockOutModal.tpl'; ?>
 
 <script>
 // Configuration globale
 window.appMobTimeTouch = {
     DOL_URL_ROOT: '<?php echo DOL_URL_ROOT; ?>',
     isClocked: <?php echo json_encode($is_clocked_in); ?>,
-    clockInTime: <?php echo json_encode($current_session_start ? strtotime($current_session_start) : null); ?>,
+    clockInTime: <?php echo json_encode($clock_in_time); ?>,
     userId: <?php echo $user->id; ?>,
     apiToken: '<?php echo newToken(); ?>'
 };
@@ -534,7 +387,7 @@ ons.ready(function() {
     console.log('AppMobTimeTouch Home loaded');
     
     // Démarrer le timer de durée si pointé
-    <?php if ($is_clocked_in && $current_session_start): ?>
+    <?php if ($is_clocked_in && $clock_in_time): ?>
     setInterval(updateCurrentDuration, 60000); // Mise à jour chaque minute
     <?php endif; ?>
 });
@@ -582,8 +435,8 @@ function selectTimeclockType(typeId, typeLabel, typeColor) {
 
 // Fonction pour mettre à jour la durée courante
 function updateCurrentDuration() {
-    <?php if ($is_clocked_in && $current_session_start): ?>
-    var startTime = <?php echo strtotime($current_session_start); ?>;
+    <?php if ($is_clocked_in && $clock_in_time): ?>
+    var startTime = <?php echo $clock_in_time; ?>;
     var now = Math.floor(Date.now() / 1000);
     var duration = now - startTime;
     var hours = Math.floor(duration / 3600);
@@ -600,6 +453,144 @@ function updateCurrentDuration() {
         sessionElement.textContent = timeStr;
     }
     <?php endif; ?>
+}
+
+// Submit Clock In - Compatible with SOLID templates
+function submitClockIn() {
+    console.log('Submit Clock In called');
+    
+    // Debug: Check form existence
+    var form = document.getElementById('clockInForm');
+    if (!form) {
+        console.error('ClockInForm not found!');
+        ons.notification.alert('Erreur: Formulaire non trouvé');
+        return;
+    }
+    
+    console.log('Form found:', form);
+    console.log('Form action:', form.action);
+    console.log('Form method:', form.method);
+    
+    // Check form data
+    var formData = new FormData(form);
+    console.log('Form data:');
+    for (var pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+    }
+    
+    // Check required fields
+    var typeId = document.getElementById('selected_timeclock_type').value;
+    if (!typeId) {
+        console.error('No timeclock type selected');
+        ons.notification.alert('Veuillez sélectionner un type de pointage');
+        return;
+    }
+    
+    // Validate required location if needed
+    if (window.appMobTimeTouch && window.appMobTimeTouch.requireLocation) {
+        var lat = document.getElementById('clockin_latitude').value;
+        var lon = document.getElementById('clockin_longitude').value;
+        
+        if (!lat || !lon) {
+            ons.notification.alert('<?php echo $langs->trans("LocationRequiredForClockIn"); ?>');
+            return;
+        }
+    }
+    
+    console.log('Submitting form...');
+    // Submit form directly (controller handles the action)
+    document.getElementById('clockInForm').submit();
+}
+
+// Submit Clock Out - Compatible with SOLID templates  
+function submitClockOut() {
+    console.log('Submit Clock Out called');
+    
+    // Validate required location if needed
+    if (window.appMobTimeTouch && window.appMobTimeTouch.requireLocation) {
+        var lat = document.getElementById('clockout_latitude').value;
+        var lon = document.getElementById('clockout_longitude').value;
+        
+        if (!lat || !lon) {
+            ons.notification.alert('<?php echo $langs->trans("LocationRequiredForClockOut"); ?>');
+            return;
+        }
+    }
+    
+    // Submit form directly (controller handles the action)
+    document.getElementById('clockOutForm').submit();
+}
+
+// Fonction pour confirmer le clock out
+function confirmClockOut() {
+    ons.notification.confirm('<?php echo $langs->trans("ConfirmClockOut"); ?>').then(function(result) {
+        if (result === 1) {
+            submitClockOut();
+        }
+    });
+}
+
+// Show Clock In Modal
+function showClockInModal() {
+    var modal = document.getElementById('clockInModal');
+    if (modal) {
+        modal.show();
+        
+        // Initialize type selection if available
+        setTimeout(function() {
+            if (typeof initializeTimeclockTypeSelection === 'function') {
+                initializeTimeclockTypeSelection();
+            }
+        }, 100);
+    }
+}
+
+// Show Clock Out Modal
+function showClockOutModal() {
+    var modal = document.getElementById('clockOutModal');
+    if (modal) {
+        modal.show();
+    }
+}
+
+// Fonction pour sélectionner le type de pointage
+function selectTimeclockType(typeId, typeLabel, typeColor) {
+    console.log('Selecting timeclock type:', typeId, typeLabel, typeColor);
+    
+    // Mettre à jour le champ caché
+    var hiddenInput = document.getElementById('selected_timeclock_type');
+    if (hiddenInput) {
+        hiddenInput.value = typeId;
+    }
+    
+    // Supprimer la sélection de tous les éléments
+    var allItems = document.querySelectorAll('.timeclock-type-item');
+    allItems.forEach(function(item) {
+        item.classList.remove('selected');
+        item.style.backgroundColor = '';
+        item.style.borderLeft = '';
+        
+        // Masquer l'icône de validation
+        var icon = item.querySelector('.type-selected-icon');
+        if (icon) {
+            icon.style.display = 'none';
+        }
+    });
+    
+    // Marquer l'élément sélectionné
+    var selectedItem = document.querySelector('[data-type-id="' + typeId + '"]');
+    if (selectedItem) {
+        selectedItem.classList.add('selected');
+        selectedItem.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+        selectedItem.style.borderLeft = '4px solid ' + typeColor;
+        
+        // Afficher l'icône de validation
+        var icon = selectedItem.querySelector('.type-selected-icon');
+        if (icon) {
+            icon.style.display = 'block';
+            icon.style.color = typeColor;
+        }
+    }
 }
 
 // Fonction pour voir un enregistrement
@@ -622,6 +613,11 @@ function toggleMenu() {
 // Exposer globalement
 window.goToHome = goToHome;
 window.toggleMenu = toggleMenu;
+window.submitClockIn = submitClockIn;
+window.submitClockOut = submitClockOut;
+window.showClockInModal = showClockInModal;
+window.showClockOutModal = showClockOutModal;
+window.selectTimeclockType = selectTimeclockType;
 </script>
 
 </body>

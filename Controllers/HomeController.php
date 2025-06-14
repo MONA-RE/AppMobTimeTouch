@@ -102,15 +102,16 @@ class HomeController extends BaseController
      */
     private function handleClockIn(): array 
     {
+        dol_syslog("HomeController: handleClockIn() called", LOG_DEBUG);
+        
         $validation = $this->validatePostParams([
-            'timeclock_type_id' => 'int',
-            'location' => 'alphanohtml',
-            'latitude' => 'float',
-            'longitude' => 'float',
-            'note' => 'restricthtml'
+            'timeclock_type_id' => 'int'
         ]);
         
+        dol_syslog("HomeController: Validation result - " . json_encode($validation), LOG_DEBUG);
+        
         if (!empty($validation['errors'])) {
+            dol_syslog("HomeController: Validation errors - " . implode(', ', $validation['errors']), LOG_ERROR);
             return [
                 'error' => 1,
                 'errors' => $validation['errors']
@@ -118,9 +119,12 @@ class HomeController extends BaseController
         }
         
         // Utiliser le service avec gestion d'exceptions
+        dol_syslog("HomeController: Calling timeclockService->clockIn()", LOG_DEBUG);
         $result = $this->timeclockService->clockIn($this->user, $validation['params']);
+        dol_syslog("HomeController: clockIn service result - " . json_encode($result), LOG_DEBUG);
         
         // Redirection pour éviter la resoumission
+        dol_syslog("HomeController: Redirecting with success", LOG_DEBUG);
         $this->redirectWithSuccess($_SERVER['PHP_SELF'], 'clockin_success');
     }
     
@@ -161,15 +165,18 @@ class HomeController extends BaseController
     private function preparePageData(int $view): array 
     {
         // Récupération du statut de pointage de l'utilisateur
+        dol_syslog("HomeController: Calling getActiveRecord for user " . $this->user->id, LOG_INFO);
         $activeRecord = $this->timeclockService->getActiveRecord($this->user->id);
         $isClocked = !is_null($activeRecord);
+        dol_syslog("HomeController: isClocked = " . ($isClocked ? 'TRUE' : 'FALSE'), LOG_INFO);
         
         // Calcul de la durée actuelle si pointé
         $currentDuration = 0;
         $clockInTime = null;
         
         if ($isClocked && $activeRecord) {
-            $clockInTime = $this->extractTimestamp($activeRecord->clock_in_time);
+            // Utiliser le timestamp Unix stocké par Dolibarr (déjà converti)
+            $clockInTime = $activeRecord->clock_in_time;
             if ($clockInTime) {
                 $currentDuration = TimeHelper::calculateDuration($clockInTime, dol_now());
             }
@@ -220,27 +227,33 @@ class HomeController extends BaseController
      */
     private function extractTimestamp($rawTimestamp): ?int 
     {
+        dol_syslog("HomeController: extractTimestamp input - " . json_encode($rawTimestamp), LOG_DEBUG);
+        
         if (empty($rawTimestamp)) {
             return null;
         }
         
         // Méthode 1: Vérifier si c'est déjà un timestamp Unix valide
         if (is_numeric($rawTimestamp) && $rawTimestamp > 946684800 && $rawTimestamp < 4102444800) {
+            dol_syslog("HomeController: extractTimestamp method 1 (unix) - " . $rawTimestamp, LOG_DEBUG);
             return (int) $rawTimestamp;
         }
         
         // Méthode 2: Conversion avec jdate pour les formats Dolibarr
         $converted = $this->db->jdate($rawTimestamp);
         if ($converted && is_numeric($converted)) {
+            dol_syslog("HomeController: extractTimestamp method 2 (jdate) - " . $converted, LOG_DEBUG);
             return (int) $converted;
         }
         
         // Méthode 3: Fallback avec strtotime
         $fallback = strtotime($rawTimestamp);
         if ($fallback !== false && $fallback > 0) {
+            dol_syslog("HomeController: extractTimestamp method 3 (strtotime) - " . $fallback, LOG_DEBUG);
             return $fallback;
         }
         
+        dol_syslog("HomeController: extractTimestamp failed for - " . json_encode($rawTimestamp), LOG_WARNING);
         return null;
     }
     

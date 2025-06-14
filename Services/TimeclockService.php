@@ -153,20 +153,32 @@ class TimeclockService implements TimeclockServiceInterface
         $sql .= " ORDER BY clock_in_time DESC";
         $sql .= " LIMIT 1";
 
+        dol_syslog("TimeclockService::getActiveRecord - SQL: " . $sql, LOG_INFO);
+
         $resql = $this->db->query($sql);
         if ($resql) {
-            if ($this->db->num_rows($resql)) {
+            $numRows = $this->db->num_rows($resql);
+            dol_syslog("TimeclockService::getActiveRecord - Rows found: " . $numRows, LOG_DEBUG);
+            
+            if ($numRows) {
                 $obj = $this->db->fetch_object($resql);
+                dol_syslog("TimeclockService::getActiveRecord - Found rowid: " . $obj->rowid, LOG_DEBUG);
                 $this->db->free($resql);
                 
                 $activeRecord = new TimeclockRecord($this->db);
-                if ($activeRecord->fetch($obj->rowid) > 0) {
+                $fetchResult = $activeRecord->fetch($obj->rowid);
+                dol_syslog("TimeclockService::getActiveRecord - Fetch result: " . $fetchResult, LOG_DEBUG);
+                
+                if ($fetchResult > 0) {
+                    dol_syslog("TimeclockService::getActiveRecord - Raw clock_in_time: " . $activeRecord->clock_in_time, LOG_INFO);
+                    dol_syslog("TimeclockService::getActiveRecord - jdate conversion: " . $this->db->jdate($activeRecord->clock_in_time), LOG_INFO);
                     return $activeRecord;
                 }
             }
             $this->db->free($resql);
         }
         
+        dol_syslog("TimeclockService::getActiveRecord - No active record found for user " . $userId, LOG_DEBUG);
         return null;
     }
     
