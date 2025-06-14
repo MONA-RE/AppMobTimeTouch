@@ -952,5 +952,35 @@ function showClockOutModal() {
     // Initialiser l'animation shake au chargement
     addShakeAnimation();
 
+    /**
+     * Go to home page (pour toolbar logo)
+     * Fonction pour compatibilité avec topbar-home.tpl
+     */
+    function goToHome() {
+        console.log('Already on home page - refreshing instead');
+        
+        // Si on est déjà sur la page d'accueil, on actualise
+        ons.notification.toast('<?php echo $langs->trans("RefreshingData"); ?>...', {timeout: 1000});
+        setTimeout(function() {
+            location.reload();
+        }, 500);
+    }
+    
+    /**
+     * Toggle menu (placeholder pour compatibilité toolbar)
+     * Note: home.tpl n'utilise pas de splitter menu
+     */
+    function toggleMenu() {
+        console.log('Home page - no side menu available');
+        
+        // On pourrait ajouter ici une navigation vers une page avec menu
+        // Pour l'instant, on montre juste un message informatif
+        ons.notification.toast('<?php echo $langs->trans("MenuNotAvailable"); ?>', {timeout: 1500});
+    }
+    
+    // Exposer les fonctions globalement pour la toolbar
+    window.goToHome = goToHome;
+    window.toggleMenu = toggleMenu;
+
   </script>
 </ons-page>
