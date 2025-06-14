@@ -14,7 +14,7 @@
 /**
  *	\file       appmobtimetouch/index.php
  *	\ingroup    appmobtimetouch
- *	\brief      Home page of appmobtimetouch mobile application
+ *	\brief      Entry point for AppMobTimeTouch module with device detection
  */
 
 // Load Dolibarr environment
@@ -56,26 +56,8 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
 dol_include_once('/appmobtimetouch/lib/appmobtimetouch.lib.php');
 dol_include_once('/appmobtimetouch/core/modules/modAppMobTimeTouch.class.php');
 
-// Load SOLID architecture components for template compatibility
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/Constants.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/TimeHelper.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/LocationHelper.php';
-
-// Load SOLID architecture components - Étape 3: Services métier (compatibilité templates)
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/TimeclockServiceInterface.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/Interfaces/DataServiceInterface.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/DataService.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Services/TimeclockService.php';
-
-// Load SOLID architecture components - Étape 4: Contrôleurs (compatibilité templates)
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Controllers/BaseController.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Controllers/HomeController.php';
-
 // Load translation files required by the page
 $langs->loadLangs(array("appmobtimetouch@appmobtimetouch"));
-
-$action = GETPOST('action', 'aZ09');
-$mainmenu = GETPOST('mainmenu', 'aZ09');
 
 // Vérifier si la fonction isModEnabled existe (compatibilité)
 if (!function_exists('isModEnabled')) {
@@ -88,10 +70,10 @@ if (!function_exists('isModEnabled')) {
 
 // Security check - Vérifier que le module est activé
 if (!isModEnabled('appmobtimetouch')) {
-    accessforbidden('Module not enabled');
+    accessforbidden('Module AppMobTimeTouch not enabled');
 }
 
-// CORRECTION ÉTAPE 1 : Initialisation correcte des droits utilisateur
+// CORRECTION : Initialisation correcte des droits utilisateur
 // Vérifier que l'objet user existe et est valide
 if (!isset($user) || !is_object($user) || $user->id <= 0) {
     accessforbidden('User not authenticated');
@@ -191,298 +173,41 @@ if (!$user->rights->appmobtimetouch->timeclock->read) {
     accessforbidden($langs->trans('NotEnoughPermissions'));
 }
 
-$socid = GETPOST('socid', 'int');
-if (isset($user->socid) && $user->socid > 0) {
-    $action = '';
-    $socid = $user->socid;
-}
-
-$max = 5;
-$now = dol_now();
-
 // Get version number from module class for cache busting
 $moduleInstance = new modAppMobTimeTouch($db);
 $version = $moduleInstance->version;
 
+// Note: isMobileDevice() function is already declared in lib/appmobtimetouch.lib.php
+
 /**
- * Récupère le statut de pointage de l'utilisateur (pour toolbar)
+ * Fonction de détection par taille d'écran (JavaScript sera requis côté client)
+ * Cette méthode servira de fallback
  */
-function getUserClockStatus($db, $user) {
-    $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "timeclock_records";
-    $sql .= " WHERE fk_user = " . (int)$user->id;
-    $sql .= " AND status = 2"; // Status 2 = En cours (pointé)
-    $sql .= " AND clock_out_time IS NULL";
-    $sql .= " ORDER BY clock_in_time DESC LIMIT 1";
+function isSmallScreen() {
+    // Vérifier si l'utilisateur a explicitement demandé la version mobile
+    if (isset($_GET['mobile']) && $_GET['mobile'] == '1') {
+        return true;
+    }
     
-    $resql = $db->query($sql);
-    if ($resql) {
-        $num = $db->num_rows($resql);
-        $db->free($resql);
-        return $num > 0;
+    // Vérifier si l'utilisateur a explicitement demandé la version desktop
+    if (isset($_GET['desktop']) && $_GET['desktop'] == '1') {
+        return false;
     }
     
     return false;
 }
 
-// CORRECTION ÉTAPE 1 : Initialiser les variables par défaut pour les templates
-// Récupérer le vrai statut de pointage
-$is_clocked_in = getUserClockStatus($db, $user);
-$clock_in_time = null;
-$current_duration = 0;
-$active_record = null;
-$today_total_hours = 0;
-$today_total_breaks = 0;
-$weekly_summary = null;
-$recent_records = array();
-$timeclock_types = array();
-$default_type_id = 1;
-$overtime_threshold = 8;
-$overtime_alert = false;
-$errors = array();
-$messages = array();
+// Variables pour le template desktop
+$is_mobile_device = isMobileDevice();
+$force_mobile = isSmallScreen();
 
-// Variables pour compatibilité rightmenu.tpl
-$pending_validation_count = 0; // Pas utilisé dans index mais requis pour rightmenu.tpl
+// Redirection automatique pour les appareils mobiles
+if ($is_mobile_device || $force_mobile) {
+    // Redirection vers l'application mobile
+    header('Location: home.php');
+    exit;
+}
 
-// Prepare JavaScript data with default values for mobile interface
-$js_data = array(
-    'is_clocked_in' => $is_clocked_in,
-    'clock_in_time' => $clock_in_time,
-    'require_location' => 0, // Default: no location required
-    'default_type_id' => $default_type_id,
-    'max_hours_per_day' => 12,
-    'overtime_threshold' => $overtime_threshold,
-    'api_token' => function_exists('newToken') ? newToken() : '',
-    'user_id' => isset($user->id) ? $user->id : 0,
-    'version' => $version
-);
-
+// Affichage pour les utilisateurs desktop
+include 'tpl/index-desktop.tpl';
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="cache-control" content="no-cache, must-revalidate, post-check=0, pre-check=0" />
-    <meta http-equiv="cache-control" content="max-age=0" />
-    <meta http-equiv="expires" content="0" />
-    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
-    <meta http-equiv="pragma" content="no-cache" />
-    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
-    <title>AppMobTimeTouch for Dolibarr <?php echo $version;?></title>
-    
-    <!-- CSS files with version parameter -->
-    <link rel="stylesheet" href="css/onsenui.min.css?v=<?php echo $version;?>">
-    <link rel="stylesheet" href="css/onsen-css-components.min.css?v=<?php echo $version;?>">
-    <link rel="stylesheet" href="css/font_awesome/css/fontawesome.min.css?v=<?php echo $version;?>">
-    <link rel="stylesheet" href="css/index.css?v=<?php echo $version;?>">
-    
-    <!-- Add manifest link -->
-    <link rel="manifest" href="manifest.json" />
-
-    <!-- JavaScript files with version parameter -->
-    <script type="text/javascript" src="js/onsenui.min.js?v=<?php echo $version;?>"></script>
-    <!-- Include navigation functions -->
-    <script type="text/javascript" src="js/navigation.js?v=<?php echo $version;?>"></script> 
-</head>
-
-<body>
-
-<!-- Application principale avec même structure que les autres pages -->
-<ons-splitter id="mySplitter">
-    <ons-splitter-side id="sidemenu" side="right" width="250px" collapse="portrait" swipeable>
-        <!-- Menu latéral -->
-        <?php include 'tpl/parts/rightmenu.tpl'; ?>
-    </ons-splitter-side>
-    
-    <ons-splitter-content>
-        <!-- Contenu principal - include du template tabbar qui contient les pages avec toolbars -->
-        <?php include "tpl/parts/tabbar.tpl"; ?>
-    </ons-splitter-content>
-</ons-splitter>
-
-<!-- Modal de chargement -->
-<ons-modal direction="up" id="sablier">
-    <div style="text-align: center;">
-        <p>
-            <ons-icon icon="md-spinner" size="45px" spin></ons-icon>
-        </p>
-        <p id="loadingmessage"><span><?php echo $langs->trans("loadingInProgress"); ?></span></p>
-    </div>
-</ons-modal>
-
-    <script type="text/javascript">
-        // Variables globales pour le time tracking
-        var globalCurrentPage = "homeApplication";
-        var globalMyNavigator = null;
-        var userTimeclockStatus = null; // null, 'clocked_in', 'clocked_out'
-
-        // Configuration globale pour l'application
-        window.appMobTimeTouch = {
-            DOL_URL_ROOT: '<?php echo DOL_URL_ROOT; ?>',
-            version: '<?php echo $version; ?>',
-            user_rights: {
-                read: <?php echo (!empty($user->rights->appmobtimetouch->timeclock->read)) ? 'true' : 'false'; ?>,
-                write: <?php echo (!empty($user->rights->appmobtimetouch->timeclock->write)) ? 'true' : 'false'; ?>,
-                readall: <?php echo (!empty($user->rights->appmobtimetouch->timeclock->readall)) ? 'true' : 'false'; ?>,
-                validate: <?php echo (!empty($user->rights->appmobtimetouch->timeclock->validate)) ? 'true' : 'false'; ?>,
-                export: <?php echo (!empty($user->rights->appmobtimetouch->timeclock->export)) ? 'true' : 'false'; ?>
-            }
-        };
-
-        ons.ready(function () {
-            console.log("ONS ready in AppMobTimeTouch index.php");
-
-            globalCurrentPage = "homeApplication";
-            
-            console.log('AppMobTimeTouch initialized');
-            console.log('User rights:', window.appMobTimeTouch.user_rights);
-
-            // S'assurer que le menu est fermé au chargement
-            let sideMenu = document.getElementById('sidemenu');
-            if (sideMenu) {
-                try {
-                    sideMenu.close();
-                } catch (e) {
-                    console.log('Menu already closed');
-                }
-            }
-
-            // Navigation simplifiée - plus besoin de gestionnaire postpop
-
-            //On nettoie l'historique au lancement de l'appli
-            cleanHistorique();
-
-            //stockage des donnees de base
-            localStoreData("email", "<?php echo $user->email ?>");
-            localStoreData("firstname", "<?php echo $user->firstname ?>");
-            localStoreData("name", "<?php echo $user->lastname ?>");
-            localStoreData("api_server", "<?php echo $_SERVER['SERVER_NAME'] ?>");
-            localStoreData("api_token", "<?php echo newToken() ?>");
-            localStoreData("api_uri", "<?php echo $_SERVER['SCRIPT_NAME'] ?>");
-
-            // Initialiser les données de time tracking
-            initializeTimeclockData();
-        });
-
-        // Fonction pour initialiser les données de time tracking
-        function initializeTimeclockData() {
-            // Pour l'instant, on simule un statut
-            // Dans la vraie version, cela viendra de la base de données
-            userTimeclockStatus = localGetData('timeclock_status') || 'clocked_out';
-            console.log('Current timeclock status:', userTimeclockStatus);
-        }
-
-        // Fonction de nettoyage de l'historique (à implémenter)
-        function cleanHistorique() {
-            // Placeholder pour la fonction de nettoyage
-            console.log('Cleaning history...');
-        }
-
-        // Fonctions de stockage local (à implémenter)
-        function localStoreData(key, value) {
-            if (typeof(Storage) !== "undefined") {
-                localStorage.setItem(key, value);
-            }
-        }
-
-        function localGetData(key) {
-            if (typeof(Storage) !== "undefined") {
-                return localStorage.getItem(key);
-            }
-            return null;
-        }
-
-        /**
-         * Go to home page (pour toolbar logo)
-         */
-        function goToHome() {
-            console.log('Already on index page - refreshing instead');
-            
-            // Si on est déjà sur la page d'accueil, on actualise
-            ons.notification.toast('<?php echo $langs->trans("RefreshingData"); ?>...', {timeout: 1000});
-            setTimeout(function() {
-                location.reload();
-            }, 500);
-        }
-        
-        /**
-         * Toggle hamburger menu
-         */
-        function toggleMenu() {
-            console.log('Toggle hamburger menu');
-            
-            var sideMenu = document.getElementById('sidemenu');
-            if (sideMenu) {
-                console.log('Found side menu, toggling...');
-                try {
-                    sideMenu.toggle();
-                    return;
-                } catch (e) {
-                    console.error('Side menu toggle failed:', e);
-                }
-            }
-            
-            var splitter = document.getElementById('mySplitter');
-            if (splitter && splitter.right) {
-                console.log('Using splitter.right API...');
-                try {
-                    splitter.right.toggle();
-                    return;
-                } catch (e) {
-                    console.error('Splitter right toggle failed:', e);
-                }
-            }
-            
-            if (splitter) {
-                console.log('Forcing splitter open...');
-                try {
-                    splitter.openSide('right');
-                } catch (e) {
-                    console.error('Force open failed:', e);
-                }
-            }
-            
-            console.error('All menu toggle methods failed');
-        }
-
-        // Fonction pour fermer la session
-        function closeSession() {
-            // Fermer le menu latéral avec nouvelle structure
-            var sideMenu = document.getElementById('sidemenu');
-            if (sideMenu) {
-                try {
-                    sideMenu.close();
-                } catch (e) {
-                    console.log('Menu already closed');
-                }
-            }
-            // Rediriger vers la déconnexion
-            window.location.href = '<?php echo DOL_URL_ROOT; ?>/user/logout.php';
-        }
-
-        // Fonction pour aller à une page
-        function gotoPage(pageId) {
-            // Fermer le menu latéral avec nouvelle structure
-            var sideMenu = document.getElementById('sidemenu');
-            if (sideMenu) {
-                try {
-                    sideMenu.close();
-                } catch (e) {
-                    console.log('Menu already closed');
-                }
-            }
-            
-            console.log('Going to page:', pageId);
-            
-            // Navigation simplifiée vers les pages
-            // Cette fonction pourrait être étendue pour naviguer vers d'autres pages
-        }
-        
-        // Exposer les fonctions globalement pour la toolbar
-        window.goToHome = goToHome;
-        window.toggleMenu = toggleMenu;
-    </script>
-
-</body>
-</html>

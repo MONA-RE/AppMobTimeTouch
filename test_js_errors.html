@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Test JavaScript Errors - AppMobTimeTouch</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .error { background: #ffebee; color: #c62828; }
+        .warning { background: #fff3e0; color: #ef6c00; }
+        #console-output { 
+            background: #f5f5f5; 
+            padding: 10px; 
+            border-radius: 5px; 
+            max-height: 300px; 
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test JavaScript Errors AppMobTimeTouch</h1>
+    
+    <div id="test-results"></div>
+    
+    <h3>Console Output:</h3>
+    <div id="console-output"></div>
+    
+    <script>
+        // Capture console logs
+        const consoleOutput = document.getElementById('console-output');
+        const testResults = document.getElementById('test-results');
+        
+        function addTestResult(message, type = 'success') {
+            const div = document.createElement('div');
+            div.className = 'test-result ' + type;
+            div.textContent = message;
+            testResults.appendChild(div);
+        }
+        
+        function addConsoleLog(message, type = 'log') {
+            const div = document.createElement('div');
+            div.style.color = type === 'error' ? 'red' : type === 'warn' ? 'orange' : 'black';
+            div.textContent = new Date().toLocaleTimeString() + ' [' + type + '] ' + message;
+            consoleOutput.appendChild(div);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        // Override console methods
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addConsoleLog(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addConsoleLog(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addConsoleLog(args.join(' '), 'warn');
+        };
+        
+        // Test 1: OnsenUI availability
+        setTimeout(function() {
+            if (typeof ons !== 'undefined') {
+                addTestResult('✅ OnsenUI loaded successfully', 'success');
+                console.log('OnsenUI version:', ons.version || 'unknown');
+            } else {
+                addTestResult('❌ OnsenUI not loaded', 'error');
+            }
+        }, 100);
+        
+        // Test 2: Navigation.js
+        setTimeout(function() {
+            if (typeof loadManagement === 'function') {
+                addTestResult('✅ Navigation.js functions loaded', 'success');
+            } else {
+                addTestResult('❌ Navigation.js functions not loaded', 'error');
+            }
+        }, 200);
+        
+        // Test 3: TimeclockAPI
+        setTimeout(function() {
+            if (typeof TimeclockAPI !== 'undefined') {
+                addTestResult('✅ TimeclockAPI loaded', 'success');
+            } else {
+                addTestResult('⚠️ TimeclockAPI not loaded', 'warning');
+            }
+        }, 300);
+        
+        // Test 4: Error handling
+        window.addEventListener('error', function(e) {
+            addTestResult('❌ JavaScript Error: ' + e.message, 'error');
+            console.error('Global error:', e.message, 'at', e.filename + ':' + e.lineno);
+        });
+        
+        // Test 5: Unhandled promise rejections
+        window.addEventListener('unhandledrejection', function(e) {
+            addTestResult('❌ Unhandled Promise Rejection: ' + e.reason, 'error');
+            console.error('Unhandled promise rejection:', e.reason);
+        });
+        
+        console.log('JavaScript error testing started...');
+    </script>
+    
+    <!-- Load the same scripts as home.php -->
+    <script src="js/onsenui.min.js?v=1.0.8"></script>
+    <script src="js/navigation.js?v=1.0.8"></script>
+    <script src="js/timeclock-api.js?v=1.0.8"></script>
+    
+    <script>
+        // Simulate app initialization
+        setTimeout(function() {
+            console.log('Testing OnsenUI initialization...');
+            
+            if (typeof ons !== 'undefined') {
+                try {
+                    ons.ready(function() {
+                        console.log('OnsenUI ready callback executed successfully');
+                        addTestResult('✅ OnsenUI ready callback works', 'success');
+                    });
+                } catch (error) {
+                    console.error('Error in OnsenUI ready:', error);
+                    addTestResult('❌ OnsenUI ready callback failed: ' + error.message, 'error');
+                }
+            }
+        }, 500);
+    </script>
+</body>
+</html>

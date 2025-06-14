@@ -1,7 +1,14 @@
+<!-- Contenu principal de l'application avec tabbar simplifié -->
 <ons-page id="tabbarPage">
+	<!-- Contenu principal - Page d'accueil par défaut -->
+	<div id="main-content">
+		<?php include 'tpl/home.tpl'; ?>
+	</div>
+	
+	<!-- Tabbar en bas sans attribut page problématique -->
 	<ons-tabbar position="bottom">
 		<!-- Onglet Accueil / Today -->
-		<ons-tab id="tabHome" page="home.php" label="<?php echo $langs->trans('Today'); ?>" icon="fa-home" badge="">
+		<ons-tab id="tabHome" onclick="showHomePage();" label="<?php echo $langs->trans('Today'); ?>" icon="fa-home" badge="" active>
 		</ons-tab>
 		
 		<!-- Onglet Mes Enregistrements -->
