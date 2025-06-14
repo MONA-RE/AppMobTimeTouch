@@ -116,6 +116,8 @@ ReadyToStart = Pret a commencer
 #
 Reports = Rapports
 MonthlyReports = Rapports mensuels
+MyMonthlyReports = Mes rapports mensuels
+MyHours = Mes heures
 ReportFilters = Filtres de rapport
 Month = Mois
 Year = Année

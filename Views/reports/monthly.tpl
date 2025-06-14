@@ -105,6 +105,7 @@
       }
       ?>
       <ons-row>
+        <?php if (!$is_personal_view): ?>
         <ons-col width="25%">
           <div style="text-align: center;">
             <div style="font-size: 20px; font-weight: bold; color: #2196f3;">
@@ -145,6 +146,39 @@
             </div>
           </div>
         </ons-col>
+        <?php else: ?>
+        <!-- Vue personnelle : statistiques simplifiées -->
+        <ons-col width="33%">
+          <div style="text-align: center;">
+            <div style="font-size: 24px; font-weight: bold; color: #ff9800;">
+              <?php echo number_format($totalHours, 1); ?>h
+            </div>
+            <div style="font-size: 14px; color: #6c757d;">
+              <?php echo $langs->trans('TotalHours'); ?>
+            </div>
+          </div>
+        </ons-col>
+        <ons-col width="33%">
+          <div style="text-align: center;">
+            <div style="font-size: 24px; font-weight: bold; color: #2196f3;">
+              <?php echo isset($monthly_reports[0]) ? $monthly_reports[0]['total_records'] : 0; ?>
+            </div>
+            <div style="font-size: 14px; color: #6c757d;">
+              <?php echo $langs->trans('Records'); ?>
+            </div>
+          </div>
+        </ons-col>
+        <ons-col width="33%">
+          <div style="text-align: center;">
+            <div style="font-size: 24px; font-weight: bold; color: <?php echo (isset($monthly_reports[0]) && $monthly_reports[0]['incomplete_records'] > 0) ? '#dc3545' : '#28a745'; ?>;">
+              <?php echo isset($monthly_reports[0]) ? $monthly_reports[0]['incomplete_records'] : 0; ?>
+            </div>
+            <div style="font-size: 14px; color: #6c757d;">
+              <?php echo $langs->trans('Incomplete'); ?>
+            </div>
+          </div>
+        </ons-col>
+        <?php endif; ?>
       </ons-row>
     </div>
   </ons-card>
@@ -156,16 +190,23 @@
   <ons-card>
     <div class="title" style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
       <h4 style="margin: 0; color: #495057;">
+        <?php if ($is_personal_view): ?>
+        <ons-icon icon="md-person" style="color: #6c757d; margin-right: 8px;"></ons-icon>
+        <?php echo $langs->trans('MyHours'); ?>
+        <?php else: ?>
         <ons-icon icon="md-people" style="color: #6c757d; margin-right: 8px;"></ons-icon>
         <?php echo $langs->trans('UsersHours'); ?> (<?php echo count($monthly_reports); ?>)
+        <?php endif; ?>
       </h4>
     </div>
     
     <!-- En-tête du tableau -->
     <div style="display: flex; padding: 10px 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; font-weight: 500; font-size: 14px;">
+      <?php if (!$is_personal_view): ?>
       <div style="flex: 2; color: #495057;">
         <?php echo $langs->trans('User'); ?>
       </div>
+      <?php endif; ?>
       <div style="flex: 1; text-align: center; color: #495057;">
         <?php echo $langs->trans('Records'); ?>
       </div>
@@ -180,6 +221,7 @@
     <!-- Lignes des utilisateurs -->
     <?php foreach ($monthly_reports as $index => $report): ?>
     <div class="user-row" style="display: flex; padding: 12px 15px; border-bottom: 1px solid #f0f0f0; align-items: center;">
+      <?php if (!$is_personal_view): ?>
       <!-- Nom utilisateur -->
       <div style="flex: 2;">
         <div style="font-weight: 500; margin-bottom: 3px;">
@@ -189,6 +231,7 @@
           <?php echo dol_escape_htmltag($report['login']); ?>
         </div>
       </div>
+      <?php endif; ?>
       
       <!-- Nombre d'enregistrements -->
       <div style="flex: 1; text-align: center;">
@@ -207,11 +250,6 @@
         <div class="hours-display" style="font-size: 16px;">
           <?php echo number_format($report['total_hours'], 1); ?>h
         </div>
-        <?php if ($report['total_hours'] > 0): ?>
-        <div style="font-size: 11px; color: #6c757d;">
-          <?php echo TimeHelper::formatDuration($report['total_seconds']); ?>
-        </div>
-        <?php endif; ?>
       </div>
       
       <!-- Statut -->
@@ -253,47 +291,3 @@
 </div>
 <?php endif; ?>
 
-<!-- Actions d'export (future) -->
-<div style="padding: 0 15px 80px 15px;">
-  <ons-card>
-    <div class="title" style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
-      <h4 style="margin: 0; color: #495057;">
-        <ons-icon icon="md-file-download" style="color: #6c757d; margin-right: 8px;"></ons-icon>
-        <?php echo $langs->trans('ExportOptions'); ?>
-      </h4>
-    </div>
-    <div class="content" style="padding: 20px;">
-      <ons-row>
-        <ons-col width="50%">
-          <ons-button 
-            onclick="exportToPDF()"
-            style="width: 100%; background-color: #dc3545; color: white; border-radius: 8px; padding: 12px;">
-            <ons-icon icon="fa-file-pdf-o" style="margin-right: 8px;"></ons-icon>
-            PDF
-          </ons-button>
-        </ons-col>
-        <ons-col width="50%">
-          <ons-button 
-            onclick="exportToExcel()"
-            style="width: 100%; background-color: #28a745; color: white; border-radius: 8px; padding: 12px;">
-            <ons-icon icon="fa-file-excel-o" style="margin-right: 8px;"></ons-icon>
-            Excel
-          </ons-button>
-        </ons-col>
-      </ons-row>
-    </div>
-  </ons-card>
-</div>
-
-<script>
-/**
- * Export functions (placeholder)
- */
-function exportToPDF() {
-  ons.notification.toast('<?php echo $langs->trans("FeatureComingSoon"); ?>...', {timeout: 2000});
-}
-
-function exportToExcel() {
-  ons.notification.toast('<?php echo $langs->trans("FeatureComingSoon"); ?>...', {timeout: 2000});
-}
-</script>

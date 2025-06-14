@@ -13,8 +13,8 @@
 		<ons-tab id="tabManagement" onclick="loadManagement();" label="<?php echo $langs->trans('Management'); ?>" icon="fa-users" badge="">
 		</ons-tab>
 		<?php else: ?>
-		<!-- Onglet Résumés pour les utilisateurs normaux -->
-		<ons-tab id="tabSummary" onclick="loadSummary();" label="<?php echo $langs->trans('Summary'); ?>" icon="fa-bar-chart" badge="">
+		<!-- Onglet Rapports pour les utilisateurs normaux -->
+		<ons-tab id="tabSummary" onclick="loadSummary();" label="<?php echo $langs->trans('Reports'); ?>" icon="fa-bar-chart" badge="">
 		</ons-tab>
 		<?php endif; ?>
 		

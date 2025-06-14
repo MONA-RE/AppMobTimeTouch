@@ -48,11 +48,20 @@ try {
     // Récupération des rapports mensuels
     $monthlyReports = getMonthlyReports($db, $user, $filter_month, $filter_year);
     
+    // Titre selon les permissions utilisateur
+    $page_title = $langs->trans('MonthlyReports');
+    $is_personal_view = (!$user->admin && empty($user->rights->appmobtimetouch->timeclock->readall));
+    
+    if ($is_personal_view) {
+        $page_title = $langs->trans('MyMonthlyReports');
+    }
+    
     $data = [
         'monthly_reports' => $monthlyReports,
         'filter_month' => $filter_month,
         'filter_year' => $filter_year,
-        'page_title' => $langs->trans('MonthlyReports')
+        'page_title' => $page_title,
+        'is_personal_view' => $is_personal_view
     ];
     
 } catch (Exception $e) {
@@ -92,11 +101,16 @@ function getMonthlyReports($db, $user, $month, $year) {
             )
             WHERE u.statut = 1";
     
-    // Si pas admin, limiter aux utilisateurs de l'équipe du manager
-    if (!$user->admin && !empty($user->rights->appmobtimetouch->timeclock->readall)) {
+    // Filtrage selon les permissions utilisateur
+    if (!$user->admin && empty($user->rights->appmobtimetouch->timeclock->readall)) {
+        // Utilisateur normal (salarié) : voir seulement ses propres données
+        $sql .= " AND u.rowid = " . (int)$user->id;
+    } elseif (!$user->admin && !empty($user->rights->appmobtimetouch->timeclock->readall)) {
+        // Manager non-admin : voir tous les utilisateurs actifs
         // Ici on pourrait ajouter une logique pour limiter aux équipes du manager
         // Pour l'instant, on affiche tous les utilisateurs actifs
     }
+    // Admin : voir tous les utilisateurs (pas de filtre supplémentaire)
     
     $sql .= " GROUP BY u.rowid, u.firstname, u.lastname, u.login
               ORDER BY u.lastname, u.firstname";
@@ -127,6 +141,7 @@ $page_title = $data['page_title'] ?? $langs->trans('Reports');
 $monthly_reports = $data['monthly_reports'] ?? [];
 $filter_month = $data['filter_month'] ?? date('n');
 $filter_year = $data['filter_year'] ?? date('Y');
+$is_personal_view = $data['is_personal_view'] ?? false;
 
 // Variables pour compatibilité rightmenu.tpl selon INDEX_HOME_COMPATIBILITY.md
 $pending_validation_count = 0; // Pas utilisé dans reports mais requis pour rightmenu.tpl

@@ -313,17 +313,15 @@ function loadMyRecords() {
 }
 
 /**
- * Navigation vers les résumés
- * Placeholder pour futures implémentations
+ * Navigation vers les rapports personnels pour les salariés
+ * Réutilise la page reports.php avec filtrage automatique
  */
 function loadSummary() {
-    console.log('=== DEBUG loadSummary ===');
+    console.log('=== DEBUG loadSummary (Personal Reports) ===');
     
-    if (typeof ons !== 'undefined') {
-        ons.notification.alert('Summary feature coming soon!');
-    } else {
-        alert('Summary feature coming soon!');
-    }
+    // Réutiliser la fonction loadReports() existante
+    // La page reports.php se chargera de filtrer les données selon les permissions
+    loadReports();
 }
 
 /**

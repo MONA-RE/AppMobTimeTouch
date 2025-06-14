@@ -110,6 +110,8 @@ ViewAllRecords=View All Records
 #
 Reports = Reports
 MonthlyReports = Monthly Reports
+MyMonthlyReports = My Monthly Reports
+MyHours = My Hours
 ReportFilters = Report Filters
 Month = Month
 Year = Year
