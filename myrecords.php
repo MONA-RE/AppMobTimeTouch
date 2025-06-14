@@ -118,7 +118,7 @@ function getMyTimeclockRecords($db, $user) {
                 'clock_out_time' => $obj->clock_out_time,
                 'work_duration' => $obj->work_duration,
                 'status' => $obj->status,
-                'validation_status' => $obj->validated_by > 0 ? 1 : 0, // 1 si validé, 0 sinon
+                'validation_status' => $obj->validation_status, // Utiliser le vrai statut de validation
                 'validated_by' => $obj->validated_by,
                 'validated_date' => $obj->validated_date,
                 'validation_comment' => $obj->validation_comment,

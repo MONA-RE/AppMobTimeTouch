@@ -346,7 +346,7 @@
             </div>
             <?php endif; ?>
             <div style="font-size: 14px; color: #6c757d; margin-bottom: 8px; padding: 2px 6px;">
-              <?php echo dol_print_date($record['clock_in_time'], 'day'); ?>
+              <?php echo dol_print_date($record['clock_in_time'], 'day', 'tzuser'); ?>
               <?php if ($hasAnomalies): ?>
               <span style="background-color: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 8px;">
                 <ons-icon icon="md-warning" style="font-size: 12px;"></ons-icon>
@@ -355,9 +355,9 @@
               <?php endif; ?>
             </div>
             <div style="font-size: 12px; color: #007bff; margin-bottom: 6px;">
-              <?php echo dol_print_date($record['clock_in_time'], 'hour'); ?>
+              <?php echo dol_print_date($record['clock_in_time'], 'hour', 'tzuser'); ?>
               <?php if (!empty($record['clock_out_time'])): ?>
-              - <?php echo dol_print_date($record['clock_out_time'], 'hour'); ?>
+              - <?php echo dol_print_date($record['clock_out_time'], 'hour', 'tzuser'); ?>
               <?php endif; ?>
             </div>
             <?php if (!empty($record['work_duration'])): ?>

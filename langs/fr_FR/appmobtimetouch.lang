@@ -572,3 +572,22 @@ TryDifferentFilters = Essayez des filtres différents
 LoadingAllRecords = Chargement de tous les enregistrements
 ShowingAllRecords = Affichage de tous les enregistrements
 ErrorLoadingRecords = Erreur lors du chargement des enregistrements
+
+#
+# Termes page d'accueil
+#
+TimeclockStatus = Statut pointeuse
+TodayStatistics = Statistiques d'aujourd'hui
+HoursWorked = Heures travaillées
+Sessions = Sessions
+WeeklySummary = Résumé hebdomadaire
+TotalHours = Total heures
+DaysWorked = Jours travaillés
+RecentRecords = Enregistrements récents
+Last7Days = 7 derniers jours
+NoRecentRecords = Aucun enregistrement récent
+StartFirstRecord = Démarrer le premier enregistrement
+Active = Actif
+Yesterday = Hier
+ConfirmClockOut = Confirmer la sortie ?
+LocationRequiredForClockOut = La localisation GPS est requise pour pointer la sortie

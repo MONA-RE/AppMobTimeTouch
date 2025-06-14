@@ -216,3 +216,22 @@ TryDifferentFilters = Try different filters
 LoadingAllRecords = Loading all records
 ShowingAllRecords = Showing all records
 ErrorLoadingRecords = Error loading records
+
+#
+# Home Page Terms
+#
+TimeclockStatus = Timeclock Status
+TodayStatistics = Today's Statistics
+HoursWorked = Hours Worked
+Sessions = Sessions
+WeeklySummary = Weekly Summary
+TotalHours = Total Hours
+DaysWorked = Days Worked
+RecentRecords = Recent Records
+Last7Days = Last 7 Days
+NoRecentRecords = No recent records
+StartFirstRecord = Start First Record
+Active = Active
+Yesterday = Yesterday
+ConfirmClockOut = Confirm clock out?
+LocationRequiredForClockOut = GPS location is required for clock out
