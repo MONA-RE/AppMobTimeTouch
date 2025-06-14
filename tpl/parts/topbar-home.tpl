@@ -20,7 +20,7 @@
         <?php endif; ?>
         
         <!-- Menu hamburger -->
-        <ons-toolbar-button onclick="document.querySelector('#mySplitter').right.toggle();">
+        <ons-toolbar-button onclick="if(typeof toggleMenu === 'function') { toggleMenu(); } else { document.querySelector('#mySplitter').right.toggle(); }">
             <ons-icon icon="md-menu"></ons-icon>
         </ons-toolbar-button>
     </div>

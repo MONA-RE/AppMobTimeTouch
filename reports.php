@@ -48,6 +48,9 @@ try {
     // Récupération des rapports mensuels
     $monthlyReports = getMonthlyReports($db, $user, $filter_month, $filter_year);
     
+    // Récupérer le statut de pointage pour la toolbar (comme index.php)
+    $is_clocked_in = getUserClockStatus($db, $user);
+    
     // Titre selon les permissions utilisateur
     $page_title = $langs->trans('MonthlyReports');
     $is_personal_view = (!$user->admin && empty($user->rights->appmobtimetouch->timeclock->readall));
@@ -61,7 +64,8 @@ try {
         'filter_month' => $filter_month,
         'filter_year' => $filter_year,
         'page_title' => $page_title,
-        'is_personal_view' => $is_personal_view
+        'is_personal_view' => $is_personal_view,
+        'is_clocked_in' => $is_clocked_in
     ];
     
 } catch (Exception $e) {
@@ -136,12 +140,33 @@ function getMonthlyReports($db, $user, $month, $year) {
     return $reports;
 }
 
+/**
+ * Récupère le statut de pointage de l'utilisateur (pour toolbar)
+ */
+function getUserClockStatus($db, $user) {
+    $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "timeclock_records";
+    $sql .= " WHERE fk_user = " . (int)$user->id;
+    $sql .= " AND status = 2"; // Status 2 = En cours (pointé)
+    $sql .= " AND clock_out_time IS NULL";
+    $sql .= " ORDER BY clock_in_time DESC LIMIT 1";
+    
+    $resql = $db->query($sql);
+    if ($resql) {
+        $num = $db->num_rows($resql);
+        $db->free($resql);
+        return $num > 0;
+    }
+    
+    return false;
+}
+
 // Configuration page et extraction des variables pour le template
 $page_title = $data['page_title'] ?? $langs->trans('Reports');
 $monthly_reports = $data['monthly_reports'] ?? [];
 $filter_month = $data['filter_month'] ?? date('n');
 $filter_year = $data['filter_year'] ?? date('Y');
 $is_personal_view = $data['is_personal_view'] ?? false;
+$is_clocked_in = $data['is_clocked_in'] ?? false;
 
 // Variables pour compatibilité rightmenu.tpl selon INDEX_HOME_COMPATIBILITY.md
 $pending_validation_count = 0; // Pas utilisé dans reports mais requis pour rightmenu.tpl
@@ -228,19 +253,8 @@ $pending_validation_count = 0; // Pas utilisé dans reports mais requis pour rig
     <ons-splitter-content>
         <ons-page id="reportsPage">
             
-            <!-- TopBar Rapports -->
-            <ons-toolbar>
-                <div class="left"></div>
-                <div class="center"><?php echo $page_title; ?></div>
-                <div class="right">
-                    <ons-toolbar-button onclick="refreshReports()">
-                        <ons-icon icon="md-refresh"></ons-icon>
-                    </ons-toolbar-button>
-                    <ons-toolbar-button onclick="toggleMenu()">
-                        <ons-icon icon="md-menu"></ons-icon>
-                    </ons-toolbar-button>
-                </div>
-            </ons-toolbar>
+            <!-- TopBar avec même style que index.php -->
+            <?php include 'tpl/parts/topbar-home.tpl'; ?>
             
             <!-- Contenu scrollable -->
             <div class="page__content">
@@ -294,12 +308,33 @@ function refreshReports() {
 }
 
 /**
+ * Go to home page (pour toolbar logo)
+ */
+function goToHome() {
+    console.log('Going to home page from reports');
+    
+    // Navigation vers la page d'accueil
+    var homeUrl;
+    var currentPath = window.location.pathname;
+    
+    if (currentPath.includes('/appmobtimetouch/')) {
+        homeUrl = './home.php';
+    } else {
+        var baseUrl = detectBaseUrl();
+        homeUrl = baseUrl + '/custom/appmobtimetouch/home.php';
+    }
+    
+    setTimeout(function() {
+        window.location.href = homeUrl;
+    }, 300);
+}
+
+/**
  * Toggle hamburger menu
  */
 function toggleMenu() {
     console.log('Toggle hamburger menu');
     
-    // Méthode 1: Via l'ID du splitter side
     var sideMenu = document.getElementById('sidemenu');
     if (sideMenu) {
         console.log('Found side menu, toggling...');
@@ -311,7 +346,6 @@ function toggleMenu() {
         }
     }
     
-    // Méthode 2: Via le splitter
     var splitter = document.getElementById('mySplitter');
     if (splitter && splitter.right) {
         console.log('Using splitter.right API...');
@@ -323,7 +357,6 @@ function toggleMenu() {
         }
     }
     
-    // Méthode 3: Force open
     if (splitter) {
         console.log('Forcing splitter open...');
         try {
@@ -387,6 +420,11 @@ if (typeof ons !== 'undefined') {
 } else {
     console.warn('OnsenUI not available');
 }
+
+// Exposer les fonctions globalement pour la toolbar
+window.goToHome = goToHome;
+window.refreshReports = refreshReports;
+window.toggleMenu = toggleMenu;
 </script>
 
 </body>
