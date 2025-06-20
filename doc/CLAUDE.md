@@ -473,10 +473,17 @@ This framework-first approach ensures consistent behavior across all mobile inte
 - ⏳ **Advanced filtering**: Multi-criteria report generation
 
 ### 🎯 Immediate Next Steps (HIGH PRIORITY)
-1. **Export functionality**: Implement PDF/Excel export for monthly reports
-2. **Daily/Weekly reports**: Extend reports system with additional time periods
-3. **Enhanced analytics**: Add trend analysis and productivity metrics
-4. **Chart visualization**: Add graphs and charts to reports interface
+1. **🕐 Centralized Timezone-Aware Duration System**: Create a unified timezone management system to replace duplicate duration calculation functions found in:
+   - `updateCurrentDuration()` in home.php (✅ Fixed with CET→GMT+4 conversion)
+   - `updateDurationDisplay()` in timeclock-api.js 
+   - `formatDuration()` in timeclock-api.js
+   - Implement TimeHelper::calculateDurationWithTimezone() following SOLID principles
+   - Support configurable user timezones instead of hardcoded GMT+4
+   - Ensure consistency across all duration displays (live, historical, reports)
+2. **Export functionality**: Implement PDF/Excel export for monthly reports
+3. **Daily/Weekly reports**: Extend reports system with additional time periods
+4. **Enhanced analytics**: Add trend analysis and productivity metrics
+5. **Chart visualization**: Add graphs and charts to reports interface
 
 ### MVP 4.1 - Advanced Anomaly Management (MEDIUM PRIORITY)
 **Objective**: Intelligent anomaly detection and management

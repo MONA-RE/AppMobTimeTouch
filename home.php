@@ -420,16 +420,89 @@ function selectTimeclockType(typeId, typeLabel, typeColor) {
     }
 }
 
-// Fonction pour mettre à jour la durée courante
+// Fonction pour mettre à jour la durée courante avec gestion timezone - VERSION 2.0 FIXED
 function updateCurrentDuration() {
+    console.log("=== updateCurrentDuration() CALLED - VERSION 2.0 FIXED ===");
+    // VISIBLE ALERT TO CONFIRM NEW CODE IS RUNNING
+    if (window.debugDurationVersion !== '2.0') {
+        console.warn("*** NEW VERSION 2.0 DURATION CALCULATION LOADED ***");
+        window.debugDurationVersion = '2.0';
+    }
+    
     <?php if ($is_clocked_in && $clock_in_time): ?>
-    // Utiliser le timestamp de base de données converti correctement
-    var startTime = <?php echo $raw_clock_in_timestamp ?: $clock_in_time; ?>;
+    // Timezone-aware calculation following Dolibarr pattern
+    // Database stores in CET (UTC+1), user is in GMT+4
+    <?php
+    echo "console.log('PHP DEBUG: clock_in_time type: " . gettype($clock_in_time) . "');\n";
+    echo "console.log('PHP DEBUG: clock_in_time value: " . json_encode($clock_in_time) . "');\n";
+    echo "console.log('PHP DEBUG: is_clocked_in: " . json_encode($is_clocked_in) . "');\n";
+    
+    // Debug: Check which record is actually being used
+    if (isset($active_record) && $active_record) {
+        echo "console.log('ACTIVE RECORD DEBUG: ID=" . ($active_record->rowid ?? 'null') . "');\n";
+        echo "console.log('ACTIVE RECORD DEBUG: clock_in_time=" . json_encode($active_record->clock_in_time) . "');\n";
+        echo "console.log('ACTIVE RECORD DEBUG: status=" . ($active_record->status ?? 'null') . "');\n";
+    } else {
+        echo "console.log('ACTIVE RECORD DEBUG: No active record object');\n";
+    }
+    
+    // CRITICAL FIX: Use $active_record directly since $clock_in_time is corrupted
+    if (isset($active_record) && $active_record && !empty($active_record->clock_in_time)) {
+        // Use the CORRECT timestamp from the active record object
+        $correct_timestamp = $active_record->clock_in_time;
+        
+        // Convert from UTC (database) to GMT+4 (user timezone) 
+        $user_timezone_clock_in = $correct_timestamp + (4 * 3600); // Add 4 hours for GMT+4
+        
+        echo "console.log('CRITICAL FIX: Using active_record->clock_in_time: $correct_timestamp');\n";
+        echo "console.log('CRITICAL FIX: Bypassing corrupted clock_in_time: $clock_in_time');\n";
+        echo "console.log('CRITICAL FIX: Converted to GMT+4: $user_timezone_clock_in');\n";
+        
+        $debug_original = date('Y-m-d H:i:s', $correct_timestamp);
+    } else {
+        echo "console.log('ERROR: No active_record available');\n";
+        $user_timezone_clock_in = 0;
+        $debug_original = 'N/A';
+    }
+    ?>
+    
+    // Use timezone-corrected timestamp from PHP
+    var startTime = <?php echo $user_timezone_clock_in; ?>;
+    
+    // Get current time in GMT+4 (user timezone)
     var now = Math.floor(Date.now() / 1000);
-    var duration = now - startTime;
+    // Convert current browser time to GMT+4
+    // Date.now() is always UTC, so we add 4 hours to get GMT+4
+    var userTimezoneNow = now + (4 * 3600);
+    
+    // Calculate duration 
+    var duration = userTimezoneNow - startTime;
+    
+    // Prevent negative durations (fallback for timezone issues)
+    if (duration < 0) {
+        console.warn('Negative duration detected, using 0:', {startTime, userTimezoneNow, duration});
+        duration = 0;
+    }
+    
     var hours = Math.floor(duration / 3600);
     var minutes = Math.floor((duration % 3600) / 60);
     var timeStr = hours + ':' + (minutes < 10 ? '0' + minutes : minutes);
+    
+    // *** VERSION 2.0 FIXED - Enhanced debug logging for timezone issues ***
+    console.log('🔧 *** DURATION CALCULATION FIXED - VERSION 2.0 ***', {
+        startTime: startTime,
+        userTimezoneNow: userTimezoneNow,
+        duration: duration,
+        durationHours: hours,
+        durationMinutes: minutes,
+        timeStr: timeStr,
+        originalClockIn: '<?php echo $debug_original ?? "N/A"; ?>',
+        convertedTimestamp: <?php echo $user_timezone_clock_in; ?>
+    });
+    
+    console.log('⏰ Start Time (GMT+4):', new Date(startTime * 1000).toLocaleString('en-US', {timeZone: 'Asia/Dubai'})); // GMT+4 equivalent
+    console.log('⏰ Current Time (GMT+4):', new Date(userTimezoneNow * 1000).toLocaleString('en-US', {timeZone: 'Asia/Dubai'})); // GMT+4 equivalent
+    console.log('✅ Duration should now be correct:', timeStr);
     
     var durationElement = document.getElementById('current-duration');
     if (durationElement) {

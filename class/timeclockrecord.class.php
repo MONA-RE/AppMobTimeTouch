@@ -332,9 +332,70 @@ class TimeclockRecord extends CommonObject
     public function fetch($id, $ref = null)
     {
         $result = $this->fetchCommon($id, $ref);
-        if ($result > 0 && !empty($this->table_element_line)) {
-            $this->fetchLines();
+        
+        // FIX: Properly convert datetime fields to timestamps after fetchCommon
+        if ($result > 0) {
+            dol_syslog("TimeclockRecord::fetch - DEBUGGING: Record ID $id, clock_in_time raw: " . json_encode($this->clock_in_time), LOG_DEBUG);
+            
+            // Fix clock_in_time conversion issue
+            if (!empty($this->clock_in_time)) {
+                $original_value = $this->clock_in_time;
+                $original_type = gettype($this->clock_in_time);
+                
+                dol_syslog("TimeclockRecord::fetch - BEFORE FIX: clock_in_time='$original_value', type=$original_type", LOG_DEBUG);
+                
+                // If it's a datetime string from database, convert to proper timestamp
+                if (is_string($this->clock_in_time)) {
+                    // Use MySQL UNIX_TIMESTAMP function for accurate conversion
+                    $sql = "SELECT UNIX_TIMESTAMP('" . $this->db->escape($this->clock_in_time) . "') as unix_ts";
+                    $resql = $this->db->query($sql);
+                    if ($resql) {
+                        $obj = $this->db->fetch_object($resql);
+                        if ($obj && $obj->unix_ts) {
+                            $this->clock_in_time = (int) $obj->unix_ts;
+                            dol_syslog("TimeclockRecord::fetch - FIXED clock_in_time conversion: '$original_value' -> {$this->clock_in_time}", LOG_DEBUG);
+                        } else {
+                            dol_syslog("TimeclockRecord::fetch - FAILED to convert clock_in_time: '$original_value'", LOG_ERROR);
+                        }
+                    } else {
+                        dol_syslog("TimeclockRecord::fetch - FAILED query for clock_in_time: '$original_value'", LOG_ERROR);
+                    }
+                } else {
+                    dol_syslog("TimeclockRecord::fetch - clock_in_time already numeric: {$this->clock_in_time} (type: $original_type)", LOG_DEBUG);
+                    
+                    // Check if it's the wrong timestamp - if it's not from today, something's wrong
+                    $date_check = date('Y-m-d', $this->clock_in_time);
+                    $today = date('Y-m-d');
+                    if ($date_check !== $today) {
+                        dol_syslog("TimeclockRecord::fetch - WARNING: clock_in_time is from $date_check, expected $today. Timestamp might be wrong!", LOG_WARNING);
+                    }
+                }
+            } else {
+                dol_syslog("TimeclockRecord::fetch - clock_in_time is empty", LOG_DEBUG);
+            }
+            
+            // Fix clock_out_time conversion issue (same logic)
+            if (!empty($this->clock_out_time)) {
+                $original_value = $this->clock_out_time;
+                
+                if (is_string($this->clock_out_time)) {
+                    $sql = "SELECT UNIX_TIMESTAMP('" . $this->db->escape($this->clock_out_time) . "') as unix_ts";
+                    $resql = $this->db->query($sql);
+                    if ($resql) {
+                        $obj = $this->db->fetch_object($resql);
+                        if ($obj && $obj->unix_ts) {
+                            $this->clock_out_time = (int) $obj->unix_ts;
+                            dol_syslog("TimeclockRecord::fetch - Fixed clock_out_time conversion: '$original_value' -> {$this->clock_out_time}", LOG_DEBUG);
+                        }
+                    }
+                }
+            }
+            
+            if (!empty($this->table_element_line)) {
+                $this->fetchLines();
+            }
         }
+        
         return $result;
     }
 
