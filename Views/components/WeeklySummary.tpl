@@ -8,6 +8,9 @@
  * Compatible avec array et objet $weekly_summary
  */
 
+// Debug: Log weekly summary data
+dol_syslog("WeeklySummary.tpl: weekly_summary = " . json_encode($weekly_summary), LOG_DEBUG);
+
 // Normaliser les données (compatibilité array/objet)
 $week_total_hours = 0;
 $week_days_worked = 0;
@@ -32,10 +35,13 @@ if ($weekly_summary) {
         $week_expected_hours = $weekly_summary->expected_hours ?? 40;
     }
 }
+
+// Debug: Log extracted values
+dol_syslog("WeeklySummary.tpl: week_total_hours = $week_total_hours, week_days_worked = $week_days_worked", LOG_DEBUG);
 ?>
 
 <!-- Weekly Summary -->
-<?php if ($weekly_summary && ($week_total_hours > 0 || $week_days_worked > 0)): ?>
+<?php if ($weekly_summary): ?>
 <div style="padding: 0 15px 15px 15px;">
   <ons-card>
     <div class="title" style="padding: 10px;">
@@ -111,14 +117,24 @@ if ($weekly_summary) {
     </div>
   </ons-card>
 </div>
-<?php elseif ($weekly_summary): ?>
-<!-- Message si pas de données cette semaine -->
+<?php else: ?>
+<!-- Fallback: Show basic weekly summary like original home.php -->
 <div style="padding: 0 15px 15px 15px;">
-  <ons-card>
-    <div class="content" style="padding: 15px; text-align: center;">
-      <p style="margin: 0; color: #666; font-style: italic;">
-        <?php echo $langs->trans("NoDataThisWeek"); ?>
-      </p>
+  <ons-card class="status-card">
+    <div class="title" style="padding: 15px;">
+      <h3><?php echo $langs->trans("WeeklySummary"); ?></h3>
+    </div>
+    <div class="content" style="padding: 0 15px 15px 15px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
+        <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+          <div style="font-size: 24px; font-weight: bold; color: #2196f3;">0h</div>
+          <div style="font-size: 12px; color: #666; margin-top: 5px;"><?php echo $langs->trans("TotalHours"); ?></div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+          <div style="font-size: 24px; font-weight: bold; color: #2196f3;">0</div>
+          <div style="font-size: 12px; color: #666; margin-top: 5px;"><?php echo $langs->trans("DaysWorked"); ?></div>
+        </div>
+      </div>
     </div>
   </ons-card>
 </div>

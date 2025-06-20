@@ -273,31 +273,7 @@ try {
                 </div>
                 
                 <!-- Section Résumé Hebdomadaire -->
-                <div class="home-section">
-                    <ons-card class="status-card">
-                        <div class="title" style="padding: 15px;">
-                            <h3><?php echo $langs->trans("WeeklySummary"); ?></h3>
-                        </div>
-                        <div class="content" style="padding: 0 15px 15px 15px;">
-                            <div class="stats-grid">
-                                <div class="stat-item">
-                                    <div class="stat-value"><?php 
-                                        $total_hours = is_object($weekly_summary) ? ($weekly_summary->total_hours ?? 0) : ($weekly_summary['total_hours'] ?? 0);
-                                        echo number_format($total_hours, 1); 
-                                    ?>h</div>
-                                    <div class="stat-label"><?php echo $langs->trans("TotalHours"); ?></div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-value"><?php 
-                                        $days_worked = is_object($weekly_summary) ? ($weekly_summary->days_worked ?? 0) : ($weekly_summary['days_worked'] ?? 0);
-                                        echo $days_worked; 
-                                    ?></div>
-                                    <div class="stat-label"><?php echo $langs->trans("DaysWorked"); ?></div>
-                                </div>
-                            </div>
-                        </div>
-                    </ons-card>
-                </div>
+                <?php include 'Views/components/WeeklySummary.tpl'; ?>
                 
                 <!-- Section Enregistrements Récents -->
                 <div class="home-section">
