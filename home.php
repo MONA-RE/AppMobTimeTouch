@@ -252,25 +252,7 @@ try {
                 </div>
                 
                 <!-- Section Statistiques Aujourd'hui -->
-                <div class="home-section">
-                    <ons-card class="status-card">
-                        <div class="title" style="padding: 15px;">
-                            <h3><?php echo $langs->trans("TodayStatistics"); ?></h3>
-                        </div>
-                        <div class="content" style="padding: 0 15px 15px 15px;">
-                            <div class="stats-grid">
-                                <div class="stat-item">
-                                    <div class="stat-value"><?php echo number_format($today_total_hours, 1); ?>h</div>
-                                    <div class="stat-label"><?php echo $langs->trans("HoursWorked"); ?></div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-value"><?php echo count($today_summary['records'] ?? []); ?></div>
-                                    <div class="stat-label"><?php echo $langs->trans("Sessions"); ?></div>
-                                </div>
-                            </div>
-                        </div>
-                    </ons-card>
-                </div>
+                <?php include 'Views/components/SummaryCard.tpl'; ?>
                 
                 <!-- Section Résumé Hebdomadaire -->
                 <?php include 'Views/components/WeeklySummary.tpl'; ?>
