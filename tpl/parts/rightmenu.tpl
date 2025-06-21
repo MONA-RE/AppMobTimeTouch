@@ -3,15 +3,6 @@
   <ons-list-title>MENU</ons-list-title>
   <ons-list id="links" class="rightMenuList">
 
-    <!-- Mon Compte -->
-    <ons-list-item onclick="gotoPage('moncompteApplication');" tappable modifier="nodivider">
-      <div class="left">
-        <ons-icon icon="fa-user" style="color: #2196F3;"></ons-icon>
-      </div>
-      <div class="center">
-        <span><?php echo $langs->trans("myAccount"); ?></span>
-      </div>
-    </ons-list-item>
 
     <!-- Mes Heures -->
     <ons-list-item onclick="gotoPage('myTimeclockRecords');" tappable modifier="nodivider">
@@ -95,15 +86,7 @@
     <!-- Divider Fin Applications -->
     <ons-list-item modifier="nodivider" style="height: 1px; background-color: #e0e0e0; margin: 10px 0;"></ons-list-item>
 
-    <!-- Préférences -->
-    <ons-list-item onclick="gotoPage('preferences');" tappable modifier="nodivider">
-      <div class="left">
-        <ons-icon icon="fa-cog" style="color: #607D8B;"></ons-icon>
-      </div>
-      <div class="center">
-        <span><?php echo $langs->trans("Preferences"); ?></span>
-      </div>
-    </ons-list-item>
+
 
     <!-- À propos -->
     <ons-list-item onclick="gotoPage('aproposApplication');" tappable modifier="nodivider">
@@ -115,26 +98,7 @@
       </div>
     </ons-list-item>
 
-    <?php if ($conf->browser->os == 'ios'): ?>
-    <!-- Installation PWA (iOS uniquement) -->
-    <ons-list-item onclick="installEvent.prompt();" tappable modifier="nodivider" id="installApp">
-      <div class="left">
-        <ons-icon icon="fa-download" style="color: #2196F3;"></ons-icon>
-      </div>
-      <div class="center">
-        <span><?php echo $langs->trans("installApp"); ?></span>
-      </div>
-    </ons-list-item>
 
-    <ons-list-item onclick="startPwa(true);" tappable modifier="nodivider" id="enableApp">
-      <div class="left">
-        <ons-icon icon="fa-mobile" style="color: #4CAF50;"></ons-icon>
-      </div>
-      <div class="center">
-        <span><?php echo $langs->trans("enablePWA"); ?></span>
-      </div>
-    </ons-list-item>
-    <?php endif; ?>
 
     <!-- Divider -->
     <ons-list-item modifier="nodivider" style="height: 1px; background-color: #e0e0e0; margin: 10px 0;"></ons-list-item>

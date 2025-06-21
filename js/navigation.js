@@ -431,8 +431,13 @@ function gotoPage(pageName) {
             finalUrl = baseUrl + '/user/card.php?id=' + (window.userId || '');
             break;
         case 'aproposApplication':
-            finalUrl = baseUrl + '/custom/appmobtimetouch/home.php?action=about';
-            break;
+            // Afficher une alerte au lieu de naviguer
+            if (typeof ons !== 'undefined' && ons.notification) {
+                ons.notification.alert('Application développée par MONA. contact@mona.re');
+            } else {
+                alert('Application développée par MONA. contact@mona.re');
+            }
+            return;
         default:
             console.error('Unknown page:', pageName);
             if (typeof ons !== 'undefined' && ons.notification) {
