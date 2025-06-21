@@ -277,6 +277,7 @@ Permission13600707 = Configurer le module de gestion du temps
 MyRecords = Mes enregistrements
 Summary = Résumé
 Management = Gestion
+appmobsalesorders = AppCommande
 GlobalTimeTracking = Gestion globale du temps
 ActiveUsers = Utilisateurs actifs
 TimeClockManagement = Gestion de la pointeuse
