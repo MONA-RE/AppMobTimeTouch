@@ -549,8 +549,8 @@ ValidationPartial = Validation partielle
 #
 # Liste complète avec filtres MVP 3.3
 #
-AllValidationRecords = Tous les enregistrements de validation
-ValidationRecords = Enregistrements de validation
+AllValidationRecords = Tous les enregistrements 
+ValidationRecords = Enregistrements 
 Filters = Filtres
 Total = Total
 Pending = En attente
