@@ -60,9 +60,9 @@ if (GETPOST('mobile', 'int') == 1) {
  * View - Desktop Dashboard
  */
 
-llxHeader("", $langs->trans("TimeClockManagement"), "EN:TimeClockManagement|FR:Gestion_du_temps");
+llxHeader("", $langs->trans("TimeManagement"), "EN:TimeManagement|FR:Gestion_des_temps");
 
-print load_fiche_titre($langs->trans("TimeClockManagement"), '', 'clock');
+print load_fiche_titre($langs->trans("TimeManagement"), '', 'clock');
 
 print '<div class="fichecenter">';
 
@@ -132,18 +132,24 @@ print '<table class="noborder nohover centpercent">';
 print '<tr class="liste_titre"><th>'.$langs->trans("QuickAccess").'</th></tr>';
 
 print '<tr><td>';
-print '<a href="list.php" class="butAction">'.$langs->trans("ViewAllRecords").'</a>';
-print '</td></tr>';
-
-print '<tr><td>';
-print '<a href="home.php" class="butAction">'.$langs->trans("MobileInterface").'</a>';
+print '<a href="list.php" class="butAction">'.$langs->trans("AllRecords").'</a>';
 print '</td></tr>';
 
 if (!empty($user->rights->appmobtimetouch->timeclock->validate)) {
     print '<tr><td>';
-    print '<a href="validation.php" class="butAction">'.$langs->trans("ValidationInterface").'</a>';
+    print '<a href="validation.php" class="butAction">'.$langs->trans("Validation").'</a>';
     print '</td></tr>';
 }
+
+if (!empty($user->rights->appmobtimetouch->timeclock->export)) {
+    print '<tr><td>';
+    print '<a href="reports.php" class="butAction">'.$langs->trans("Reports").'</a>';
+    print '</td></tr>';
+}
+
+print '<tr><td>';
+print '<a href="home.php" class="butAction">'.$langs->trans("MobileInterface").'</a>';
+print '</td></tr>';
 
 print '</table>';
 print '</div>';

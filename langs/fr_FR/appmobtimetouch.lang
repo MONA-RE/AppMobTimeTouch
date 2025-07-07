@@ -594,13 +594,12 @@ ConfirmClockOut = Confirmer la sortie ?
 LocationRequiredForClockOut = La localisation GPS est requise pour pointer la sortie
 
 #
-# Menu Translations (Sprint 4)
+# Menu Translations (Sprint 4 - Simplified)
 #
-TimeClockManagement = Gestion du Temps de Travail
-DesktopManagement = Gestion Bureau
-ListAllRecords = Lister Tous les Enregistrements
-CreateRecord = Créer Enregistrement
-ExportRecords = Exporter Enregistrements
+TimeManagement = Gestion des temps
+AllRecords = Tous les enregistrements
+Validation = Validation
+Reports = Rapports
 Statistics = Statistiques
 TotalTimeRecords = Total Enregistrements
 TodayTimeRecords = Enregistrements du Jour

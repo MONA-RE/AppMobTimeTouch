@@ -237,13 +237,12 @@ ConfirmClockOut = Confirm clock out?
 LocationRequiredForClockOut = GPS location is required for clock out
 
 #
-# Menu Translations (Sprint 4)
+# Menu Translations (Sprint 4 - Simplified)
 #
-TimeClockManagement = Time Clock Management
-DesktopManagement = Desktop Management
-ListAllRecords = List All Records
-CreateRecord = Create Record
-ExportRecords = Export Records
+TimeManagement = Time Management
+AllRecords = All Records
+Validation = Validation
+Reports = Reports
 Statistics = Statistics
 TotalTimeRecords = Total Time Records
 TodayTimeRecords = Today's Records

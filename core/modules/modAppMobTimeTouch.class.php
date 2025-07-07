@@ -283,11 +283,11 @@ class modAppMobTimeTouch extends DolibarrModules
 		$this->menu = array();
 		$r = 0;
 
-		// Top menu for time tracking
+		// Top menu for time tracking - "Gestion des temps"
 		$this->menu[$r++] = array(
 			'fk_menu'=>'',
 			'type'=>'top',
-			'titre'=>'TimeTracking',
+			'titre'=>'TimeManagement',
 			'prefix' => img_picto('', $this->picto, 'class="paddingright pictofixedwidth valignmiddle"'),
 			'mainmenu'=>'appmobtimetouch',
 			'leftmenu'=>'',
@@ -300,80 +300,14 @@ class modAppMobTimeTouch extends DolibarrModules
 			'user'=>2,
 		);
 
-		// Left menu - My Time Tracking
+		// Left menu - Tous les enregistrements
 		$this->menu[$r++] = array(
 			'fk_menu'=>'fk_mainmenu=appmobtimetouch',
-			'type'=>'left',
-			'titre'=>'MyTimeTracking',
-			'prefix' => img_picto('', 'clock', 'class="paddingright pictofixedwidth valignmiddle"'),
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'mytimeclock',
-			'url'=>'/appmobtimetouch/timeclock_card.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->read',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - Clock In/Out
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=mytimeclock',
-			'type'=>'left',
-			'titre'=>'ClockInOut',
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'clockinout',
-			'url'=>'/appmobtimetouch/clockinout.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->write',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - My Records
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=mytimeclock',
-			'type'=>'left',
-			'titre'=>'MyRecords',
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'myrecords',
-			'url'=>'/appmobtimetouch/timeclock_list.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->read',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - Management (for managers)
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch',
-			'type'=>'left',
-			'titre'=>'TimeManagement',
-			'prefix' => img_picto('', 'group', 'class="paddingright pictofixedwidth valignmiddle"'),
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'timemanagement',
-			'url'=>'/appmobtimetouch/management.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->readall',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - All Records (for managers)
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=timemanagement',
 			'type'=>'left',
 			'titre'=>'AllRecords',
 			'mainmenu'=>'appmobtimetouch',
 			'leftmenu'=>'allrecords',
-			'url'=>'/appmobtimetouch/timeclock_list.php?mode=all',
+			'url'=>'/appmobtimetouch/list.php',
 			'langs'=>'appmobtimetouch@appmobtimetouch',
 			'position'=>1000+$r,
 			'enabled'=>'$conf->appmobtimetouch->enabled',
@@ -384,7 +318,7 @@ class modAppMobTimeTouch extends DolibarrModules
 
 		// Left menu - Validation
 		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=timemanagement',
+			'fk_menu'=>'fk_mainmenu=appmobtimetouch',
 			'type'=>'left',
 			'titre'=>'Validation',
 			'mainmenu'=>'appmobtimetouch',
@@ -398,79 +332,14 @@ class modAppMobTimeTouch extends DolibarrModules
 			'user'=>2,
 		);
 
-		// Left menu - Reports
+		// Left menu - Rapports
 		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=timemanagement',
+			'fk_menu'=>'fk_mainmenu=appmobtimetouch',
 			'type'=>'left',
 			'titre'=>'Reports',
 			'mainmenu'=>'appmobtimetouch',
 			'leftmenu'=>'reports',
 			'url'=>'/appmobtimetouch/reports.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->export',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - Desktop Management (Sprint 4)
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch',
-			'type'=>'left',
-			'titre'=>'DesktopManagement',
-			'prefix' => img_picto('', 'computer', 'class="paddingright pictofixedwidth valignmiddle"'),
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'desktopmanagement',
-			'url'=>'/appmobtimetouch/list.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->readall',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - List All Records (Desktop)
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=desktopmanagement',
-			'type'=>'left',
-			'titre'=>'ListAllRecords',
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'listallrecords',
-			'url'=>'/appmobtimetouch/list.php',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->readall',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - Create Record (Desktop)
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=desktopmanagement',
-			'type'=>'left',
-			'titre'=>'CreateRecord',
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'createrecord',
-			'url'=>'/appmobtimetouch/card.php?action=create',
-			'langs'=>'appmobtimetouch@appmobtimetouch',
-			'position'=>1000+$r,
-			'enabled'=>'$conf->appmobtimetouch->enabled',
-			'perms'=>'$user->rights->appmobtimetouch->timeclock->write',
-			'target'=>'',
-			'user'=>2,
-		);
-
-		// Left menu - Export Records (Desktop)
-		$this->menu[$r++] = array(
-			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=desktopmanagement',
-			'type'=>'left',
-			'titre'=>'ExportRecords',
-			'mainmenu'=>'appmobtimetouch',
-			'leftmenu'=>'exportrecords',
-			'url'=>'/appmobtimetouch/export.php',
 			'langs'=>'appmobtimetouch@appmobtimetouch',
 			'position'=>1000+$r,
 			'enabled'=>'$conf->appmobtimetouch->enabled',
