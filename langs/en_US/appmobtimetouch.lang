@@ -235,3 +235,19 @@ Active = Active
 Yesterday = Yesterday
 ConfirmClockOut = Confirm clock out?
 LocationRequiredForClockOut = GPS location is required for clock out
+
+#
+# Menu Translations (Sprint 4)
+#
+TimeClockManagement = Time Clock Management
+DesktopManagement = Desktop Management
+ListAllRecords = List All Records
+CreateRecord = Create Record
+ExportRecords = Export Records
+Statistics = Statistics
+TotalTimeRecords = Total Time Records
+TodayTimeRecords = Today's Records
+QuickAccess = Quick Access
+ViewAllRecords = View All Records
+MobileInterface = Mobile Interface
+ValidationInterface = Validation Interface

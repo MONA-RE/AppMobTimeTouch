@@ -414,6 +414,71 @@ class modAppMobTimeTouch extends DolibarrModules
 			'user'=>2,
 		);
 
+		// Left menu - Desktop Management (Sprint 4)
+		$this->menu[$r++] = array(
+			'fk_menu'=>'fk_mainmenu=appmobtimetouch',
+			'type'=>'left',
+			'titre'=>'DesktopManagement',
+			'prefix' => img_picto('', 'computer', 'class="paddingright pictofixedwidth valignmiddle"'),
+			'mainmenu'=>'appmobtimetouch',
+			'leftmenu'=>'desktopmanagement',
+			'url'=>'/appmobtimetouch/list.php',
+			'langs'=>'appmobtimetouch@appmobtimetouch',
+			'position'=>1000+$r,
+			'enabled'=>'$conf->appmobtimetouch->enabled',
+			'perms'=>'$user->rights->appmobtimetouch->timeclock->readall',
+			'target'=>'',
+			'user'=>2,
+		);
+
+		// Left menu - List All Records (Desktop)
+		$this->menu[$r++] = array(
+			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=desktopmanagement',
+			'type'=>'left',
+			'titre'=>'ListAllRecords',
+			'mainmenu'=>'appmobtimetouch',
+			'leftmenu'=>'listallrecords',
+			'url'=>'/appmobtimetouch/list.php',
+			'langs'=>'appmobtimetouch@appmobtimetouch',
+			'position'=>1000+$r,
+			'enabled'=>'$conf->appmobtimetouch->enabled',
+			'perms'=>'$user->rights->appmobtimetouch->timeclock->readall',
+			'target'=>'',
+			'user'=>2,
+		);
+
+		// Left menu - Create Record (Desktop)
+		$this->menu[$r++] = array(
+			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=desktopmanagement',
+			'type'=>'left',
+			'titre'=>'CreateRecord',
+			'mainmenu'=>'appmobtimetouch',
+			'leftmenu'=>'createrecord',
+			'url'=>'/appmobtimetouch/card.php?action=create',
+			'langs'=>'appmobtimetouch@appmobtimetouch',
+			'position'=>1000+$r,
+			'enabled'=>'$conf->appmobtimetouch->enabled',
+			'perms'=>'$user->rights->appmobtimetouch->timeclock->write',
+			'target'=>'',
+			'user'=>2,
+		);
+
+		// Left menu - Export Records (Desktop)
+		$this->menu[$r++] = array(
+			'fk_menu'=>'fk_mainmenu=appmobtimetouch,fk_leftmenu=desktopmanagement',
+			'type'=>'left',
+			'titre'=>'ExportRecords',
+			'mainmenu'=>'appmobtimetouch',
+			'leftmenu'=>'exportrecords',
+			'url'=>'/appmobtimetouch/export.php',
+			'langs'=>'appmobtimetouch@appmobtimetouch',
+			'position'=>1000+$r,
+			'enabled'=>'$conf->appmobtimetouch->enabled',
+			'perms'=>'$user->rights->appmobtimetouch->timeclock->export',
+			'target'=>'',
+			'user'=>2,
+		);
+
 		// Exports profiles
 		$r = 1;
 		$this->export_code[$r] = $this->rights_class.'_'.$r;

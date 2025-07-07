@@ -592,3 +592,19 @@ Active = Actif
 Yesterday = Hier
 ConfirmClockOut = Confirmer la sortie ?
 LocationRequiredForClockOut = La localisation GPS est requise pour pointer la sortie
+
+#
+# Menu Translations (Sprint 4)
+#
+TimeClockManagement = Gestion du Temps de Travail
+DesktopManagement = Gestion Bureau
+ListAllRecords = Lister Tous les Enregistrements
+CreateRecord = Créer Enregistrement
+ExportRecords = Exporter Enregistrements
+Statistics = Statistiques
+TotalTimeRecords = Total Enregistrements
+TodayTimeRecords = Enregistrements du Jour
+QuickAccess = Accès Rapide
+ViewAllRecords = Voir Tous les Enregistrements
+MobileInterface = Interface Mobile
+ValidationInterface = Interface de Validation
