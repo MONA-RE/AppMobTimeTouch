@@ -70,7 +70,7 @@ $search_array_options = $extrafields->getOptionalsFromPost($object->table_elemen
 
 // Default sort order
 if (!$sortfield) {
-	$sortfield = "t.clock_in";
+	$sortfield = "t.clock_in_time";
 }
 if (!$sortorder) {
 	$sortorder = "DESC";
@@ -85,12 +85,12 @@ $search_user = GETPOST('search_user', 'alpha');
 $search_status = GETPOST('search_status', 'int');
 $search_type = GETPOST('search_type', 'int');
 $search_validation_status = GETPOST('search_validation_status', 'int');
-$search_clock_in_dtstart = dol_mktime(0, 0, 0, GETPOST('search_clock_in_dtstartmonth', 'int'), GETPOST('search_clock_in_dtstartday', 'int'), GETPOST('search_clock_in_dtstartyear', 'int'));
-$search_clock_in_dtend = dol_mktime(23, 59, 59, GETPOST('search_clock_in_dtendmonth', 'int'), GETPOST('search_clock_in_dtendday', 'int'), GETPOST('search_clock_in_dtendyear', 'int'));
+$search_clock_in_dtstart = dol_mktime(0, 0, 0, GETPOST('search_clock_in_time_dtstartmonth', 'int'), GETPOST('search_clock_in_time_dtstartday', 'int'), GETPOST('search_clock_in_time_dtstartyear', 'int'));
+$search_clock_in_dtend = dol_mktime(23, 59, 59, GETPOST('search_clock_in_time_dtendmonth', 'int'), GETPOST('search_clock_in_time_dtendday', 'int'), GETPOST('search_clock_in_time_dtendyear', 'int'));
 
 // List of fields to search into when doing a "search in all"
 $fieldstosearchall = array(
-	't.location_name' => 'Location',
+	't.location_in' => 'Location',
 	'u.login' => 'User',
 	'u.lastname' => 'LastName',
 	'u.firstname' => 'FirstName',
@@ -190,10 +190,10 @@ $morecss = array();
 // Build and execute select
 $sql = 'SELECT ';
 $sql .= 't.rowid,';
-$sql .= ' t.clock_in,';
-$sql .= ' t.clock_out,';
-$sql .= ' t.duration,';
-$sql .= ' t.location_name,';
+$sql .= ' t.clock_in_time,';
+$sql .= ' t.clock_out_time,';
+$sql .= ' t.work_duration,';
+$sql .= ' t.location_in,';
 $sql .= ' t.status,';
 $sql .= ' t.validation_status,';
 $sql .= ' t.fk_user,';
@@ -234,10 +234,10 @@ if ($search_validation_status != '' && $search_validation_status != '-1') {
 	$sql .= " AND t.validation_status = ".((int) $search_validation_status);
 }
 if ($search_clock_in_dtstart) {
-	$sql .= " AND t.clock_in >= '".$db->idate($search_clock_in_dtstart)."'";
+	$sql .= " AND t.clock_in_time >= '".$db->idate($search_clock_in_dtstart)."'";
 }
 if ($search_clock_in_dtend) {
-	$sql .= " AND t.clock_in <= '".$db->idate($search_clock_in_dtend)."'";
+	$sql .= " AND t.clock_in_time <= '".$db->idate($search_clock_in_dtend)."'";
 }
 
 // Add where from hooks
@@ -309,14 +309,14 @@ if ($search_validation_status != '') {
 	$param .= '&search_validation_status='.urlencode($search_validation_status);
 }
 if ($search_clock_in_dtstart) {
-	$param .= '&search_clock_in_dtstartday='.dol_print_date($search_clock_in_dtstart, '%d');
-	$param .= '&search_clock_in_dtstartmonth='.dol_print_date($search_clock_in_dtstart, '%m');
-	$param .= '&search_clock_in_dtstartyear='.dol_print_date($search_clock_in_dtstart, '%Y');
+	$param .= '&search_clock_in_time_dtstartday='.dol_print_date($search_clock_in_dtstart, '%d');
+	$param .= '&search_clock_in_time_dtstartmonth='.dol_print_date($search_clock_in_dtstart, '%m');
+	$param .= '&search_clock_in_time_dtstartyear='.dol_print_date($search_clock_in_dtstart, '%Y');
 }
 if ($search_clock_in_dtend) {
-	$param .= '&search_clock_in_dtendday='.dol_print_date($search_clock_in_dtend, '%d');
-	$param .= '&search_clock_in_dtendmonth='.dol_print_date($search_clock_in_dtend, '%m');
-	$param .= '&search_clock_in_dtendyear='.dol_print_date($search_clock_in_dtend, '%Y');
+	$param .= '&search_clock_in_time_dtendday='.dol_print_date($search_clock_in_dtend, '%d');
+	$param .= '&search_clock_in_time_dtendmonth='.dol_print_date($search_clock_in_dtend, '%m');
+	$param .= '&search_clock_in_time_dtendyear='.dol_print_date($search_clock_in_dtend, '%Y');
 }
 if ($optioncss != '') {
 	$param .= '&optioncss='.urlencode($optioncss);

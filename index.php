@@ -106,7 +106,7 @@ if ($resql) {
 }
 
 // Count today's records
-$sql = "SELECT COUNT(*) as nb FROM ".MAIN_DB_PREFIX."timeclock_records WHERE DATE(clock_in) = CURDATE()";
+$sql = "SELECT COUNT(*) as nb FROM ".MAIN_DB_PREFIX."timeclock_records WHERE DATE(clock_in_time) = CURDATE()";
 $resql = $db->query($sql);
 if ($resql) {
     $obj = $db->fetch_object($resql);
