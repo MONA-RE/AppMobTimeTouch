@@ -26,7 +26,14 @@ dol_include_once('/appmobtimetouch/lib/appmobtimetouch.lib.php');
 dol_include_once('/appmobtimetouch/core/modules/modAppMobTimeTouch.class.php');
 
 // Security check
-restrictedArea($user, 'appmobtimetouch');
+if (empty($conf->appmobtimetouch->enabled)) {
+    accessforbidden('Module AppMobTimeTouch not enabled');
+}
+
+// Basic permission check - allow access if user is admin or has module access
+if (!$user->admin && empty($user->rights->appmobtimetouch)) {
+    accessforbidden('NotEnoughPermissions');
+}
 
 // Load translation files required by the page
 $langs->loadLangs(array('appmobtimetouch@appmobtimetouch', 'other'));
@@ -94,6 +101,8 @@ if ($resql) {
     $obj = $db->fetch_object($resql);
     print '<tr><td>'.$langs->trans("TotalTimeRecords").'</td><td class="right">'.$obj->nb.'</td></tr>';
     $db->free($resql);
+} else {
+    print '<tr><td>'.$langs->trans("TotalTimeRecords").'</td><td class="right">0</td></tr>';
 }
 
 // Count today's records
@@ -103,6 +112,8 @@ if ($resql) {
     $obj = $db->fetch_object($resql);
     print '<tr><td>'.$langs->trans("TodayTimeRecords").'</td><td class="right">'.$obj->nb.'</td></tr>';
     $db->free($resql);
+} else {
+    print '<tr><td>'.$langs->trans("TodayTimeRecords").'</td><td class="right">0</td></tr>';
 }
 
 print '</table>';
