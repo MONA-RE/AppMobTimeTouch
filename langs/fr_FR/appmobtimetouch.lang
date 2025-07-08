@@ -151,6 +151,21 @@ FeatureComingSoon = Fonctionnalité à venir
 LoadingReports = Chargement des rapports
 RefreshingData = Actualisation des données
 
+# Interface card.php MVP 4.2
+NewTimeclockRecord = Nouvel enregistrement de temps
+EditTimeclockRecord = Modifier l'enregistrement de temps
+TimeclockRecord = Enregistrement de temps
+DeleteTimeclockRecord = Supprimer l'enregistrement de temps
+Employee = Employé
+ClockInTime = Heure d'arrivée
+ClockOutTime = Heure de départ
+WorkType = Type de travail
+LocationIn = Lieu d'arrivée
+LocationOut = Lieu de départ
+WorkDuration = Durée de travail
+ErrorClockOutBeforeClockIn = L'heure de départ doit être après l'heure d'arrivée
+Standard = Standard
+
 #
 # Statuts
 #

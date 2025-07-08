@@ -610,7 +610,7 @@ while ($i < $imaxinloop) {
 	// ID
 	if (!empty($arrayfields['t.rowid']['checked'])) {
 		print '<td class="nowrap">';
-		print $obj->rowid;
+		print '<a href="card.php?id='.$obj->rowid.'">'.$obj->rowid.'</a>';
 		print '</td>';
 		if (!$i) $totalarray['nbfield']++;
 	}

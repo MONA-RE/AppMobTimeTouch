@@ -145,6 +145,21 @@ FeatureComingSoon = Feature Coming Soon
 LoadingReports = Loading Reports
 RefreshingData = Refreshing Data
 
+# Card.php interface MVP 4.2
+NewTimeclockRecord = New Timeclock Record
+EditTimeclockRecord = Edit Timeclock Record
+TimeclockRecord = Timeclock Record
+DeleteTimeclockRecord = Delete Timeclock Record
+Employee = Employee
+ClockInTime = Clock In Time
+ClockOutTime = Clock Out Time
+WorkType = Work Type
+LocationIn = Location In
+LocationOut = Location Out
+WorkDuration = Work Duration
+ErrorClockOutBeforeClockIn = Clock out time must be after clock in time
+Standard = Standard
+
 ModuleAppMobTimeTouchName = AppMobTimeTouch
 # Module description 'ModuleAppMobTimeTouchDesc'
 ModuleAppMobTimeTouchDesc = AppMobTimeTouch description
