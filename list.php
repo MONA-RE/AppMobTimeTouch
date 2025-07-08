@@ -85,8 +85,11 @@ $search_user = GETPOST('search_user', 'alpha');
 $search_status = GETPOST('search_status', 'int');
 $search_type = GETPOST('search_type', 'int');
 $search_validation_status = GETPOST('search_validation_status', 'int');
-$search_clock_in_dtstart = dol_mktime(0, 0, 0, GETPOST('search_clock_in_time_dtstartmonth', 'int'), GETPOST('search_clock_in_time_dtstartday', 'int'), GETPOST('search_clock_in_time_dtstartyear', 'int'));
-$search_clock_in_dtend = dol_mktime(23, 59, 59, GETPOST('search_clock_in_time_dtendmonth', 'int'), GETPOST('search_clock_in_time_dtendday', 'int'), GETPOST('search_clock_in_time_dtendyear', 'int'));
+$search_clock_in_dtstart = dol_mktime(0, 0, 0, GETPOST('search_clock_in_dtstartmonth', 'int'), GETPOST('search_clock_in_dtstartday', 'int'), GETPOST('search_clock_in_dtstartyear', 'int'));
+$search_clock_in_dtend = dol_mktime(23, 59, 59, GETPOST('search_clock_in_dtendmonth', 'int'), GETPOST('search_clock_in_dtendday', 'int'), GETPOST('search_clock_in_dtendyear', 'int'));
+
+// Debug date filtering
+dol_syslog("Clock in date filter debug: dtstart=" . ($search_clock_in_dtstart ? dol_print_date($search_clock_in_dtstart, 'dayhour') : 'empty') . ", dtend=" . ($search_clock_in_dtend ? dol_print_date($search_clock_in_dtend, 'dayhour') : 'empty'), LOG_DEBUG);
 
 // List of fields to search into when doing a "search in all"
 $fieldstosearchall = array(
@@ -98,16 +101,16 @@ $fieldstosearchall = array(
 
 // Definition of array of fields for columns
 $arrayfields = array(
-	't.rowid' => array('label' => 'ID', 'checked' => -1, 'position' => 1),
-	't.clock_in' => array('label' => 'ClockIn', 'checked' => 1, 'position' => 10),
-	't.clock_out' => array('label' => 'ClockOut', 'checked' => 1, 'position' => 15),
-	'u.login' => array('label' => 'User', 'checked' => 1, 'position' => 20),
-	'u.lastname' => array('label' => 'LastName', 'checked' => 1, 'position' => 25),
-	'u.firstname' => array('label' => 'FirstName', 'checked' => 1, 'position' => 30),
-	't.duration' => array('label' => 'Duration', 'checked' => 1, 'position' => 35),
-	't.location_name' => array('label' => 'Location', 'checked' => 0, 'position' => 40),
-	't.status' => array('label' => 'Status', 'checked' => 1, 'position' => 45),
-	't.validation_status' => array('label' => 'ValidationStatus', 'checked' => 1, 'position' => 50),
+	't.rowid' => array('label' => 'ID', 'checked' => -1, 'position' => 1, 'type' => 'integer'),
+	't.clock_in_time' => array('label' => 'ClockIn', 'checked' => 1, 'position' => 10, 'type' => 'datetime'),
+	't.clock_out_time' => array('label' => 'ClockOut', 'checked' => 1, 'position' => 15, 'type' => 'datetime'),
+	'u.login' => array('label' => 'User', 'checked' => 1, 'position' => 20, 'type' => 'varchar'),
+	'u.lastname' => array('label' => 'LastName', 'checked' => 1, 'position' => 25, 'type' => 'varchar'),
+	'u.firstname' => array('label' => 'FirstName', 'checked' => 1, 'position' => 30, 'type' => 'varchar'),
+	't.work_duration' => array('label' => 'Duration', 'checked' => 1, 'position' => 35, 'type' => 'integer'),
+	't.location_in' => array('label' => 'Location', 'checked' => 0, 'position' => 40, 'type' => 'varchar'),
+	't.status' => array('label' => 'Status', 'checked' => 1, 'position' => 45, 'type' => 'integer'),
+	't.validation_status' => array('label' => 'ValidationStatus', 'checked' => 1, 'position' => 50, 'type' => 'integer'),
 );
 
 // Extra fields
@@ -235,9 +238,11 @@ if ($search_validation_status != '' && $search_validation_status != '-1') {
 }
 if ($search_clock_in_dtstart) {
 	$sql .= " AND t.clock_in_time >= '".$db->idate($search_clock_in_dtstart)."'";
+	dol_syslog("Added clock_in_time >= filter: " . $db->idate($search_clock_in_dtstart), LOG_DEBUG);
 }
 if ($search_clock_in_dtend) {
 	$sql .= " AND t.clock_in_time <= '".$db->idate($search_clock_in_dtend)."'";
+	dol_syslog("Added clock_in_time <= filter: " . $db->idate($search_clock_in_dtend), LOG_DEBUG);
 }
 
 // Add where from hooks
@@ -309,14 +314,14 @@ if ($search_validation_status != '') {
 	$param .= '&search_validation_status='.urlencode($search_validation_status);
 }
 if ($search_clock_in_dtstart) {
-	$param .= '&search_clock_in_time_dtstartday='.dol_print_date($search_clock_in_dtstart, '%d');
-	$param .= '&search_clock_in_time_dtstartmonth='.dol_print_date($search_clock_in_dtstart, '%m');
-	$param .= '&search_clock_in_time_dtstartyear='.dol_print_date($search_clock_in_dtstart, '%Y');
+	$param .= '&search_clock_in_dtstartday='.dol_print_date($search_clock_in_dtstart, '%d');
+	$param .= '&search_clock_in_dtstartmonth='.dol_print_date($search_clock_in_dtstart, '%m');
+	$param .= '&search_clock_in_dtstartyear='.dol_print_date($search_clock_in_dtstart, '%Y');
 }
 if ($search_clock_in_dtend) {
-	$param .= '&search_clock_in_time_dtendday='.dol_print_date($search_clock_in_dtend, '%d');
-	$param .= '&search_clock_in_time_dtendmonth='.dol_print_date($search_clock_in_dtend, '%m');
-	$param .= '&search_clock_in_time_dtendyear='.dol_print_date($search_clock_in_dtend, '%Y');
+	$param .= '&search_clock_in_dtendday='.dol_print_date($search_clock_in_dtend, '%d');
+	$param .= '&search_clock_in_dtendmonth='.dol_print_date($search_clock_in_dtend, '%m');
+	$param .= '&search_clock_in_dtendyear='.dol_print_date($search_clock_in_dtend, '%Y');
 }
 if ($optioncss != '') {
 	$param .= '&optioncss='.urlencode($optioncss);
@@ -412,7 +417,7 @@ if (!empty($arrayfields['t.rowid']['checked'])) {
 }
 
 // Clock In
-if (!empty($arrayfields['t.clock_in']['checked'])) {
+if (!empty($arrayfields['t.clock_in_time']['checked'])) {
 	print '<td class="liste_titre center">';
 	print '<div class="nowrap">';
 	print $form->selectDate($search_clock_in_dtstart ? $search_clock_in_dtstart : -1, "search_clock_in_dtstart", 0, 0, 1, '', 1, 0, 0, '', '', '', '', 1, '', $langs->trans('From'));
@@ -424,7 +429,7 @@ if (!empty($arrayfields['t.clock_in']['checked'])) {
 }
 
 // Clock Out
-if (!empty($arrayfields['t.clock_out']['checked'])) {
+if (!empty($arrayfields['t.clock_out_time']['checked'])) {
 	print '<td class="liste_titre">';
 	print '</td>';
 }
@@ -449,13 +454,13 @@ if (!empty($arrayfields['u.firstname']['checked'])) {
 }
 
 // Duration
-if (!empty($arrayfields['t.duration']['checked'])) {
+if (!empty($arrayfields['t.work_duration']['checked'])) {
 	print '<td class="liste_titre">';
 	print '</td>';
 }
 
 // Location
-if (!empty($arrayfields['t.location_name']['checked'])) {
+if (!empty($arrayfields['t.location_in']['checked'])) {
 	print '<td class="liste_titre">';
 	print '</td>';
 }
@@ -512,11 +517,11 @@ foreach ($arrayfields as $key => $val) {
 		$cssforfield = (empty($val['csslist']) ? (empty($val['css']) ? '' : $val['css']) : $val['csslist']);
 		if ($key == 't.status' || $key == 't.validation_status') {
 			$cssforfield .= ($cssforfield ? ' ' : '').'center';
-		} elseif (in_array($val['type'], array('date', 'datetime', 'timestamp'))) {
+		} elseif (!empty($val['type']) && in_array($val['type'], array('date', 'datetime', 'timestamp'))) {
 			$cssforfield .= ($cssforfield ? ' ' : '').'center';
-		} elseif (in_array($val['type'], array('timestamp'))) {
+		} elseif (!empty($val['type']) && in_array($val['type'], array('timestamp'))) {
 			$cssforfield .= ($cssforfield ? ' ' : '').'nowrap';
-		} elseif (in_array($val['type'], array('double(24,8)', 'double(6,3)', 'integer', 'real', 'price')) && $key != 't.rowid') {
+		} elseif (!empty($val['type']) && in_array($val['type'], array('double(24,8)', 'double(6,3)', 'integer', 'real', 'price')) && $key != 't.rowid') {
 			$cssforfield .= ($cssforfield ? ' ' : '').'right';
 		}
 		$cssforfield = preg_replace('/small\s*/', '', $cssforfield);
@@ -568,17 +573,17 @@ while ($i < $imaxinloop) {
 	}
 
 	// Clock In
-	if (!empty($arrayfields['t.clock_in']['checked'])) {
+	if (!empty($arrayfields['t.clock_in_time']['checked'])) {
 		print '<td class="center">';
-		print $obj->clock_in ? dol_print_date($db->jdate($obj->clock_in), 'dayhour') : '';
+		print $obj->clock_in_time ? dol_print_date($db->jdate($obj->clock_in_time), 'dayhour') : '';
 		print '</td>';
 		if (!$i) $totalarray['nbfield']++;
 	}
 
 	// Clock Out
-	if (!empty($arrayfields['t.clock_out']['checked'])) {
+	if (!empty($arrayfields['t.clock_out_time']['checked'])) {
 		print '<td class="center">';
-		print $obj->clock_out ? dol_print_date($db->jdate($obj->clock_out), 'dayhour') : '<span class="opacitymedium">'.$langs->trans("InProgress").'</span>';
+		print $obj->clock_out_time ? dol_print_date($db->jdate($obj->clock_out_time), 'dayhour') : '<span class="opacitymedium">'.$langs->trans("InProgress").'</span>';
 		print '</td>';
 		if (!$i) $totalarray['nbfield']++;
 	}
@@ -608,11 +613,11 @@ while ($i < $imaxinloop) {
 	}
 
 	// Duration
-	if (!empty($arrayfields['t.duration']['checked'])) {
+	if (!empty($arrayfields['t.work_duration']['checked'])) {
 		print '<td class="right">';
-		if ($obj->duration && $obj->duration > 0) {
-			$hours = floor($obj->duration / 3600);
-			$minutes = floor(($obj->duration % 3600) / 60);
+		if ($obj->work_duration && $obj->work_duration > 0) {
+			$hours = floor($obj->work_duration / 3600);
+			$minutes = floor(($obj->work_duration % 3600) / 60);
 			print sprintf('%dh %02dm', $hours, $minutes);
 		} else {
 			print '<span class="opacitymedium">-</span>';
@@ -622,9 +627,9 @@ while ($i < $imaxinloop) {
 	}
 
 	// Location
-	if (!empty($arrayfields['t.location_name']['checked'])) {
+	if (!empty($arrayfields['t.location_in']['checked'])) {
 		print '<td class="nowrap">';
-		print $obj->location_name ? $obj->location_name : '<span class="opacitymedium">-</span>';
+		print $obj->location_in ? $obj->location_in : '<span class="opacitymedium">-</span>';
 		print '</td>';
 		if (!$i) $totalarray['nbfield']++;
 	}
