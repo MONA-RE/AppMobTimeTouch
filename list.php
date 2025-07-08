@@ -81,15 +81,18 @@ $search_all = GETPOST('search_all', 'alphanohtml');
 $search = array();
 
 // Search fields for TimeclockRecord
-$search_user = GETPOST('search_user', 'alpha');
+$search_user = GETPOST('search_user', 'int');
 $search_status = GETPOST('search_status', 'int');
 $search_type = GETPOST('search_type', 'int');
 $search_validation_status = GETPOST('search_validation_status', 'int');
 $search_clock_in_dtstart = dol_mktime(0, 0, 0, GETPOST('search_clock_in_dtstartmonth', 'int'), GETPOST('search_clock_in_dtstartday', 'int'), GETPOST('search_clock_in_dtstartyear', 'int'));
 $search_clock_in_dtend = dol_mktime(23, 59, 59, GETPOST('search_clock_in_dtendmonth', 'int'), GETPOST('search_clock_in_dtendday', 'int'), GETPOST('search_clock_in_dtendyear', 'int'));
+$search_clock_out_dtstart = dol_mktime(0, 0, 0, GETPOST('search_clock_out_dtstartmonth', 'int'), GETPOST('search_clock_out_dtstartday', 'int'), GETPOST('search_clock_out_dtstartyear', 'int'));
+$search_clock_out_dtend = dol_mktime(23, 59, 59, GETPOST('search_clock_out_dtendmonth', 'int'), GETPOST('search_clock_out_dtendday', 'int'), GETPOST('search_clock_out_dtendyear', 'int'));
 
 // Debug date filtering
 dol_syslog("Clock in date filter debug: dtstart=" . ($search_clock_in_dtstart ? dol_print_date($search_clock_in_dtstart, 'dayhour') : 'empty') . ", dtend=" . ($search_clock_in_dtend ? dol_print_date($search_clock_in_dtend, 'dayhour') : 'empty'), LOG_DEBUG);
+dol_syslog("Clock out date filter debug: dtstart=" . ($search_clock_out_dtstart ? dol_print_date($search_clock_out_dtstart, 'dayhour') : 'empty') . ", dtend=" . ($search_clock_out_dtend ? dol_print_date($search_clock_out_dtend, 'dayhour') : 'empty'), LOG_DEBUG);
 
 // List of fields to search into when doing a "search in all"
 $fieldstosearchall = array(
@@ -163,6 +166,8 @@ if (empty($reshook)) {
 		$search_validation_status = '';
 		$search_clock_in_dtstart = '';
 		$search_clock_in_dtend = '';
+		$search_clock_out_dtstart = '';
+		$search_clock_out_dtend = '';
 		$toselect = array();
 		$search_array_options = array();
 	}
@@ -185,6 +190,22 @@ if (empty($reshook)) {
 $form = new Form($db);
 
 $now = dol_now();
+
+// Build user list for dropdown
+$array_users = array();
+$sql_users = "SELECT DISTINCT u.rowid, u.login, u.lastname, u.firstname FROM ".MAIN_DB_PREFIX."user as u 
+              INNER JOIN ".MAIN_DB_PREFIX."timeclock_records as t ON t.fk_user = u.rowid 
+              WHERE u.entity IN (".getEntity('user').") AND u.statut = 1 
+              ORDER BY u.lastname, u.firstname, u.login";
+$resql_users = $db->query($sql_users);
+if ($resql_users) {
+    while ($obj_user = $db->fetch_object($resql_users)) {
+        $user_name = trim($obj_user->lastname.' '.$obj_user->firstname);
+        if (empty($user_name)) $user_name = $obj_user->login;
+        $array_users[$obj_user->rowid] = $user_name.' ('.$obj_user->login.')';
+    }
+    $db->free($resql_users);
+}
 
 $title = $langs->trans("AllRecords");
 $morejs = array();
@@ -224,8 +245,8 @@ $sql .= " WHERE 1 = 1";
 if ($search_all) {
 	$sql .= natural_search(array_keys($fieldstosearchall), $search_all);
 }
-if ($search_user) {
-	$sql .= natural_search(array('u.login', 'u.lastname', 'u.firstname'), $search_user);
+if ($search_user && $search_user != '-1') {
+	$sql .= " AND t.fk_user = ".((int) $search_user);
 }
 if ($search_status != '' && $search_status != '-1') {
 	$sql .= " AND t.status = ".((int) $search_status);
@@ -243,6 +264,14 @@ if ($search_clock_in_dtstart) {
 if ($search_clock_in_dtend) {
 	$sql .= " AND t.clock_in_time <= '".$db->idate($search_clock_in_dtend)."'";
 	dol_syslog("Added clock_in_time <= filter: " . $db->idate($search_clock_in_dtend), LOG_DEBUG);
+}
+if ($search_clock_out_dtstart) {
+	$sql .= " AND t.clock_out_time >= '".$db->idate($search_clock_out_dtstart)."'";
+	dol_syslog("Added clock_out_time >= filter: " . $db->idate($search_clock_out_dtstart), LOG_DEBUG);
+}
+if ($search_clock_out_dtend) {
+	$sql .= " AND t.clock_out_time <= '".$db->idate($search_clock_out_dtend)."'";
+	dol_syslog("Added clock_out_time <= filter: " . $db->idate($search_clock_out_dtend), LOG_DEBUG);
 }
 
 // Add where from hooks
@@ -301,7 +330,7 @@ if ($limit > 0 && $limit != $conf->liste_limit) {
 if ($search_all != '') {
 	$param .= '&search_all='.urlencode($search_all);
 }
-if ($search_user != '') {
+if ($search_user != '' && $search_user != '-1') {
 	$param .= '&search_user='.urlencode($search_user);
 }
 if ($search_status != '') {
@@ -322,6 +351,16 @@ if ($search_clock_in_dtend) {
 	$param .= '&search_clock_in_dtendday='.dol_print_date($search_clock_in_dtend, '%d');
 	$param .= '&search_clock_in_dtendmonth='.dol_print_date($search_clock_in_dtend, '%m');
 	$param .= '&search_clock_in_dtendyear='.dol_print_date($search_clock_in_dtend, '%Y');
+}
+if ($search_clock_out_dtstart) {
+	$param .= '&search_clock_out_dtstartday='.dol_print_date($search_clock_out_dtstart, '%d');
+	$param .= '&search_clock_out_dtstartmonth='.dol_print_date($search_clock_out_dtstart, '%m');
+	$param .= '&search_clock_out_dtstartyear='.dol_print_date($search_clock_out_dtstart, '%Y');
+}
+if ($search_clock_out_dtend) {
+	$param .= '&search_clock_out_dtendday='.dol_print_date($search_clock_out_dtend, '%d');
+	$param .= '&search_clock_out_dtendmonth='.dol_print_date($search_clock_out_dtend, '%m');
+	$param .= '&search_clock_out_dtendyear='.dol_print_date($search_clock_out_dtend, '%Y');
 }
 if ($optioncss != '') {
 	$param .= '&optioncss='.urlencode($optioncss);
@@ -430,14 +469,20 @@ if (!empty($arrayfields['t.clock_in_time']['checked'])) {
 
 // Clock Out
 if (!empty($arrayfields['t.clock_out_time']['checked'])) {
-	print '<td class="liste_titre">';
+	print '<td class="liste_titre center">';
+	print '<div class="nowrap">';
+	print $form->selectDate($search_clock_out_dtstart ? $search_clock_out_dtstart : -1, "search_clock_out_dtstart", 0, 0, 1, '', 1, 0, 0, '', '', '', '', 1, '', $langs->trans('From'));
+	print '</div>';
+	print '<div class="nowrap">';
+	print $form->selectDate($search_clock_out_dtend ? $search_clock_out_dtend : -1, "search_clock_out_dtend", 0, 0, 1, '', 1, 0, 0, '', '', '', '', 1, '', $langs->trans('to'));
+	print '</div>';
 	print '</td>';
 }
 
 // User
 if (!empty($arrayfields['u.login']['checked'])) {
 	print '<td class="liste_titre">';
-	print '<input type="text" class="flat maxwidth100" name="search_user" value="'.dol_escape_htmltag($search_user).'">';
+	print $form->selectarray('search_user', $array_users, $search_user, 1, 0, 0, '', 1, 0, 0, '', 'maxwidth100', 1);
 	print '</td>';
 }
 
@@ -469,7 +514,6 @@ if (!empty($arrayfields['t.location_in']['checked'])) {
 if (!empty($arrayfields['t.status']['checked'])) {
 	print '<td class="liste_titre center">';
 	$array_status = array(
-		'' => '',
 		'0' => 'Draft',
 		'1' => 'Validated',
 		'2' => 'InProgress',
@@ -484,7 +528,6 @@ if (!empty($arrayfields['t.status']['checked'])) {
 if (!empty($arrayfields['t.validation_status']['checked'])) {
 	print '<td class="liste_titre center">';
 	$array_validation = array(
-		'' => '',
 		'0' => 'Pending',
 		'1' => 'Approved',
 		'2' => 'Rejected',
@@ -616,8 +659,9 @@ while ($i < $imaxinloop) {
 	if (!empty($arrayfields['t.work_duration']['checked'])) {
 		print '<td class="right">';
 		if ($obj->work_duration && $obj->work_duration > 0) {
-			$hours = floor($obj->work_duration / 3600);
-			$minutes = floor(($obj->work_duration % 3600) / 60);
+			// work_duration is stored in minutes in database
+			$hours = floor($obj->work_duration / 60);
+			$minutes = $obj->work_duration % 60;
 			print sprintf('%dh %02dm', $hours, $minutes);
 		} else {
 			print '<span class="opacitymedium">-</span>';
