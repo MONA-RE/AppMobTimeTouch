@@ -81,6 +81,7 @@ $search_all = GETPOST('search_all', 'alphanohtml');
 $search = array();
 
 // Search fields for TimeclockRecord
+$search_id = GETPOST('search_id', 'int');
 $search_user = GETPOST('search_user', 'int');
 $search_status = GETPOST('search_status', 'int');
 $search_type = GETPOST('search_type', 'int');
@@ -104,7 +105,7 @@ $fieldstosearchall = array(
 
 // Definition of array of fields for columns
 $arrayfields = array(
-	't.rowid' => array('label' => 'ID', 'checked' => -1, 'position' => 1, 'type' => 'integer'),
+	't.rowid' => array('label' => 'ID', 'checked' => 1, 'position' => 1, 'type' => 'integer'),
 	't.clock_in_time' => array('label' => 'ClockIn', 'checked' => 1, 'position' => 10, 'type' => 'datetime'),
 	't.clock_out_time' => array('label' => 'ClockOut', 'checked' => 1, 'position' => 15, 'type' => 'datetime'),
 	'u.login' => array('label' => 'User', 'checked' => 1, 'position' => 20, 'type' => 'varchar'),
@@ -160,6 +161,7 @@ if (empty($reshook)) {
 	// Purge search criteria
 	if (GETPOST('button_removefilter_x', 'alpha') || GETPOST('button_removefilter.x', 'alpha') || GETPOST('button_removefilter', 'alpha')) {
 		$search_all = '';
+		$search_id = '';
 		$search_user = '';
 		$search_status = '';
 		$search_type = '';
@@ -245,6 +247,9 @@ $sql .= " WHERE 1 = 1";
 if ($search_all) {
 	$sql .= natural_search(array_keys($fieldstosearchall), $search_all);
 }
+if ($search_id) {
+	$sql .= " AND t.rowid = ".((int) $search_id);
+}
 if ($search_user && $search_user != '-1') {
 	$sql .= " AND t.fk_user = ".((int) $search_user);
 }
@@ -329,6 +334,9 @@ if ($limit > 0 && $limit != $conf->liste_limit) {
 }
 if ($search_all != '') {
 	$param .= '&search_all='.urlencode($search_all);
+}
+if ($search_id != '') {
+	$param .= '&search_id='.urlencode($search_id);
 }
 if ($search_user != '' && $search_user != '-1') {
 	$param .= '&search_user='.urlencode($search_user);
