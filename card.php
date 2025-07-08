@@ -109,6 +109,7 @@ if (empty($reshook)) {
 		$fk_timeclock_type = GETPOST('fk_timeclock_type', 'int');
 		$location_in = GETPOST('location_in', 'alpha');
 		$location_out = GETPOST('location_out', 'alpha');
+		$status = GETPOST('status', 'int');
 
 		// Validation
 		if (empty($fk_user)) {
@@ -131,7 +132,7 @@ if (empty($reshook)) {
 			$object->fk_timeclock_type = $fk_timeclock_type;
 			$object->location_in = $location_in;
 			$object->location_out = $location_out;
-			$object->status = !empty($clock_out_time) ? 3 : 2; // 3=Completed, 2=InProgress
+			$object->status = !empty($status) ? $status : (!empty($clock_out_time) ? 3 : 2); // Use selected status or auto-determine
 			$object->fk_user_creat = $user->id;
 			$object->datec = dol_now();
 
@@ -166,6 +167,7 @@ if (empty($reshook)) {
 		$fk_timeclock_type = GETPOST('fk_timeclock_type', 'int');
 		$location_in = GETPOST('location_in', 'alpha');
 		$location_out = GETPOST('location_out', 'alpha');
+		$status = GETPOST('status', 'int');
 
 		// Validation
 		if (empty($fk_user)) {
@@ -188,7 +190,7 @@ if (empty($reshook)) {
 			$object->fk_timeclock_type = $fk_timeclock_type;
 			$object->location_in = $location_in;
 			$object->location_out = $location_out;
-			$object->status = !empty($clock_out_time) ? 3 : 2; // 3=Completed, 2=InProgress
+			$object->status = !empty($status) ? $status : (!empty($clock_out_time) ? 3 : 2); // Use selected status or auto-determine
 
 			// Calculate work duration if both times are set
 			if (!empty($clock_out_time)) {
@@ -253,6 +255,15 @@ if (empty($array_types)) {
     $array_types[1] = $langs->trans("Standard");
 }
 
+// Build status array
+$array_status = array(
+    0 => $langs->trans('Draft'),
+    1 => $langs->trans('Validated'),
+    2 => $langs->trans('InProgress'),
+    3 => $langs->trans('Completed'),
+    9 => $langs->trans('Cancelled')
+);
+
 // Part to create
 if ($action == 'create') {
 	if (empty($permissiontoadd)) {
@@ -304,6 +315,11 @@ if ($action == 'create') {
 	// Location Out
 	print '<tr><td>'.$langs->trans("LocationOut").'</td><td>';
 	print '<input type="text" class="flat maxwidth300" name="location_out" value="'.dol_escape_htmltag(GETPOST('location_out', 'alpha')).'">';
+	print '</td></tr>';
+
+	// Status
+	print '<tr><td>'.$langs->trans("Status").'</td><td>';
+	print $form->selectarray('status', $array_status, GETPOST('status', 'int') ? GETPOST('status', 'int') : 2, 1, 0, 0, '', 1, 0, 0, '', 'maxwidth300', 1);
 	print '</td></tr>';
 
 	print '</table>'."\n";
@@ -367,6 +383,11 @@ if (($id || $ref) && $action == 'edit') {
 	// Location Out
 	print '<tr><td>'.$langs->trans("LocationOut").'</td><td>';
 	print '<input type="text" class="flat maxwidth300" name="location_out" value="'.dol_escape_htmltag($object->location_out).'">';
+	print '</td></tr>';
+
+	// Status
+	print '<tr><td>'.$langs->trans("Status").'</td><td>';
+	print $form->selectarray('status', $array_status, $object->status, 1, 0, 0, '', 1, 0, 0, '', 'maxwidth300', 1);
 	print '</td></tr>';
 
 	print '</table>';
