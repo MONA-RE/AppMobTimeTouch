@@ -26,15 +26,36 @@ AppMobTimeTouch is a Dolibarr module for mobile time tracking and employee prese
 ## Current Status & Development Context
 
 ### 🎯 CURRENT STATUS (Décembre 2025)
-- **Sprint 2 MVP 3.3**: ✅ COMPLETED - Complete validation management with advanced filtering
-- **Batch Validation**: ✅ COMPLETED - Multi-record validation with checkboxes and batch actions
-- **Advanced Filtering**: ✅ COMPLETED - Dedicated list page with comprehensive filters
-- **ViewRecord() Employee**: ✅ COMPLETED - Full navigation from RecordsList to details
+- **Sprint 4 MVP 4.1**: ✅ COMPLETED - Desktop interface foundation with list view
+- **Sprint 4 MVP 4.2**: ✅ COMPLETED - Complete CRUD interface (card.php) with status management
+- **List Interface**: ✅ COMPLETED - Standard Dolibarr list with filtering, date handling, and user dropdowns
+- **Card Interface**: ✅ COMPLETED - Full create/edit/view functionality with validation
+- **Status Management**: ✅ COMPLETED - Manual status selection with smart fallback logic
 - **Function Directory**: ✅ COMPLETED - Complete function directory for code reuse (200+ functions)
-- **Internationalization**: ✅ COMPLETED - Full bilingual support (FR/EN) for all MVP 3.3 features
-- **Next Priority**: Sprint 3 - Advanced reporting and analytics
+- **Internationalization**: ✅ COMPLETED - Full bilingual support (FR/EN) for all features
+- **Next Priority**: Sprint 4 MVP 4.3 - Enhanced update functionalities and advanced operations
 
-### 📋 Recent Session Summary (14 Juin 2025)
+### 📋 Recent Session Summary (Décembre 2025)
+**Sprint 4 MVP 4.2 Completion - Card.php Enhancement:**
+1. ✅ **Status Field Addition**: Added complete status management to card.php with dropdown selection
+2. ✅ **Smart Status Logic**: Implemented manual selection with auto-determination fallback
+3. ✅ **Form Integration**: Status field added to both create and edit forms with proper validation
+4. ✅ **Action Handler Updates**: Modified both create and update actions to handle status parameter
+5. ✅ **Default Behavior**: New records default to "InProgress" status when no selection made
+6. ✅ **Status Options**: Complete dropdown with Draft, Validated, InProgress, Completed, Cancelled
+7. ✅ **Documentation Update**: Updated sprint4.md and CLAUDE.md for next development phase
+
+**Key Technical Achievements:**
+- Enhanced card.php with manual status modification capabilities
+- Maintained existing auto-determination business logic as fallback
+- Added proper form validation and data handling for status field
+- Created status array with proper translations for bilingual support
+- Implemented CSRF protection and security checks for status modifications
+- Prepared documentation for next phase: enhanced update functionalities
+
+**Next Development Target**: Enhance update functionalities in card.php with advanced features like bulk operations, audit trail, and enhanced validation workflow integration.
+
+### 📋 Previous Session Summary (14 Juin 2025)
 **Major Filter System and UX Improvements:**
 1. ✅ **Personal Records Filtering**: Complete filter functionality in `myrecords.php` using SOLID architecture
 2. ✅ **Validation Status Fix**: Added `validation_status` and `validation_comment` fields to `TimeclockRecord` class
