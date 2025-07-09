@@ -518,12 +518,11 @@ if (!empty($arrayfields['t.location_in']['checked'])) {
 	print '</td>';
 }
 
-// Status
+// Status (excluding STATUS_VALIDATED as validation is managed separately)
 if (!empty($arrayfields['t.status']['checked'])) {
 	print '<td class="liste_titre center">';
 	$array_status = array(
 		'0' => 'Draft',
-		'1' => 'Validated',
 		'2' => 'InProgress',
 		'3' => 'Completed',
 		'9' => 'Cancelled'
@@ -686,19 +685,17 @@ while ($i < $imaxinloop) {
 		if (!$i) $totalarray['nbfield']++;
 	}
 
-	// Status
+	// Status (excluding STATUS_VALIDATED as validation is managed separately)
 	if (!empty($arrayfields['t.status']['checked'])) {
 		print '<td class="center">';
 		$status_labels = array(
 			0 => 'Draft',
-			1 => 'Validated', 
 			2 => 'InProgress',
 			3 => 'Completed',
 			9 => 'Cancelled'
 		);
 		$status_colors = array(
 			0 => 'status0',
-			1 => 'status4',
 			2 => 'status3',
 			3 => 'status6',
 			9 => 'status9'
