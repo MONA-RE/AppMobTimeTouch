@@ -255,10 +255,9 @@ if (empty($array_types)) {
     $array_types[1] = $langs->trans("Standard");
 }
 
-// Build status array
+// Build status array (excluding STATUS_VALIDATED as validation is managed separately)
 $array_status = array(
     0 => $langs->trans('Draft'),
-    1 => $langs->trans('Validated'),
     2 => $langs->trans('InProgress'),
     3 => $langs->trans('Completed'),
     9 => $langs->trans('Cancelled')
