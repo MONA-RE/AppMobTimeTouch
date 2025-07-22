@@ -157,6 +157,9 @@ class modAppMobTimeTouch extends DolibarrModules
 			4 => array('APPMOBTIMETOUCH_ALLOW_MANUAL_EDIT', 'chaine', '1', 'Allow manual time editing', 1),
 			5 => array('APPMOBTIMETOUCH_DEFAULT_TIMECLOCK_TYPE', 'chaine', '1', 'Default time clock type', 1),
 			6 => array('APPMOBTIMETOUCH_VALIDATION_REQUIRED', 'chaine', '1', 'Require manager validation', 1),
+			7 => array('APPMOBTIMETOUCH_NB_HEURE_THEORIQUE_MENSUEL', 'chaine', '140', 'Monthly theoretical work hours', 1),
+			8 => array('APPMOBTIMETOUCH_SHOW_WEEK_SUMMARY', 'chaine', '1', 'Show week summary on mobile home page', 1),
+			9 => array('APPMOBTIMETOUCH_SHOW_MONTH_SUMMARY', 'chaine', '1', 'Show month summary on mobile home page', 1),
 		);
 
 		if (!isset($conf->appmobtimetouch) || !isset($conf->appmobtimetouch->enabled)) {
