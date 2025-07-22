@@ -11,8 +11,6 @@
  * Utilise nb_heure_theorique_mensuel pour les calculs de progression
  */
 
-// Debug: Log monthly summary data
-dol_syslog("MonthSummary.tpl: monthly_summary = " . json_encode($monthly_summary), LOG_DEBUG);
 
 // Récupération des heures théoriques mensuelles depuis la configuration
 global $conf;
@@ -49,25 +47,10 @@ if ($month_total_hours > $month_theoretical_hours) {
     $month_overtime_hours = $month_total_hours - $month_theoretical_hours;
 }
 
-// Debug: Log extracted values
-dol_syslog("MonthSummary.tpl: month_total_hours = $month_total_hours, month_theoretical_hours = $month_theoretical_hours", LOG_DEBUG);
 ?>
 
 <!-- Monthly Summary -->
-<?php 
-// Pour MVP 3 : Créer des données de démonstration si pas de données réelles
-if (!isset($monthly_summary) || !$monthly_summary) {
-    // Simuler des données basiques pour démonstration MVP 3
-    $monthly_summary = array(
-        'total_hours' => 0.02, // Simulation avec quelques minutes pour test
-        'days_worked' => 1,
-        'month_number' => date('n'),
-        'month_name' => date('F'),
-        'overtime_hours' => 0
-    );
-}
-?>
-<?php if ($monthly_summary): ?>
+<?php if (isset($monthly_summary) && $monthly_summary): ?>
 <div style="padding: 0 15px 15px 15px;">
   <ons-card class="card">
     <div class="title card__title" style="padding: 10px;">
