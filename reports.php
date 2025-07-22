@@ -78,9 +78,15 @@ try {
  * Récupère les rapports mensuels pour tous les utilisateurs
  */
 function getMonthlyReports($db, $user, $month, $year) {
+    global $conf;
+    
     // Date de début et fin du mois
     $startDate = sprintf('%04d-%02d-01', $year, $month);
     $endDate = date('Y-m-t', strtotime($startDate)); // Dernier jour du mois
+    
+    // TK2507-0344 MVP 4: Récupérer les heures théoriques mensuelles
+    $theoretical_hours = !empty($conf->global->APPMOBTIMETOUCH_NB_HEURE_THEORIQUE_MENSUEL) ? 
+        (int)$conf->global->APPMOBTIMETOUCH_NB_HEURE_THEORIQUE_MENSUEL : 140;
     
     $sql = "SELECT 
                 u.rowid as user_id,
@@ -124,12 +130,17 @@ function getMonthlyReports($db, $user, $month, $year) {
     
     if ($resql) {
         while ($obj = $db->fetch_object($resql)) {
+            $worked_hours = round($obj->total_seconds / 3600, 2);
+            $delta_hours = $worked_hours - $theoretical_hours;
+            
             $reports[] = [
                 'user_id' => $obj->user_id,
                 'fullname' => trim($obj->firstname . ' ' . $obj->lastname),
                 'login' => $obj->login,
                 'total_seconds' => (int)$obj->total_seconds,
-                'total_hours' => round($obj->total_seconds / 3600, 2),
+                'total_hours' => $worked_hours,
+                'theoretical_hours' => $theoretical_hours,
+                'delta_hours' => $delta_hours,
                 'total_records' => (int)$obj->total_records,
                 'incomplete_records' => (int)$obj->incomplete_records
             ];

@@ -147,33 +147,58 @@
           </div>
         </ons-col>
         <?php else: ?>
-        <!-- Vue personnelle : statistiques simplifiées -->
-        <ons-col width="33%">
+        <!-- Vue personnelle : statistiques avec heures théoriques (TK2507-0344 MVP 4) -->
+        <?php
+        $personal_theoretical = isset($monthly_reports[0]) ? $monthly_reports[0]['theoretical_hours'] : 140;
+        $personal_delta = isset($monthly_reports[0]) ? $monthly_reports[0]['delta_hours'] : ($totalHours - $personal_theoretical);
+        $delta_color = $personal_delta >= 0 ? '#28a745' : '#dc3545';
+        ?>
+        <ons-col width="20%">
           <div style="text-align: center;">
-            <div style="font-size: 24px; font-weight: bold; color: #ff9800;">
+            <div style="font-size: 20px; font-weight: bold; color: #ff9800;">
               <?php echo number_format($totalHours, 1); ?>h
             </div>
-            <div style="font-size: 14px; color: #6c757d;">
-              <?php echo $langs->trans('TotalHours'); ?>
+            <div style="font-size: 12px; color: #6c757d;">
+              <?php echo $langs->trans('WorkedHours'); ?>
             </div>
           </div>
         </ons-col>
-        <ons-col width="33%">
+        <ons-col width="20%">
           <div style="text-align: center;">
-            <div style="font-size: 24px; font-weight: bold; color: #2196f3;">
+            <div style="font-size: 20px; font-weight: bold; color: #6c757d;">
+              <?php echo number_format($personal_theoretical, 0); ?>h
+            </div>
+            <div style="font-size: 12px; color: #6c757d;">
+              <?php echo $langs->trans('TheoreticalHours'); ?>
+            </div>
+          </div>
+        </ons-col>
+        <ons-col width="20%">
+          <div style="text-align: center;">
+            <div style="font-size: 20px; font-weight: bold; color: <?php echo $delta_color; ?>;">
+              <?php echo ($personal_delta >= 0 ? '+' : '') . number_format($personal_delta, 1); ?>h
+            </div>
+            <div style="font-size: 12px; color: #6c757d;">
+              <?php echo $langs->trans('Delta'); ?>
+            </div>
+          </div>
+        </ons-col>
+        <ons-col width="20%">
+          <div style="text-align: center;">
+            <div style="font-size: 20px; font-weight: bold; color: #2196f3;">
               <?php echo isset($monthly_reports[0]) ? $monthly_reports[0]['total_records'] : 0; ?>
             </div>
-            <div style="font-size: 14px; color: #6c757d;">
+            <div style="font-size: 12px; color: #6c757d;">
               <?php echo $langs->trans('Records'); ?>
             </div>
           </div>
         </ons-col>
-        <ons-col width="33%">
+        <ons-col width="20%">
           <div style="text-align: center;">
-            <div style="font-size: 24px; font-weight: bold; color: <?php echo (isset($monthly_reports[0]) && $monthly_reports[0]['incomplete_records'] > 0) ? '#dc3545' : '#28a745'; ?>;">
+            <div style="font-size: 20px; font-weight: bold; color: <?php echo (isset($monthly_reports[0]) && $monthly_reports[0]['incomplete_records'] > 0) ? '#dc3545' : '#28a745'; ?>;">
               <?php echo isset($monthly_reports[0]) ? $monthly_reports[0]['incomplete_records'] : 0; ?>
             </div>
-            <div style="font-size: 14px; color: #6c757d;">
+            <div style="font-size: 12px; color: #6c757d;">
               <?php echo $langs->trans('Incomplete'); ?>
             </div>
           </div>
@@ -211,7 +236,14 @@
         <?php echo $langs->trans('Records'); ?>
       </div>
       <div style="flex: 1; text-align: center; color: #495057;">
-        <?php echo $langs->trans('Hours'); ?>
+        <?php echo $langs->trans('WorkedHours'); ?>
+      </div>
+      <!-- TK2507-0344 MVP 4: Colonnes théoriques -->
+      <div style="flex: 1; text-align: center; color: #495057;">
+        <?php echo $langs->trans('TheoreticalHours'); ?>
+      </div>
+      <div style="flex: 1; text-align: center; color: #495057;">
+        <?php echo $langs->trans('Delta'); ?>
       </div>
       <div style="flex: 1; text-align: center; color: #495057;">
         <?php echo $langs->trans('Status'); ?>
@@ -245,10 +277,41 @@
         <?php endif; ?>
       </div>
       
-      <!-- Heures -->
+      <!-- Heures travaillées -->
       <div style="flex: 1; text-align: center;">
         <div class="hours-display" style="font-size: 16px;">
           <?php echo number_format($report['total_hours'], 1); ?>h
+        </div>
+      </div>
+      
+      <!-- TK2507-0344 MVP 4: Heures théoriques -->
+      <div style="flex: 1; text-align: center;">
+        <div style="font-size: 14px; color: #6c757d;">
+          <?php echo number_format($report['theoretical_hours'], 0); ?>h
+        </div>
+      </div>
+      
+      <!-- TK2507-0344 MVP 4: Delta avec codage couleur -->
+      <div style="flex: 1; text-align: center;">
+        <?php 
+        $delta = $report['delta_hours'];
+        $delta_color = '#6c757d'; // Neutre par défaut
+        $delta_bg = '#f8f9fa';
+        $delta_icon = 'md-remove';
+        
+        if ($delta > 0) {
+            $delta_color = '#155724'; // Vert foncé
+            $delta_bg = '#d4edda';    // Vert clair
+            $delta_icon = 'md-add';
+        } elseif ($delta < 0) {
+            $delta_color = '#721c24'; // Rouge foncé
+            $delta_bg = '#f8d7da';    // Rouge clair
+            $delta_icon = 'md-remove';
+        }
+        ?>
+        <div style="display: inline-block; background-color: <?php echo $delta_bg; ?>; color: <?php echo $delta_color; ?>; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">
+          <ons-icon icon="<?php echo $delta_icon; ?>" style="font-size: 10px; margin-right: 2px;"></ons-icon>
+          <?php echo ($delta >= 0 ? '+' : '') . number_format($delta, 1); ?>h
         </div>
       </div>
       
