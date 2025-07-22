@@ -189,6 +189,7 @@ class HomeController extends BaseController
         // Récupération des résumés via le service de données
         $todaySummary = $this->dataService->calculateTodaySummary($this->user->id);
         $weeklySummary = $this->dataService->calculateWeeklySummary($this->user->id);
+        $monthlySummary = $this->dataService->calculateMonthlySummary($this->user->id);
         
         // Ajout de la durée active au résumé d'aujourd'hui
         $todayTotalHours = ($todaySummary['total_hours'] ?? 0);
@@ -212,6 +213,7 @@ class HomeController extends BaseController
             'today_total_breaks' => $todaySummary['total_breaks'] ?? 0,
             'today_summary' => $todaySummary,
             'weekly_summary' => $weeklySummary,
+            'monthly_summary' => $monthlySummary,
             'recent_records' => $this->dataService->getRecentRecords($this->user->id, 5),
             'timeclock_types' => $this->dataService->getActiveTimeclockTypes(),
             'default_type_id' => $this->dataService->getDefaultTimeclockType(),

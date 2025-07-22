@@ -213,6 +213,59 @@ class DataService implements DataServiceInterface
     }
     
     /**
+     * Calculer le résumé mensuel d'un utilisateur (TK2507-0344 MVP 3)
+     * 
+     * @param int $userId ID de l'utilisateur
+     * @return array|null Résumé mensuel avec total_hours, days_worked, month_number, etc.
+     */
+    public function calculateMonthlySummary(int $userId): ?array 
+    {
+        $currentYear = (int) date('Y');
+        $currentMonth = (int) date('n'); // 1-12
+        
+        // Calculer les dates de début et fin du mois
+        $monthStart = mktime(0, 0, 0, $currentMonth, 1, $currentYear);
+        $monthEnd = mktime(23, 59, 59, $currentMonth, date('t', $monthStart), $currentYear);
+        
+        // Requête pour récupérer les enregistrements du mois
+        $sql = "SELECT ";
+        $sql .= " SUM(work_duration) as total_minutes,";
+        $sql .= " COUNT(DISTINCT DATE(FROM_UNIXTIME(clock_in_time))) as days_worked,";
+        $sql .= " COUNT(*) as total_records";
+        $sql .= " FROM " . MAIN_DB_PREFIX . "timeclock_records";
+        $sql .= " WHERE fk_user = " . (int) $userId;
+        $sql .= " AND clock_in_time >= " . (int) $monthStart;
+        $sql .= " AND clock_in_time <= " . (int) $monthEnd;
+        $sql .= " AND status = 3"; // Completed records only
+        
+        $result = $this->db->query($sql);
+        
+        if (!$result) {
+            return null;
+        }
+        
+        $obj = $this->db->fetch_object($result);
+        $this->db->free($result);
+        
+        if (!$obj || $obj->total_records == 0) {
+            return null;
+        }
+        
+        // Convertir minutes en heures décimales
+        $totalHours = ($obj->total_minutes ?? 0) / 60.0;
+        
+        return [
+            'total_hours' => $totalHours,
+            'days_worked' => (int) $obj->days_worked,
+            'month_number' => $currentMonth,
+            'month_name' => date('F', $monthStart),
+            'year' => $currentYear,
+            'overtime_hours' => 0, // Calculé dans le template selon heures théoriques
+            'total_records' => (int) $obj->total_records
+        ];
+    }
+    
+    /**
      * Récupérer les types de pointage actifs
      */
     public function getActiveTimeclockTypes(): array 
