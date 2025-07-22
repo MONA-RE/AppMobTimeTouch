@@ -26,8 +26,10 @@
 <!-- Summary Card Component (SRP: Résumé journalier) -->
 <?php include 'Views/components/SummaryCard.tpl'; ?>
 
-<!-- Weekly Summary Component (SRP: Résumé hebdomadaire) -->
-<?php include 'Views/components/WeeklySummary.tpl'; ?>
+<!-- Weekly Summary Component (SRP: Résumé hebdomadaire) - TK2507-0344 MVP 2: Contrôle d'affichage -->
+<?php if (getDolGlobalString('APPMOBTIMETOUCH_SHOW_WEEK_SUMMARY', '1') == '1'): ?>
+    <?php include 'Views/components/WeeklySummary.tpl'; ?>
+<?php endif; ?>
 
 <!-- Recent Records Component (SRP: Liste enregistrements) -->
 <?php include 'Views/components/RecordsList.tpl'; ?>

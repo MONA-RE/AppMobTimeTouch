@@ -254,8 +254,10 @@ try {
                 <!-- Section Statistiques Aujourd'hui -->
                 <?php include 'Views/components/SummaryCard.tpl'; ?>
                 
-                <!-- Section Résumé Hebdomadaire -->
-                <?php include 'Views/components/WeeklySummary.tpl'; ?>
+                <!-- Section Résumé Hebdomadaire (TK2507-0344 MVP 2: Contrôle d'affichage) -->
+                <?php if (getDolGlobalString('APPMOBTIMETOUCH_SHOW_WEEK_SUMMARY', '1') == '1'): ?>
+                    <?php include 'Views/components/WeeklySummary.tpl'; ?>
+                <?php endif; ?>
                 
                 <!-- Section Enregistrements Récents -->
                 <div class="home-section">
