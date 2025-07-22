@@ -223,31 +223,36 @@ class DataService implements DataServiceInterface
         $currentYear = (int) date('Y');
         $currentMonth = (int) date('n'); // 1-12
         
-        // Calculer les dates de début et fin du mois
-        $monthStart = mktime(0, 0, 0, $currentMonth, 1, $currentYear);
-        $monthEnd = mktime(23, 59, 59, $currentMonth, date('t', $monthStart), $currentYear);
-        
-        // Requête pour récupérer les enregistrements du mois
+        // Use DATETIME format like WeeklySummary, not UNIX timestamps
         $sql = "SELECT ";
         $sql .= " SUM(work_duration) as total_minutes,";
-        $sql .= " COUNT(DISTINCT DATE(FROM_UNIXTIME(clock_in_time))) as days_worked,";
+        $sql .= " COUNT(DISTINCT DATE(clock_in_time)) as days_worked,";
         $sql .= " COUNT(*) as total_records";
         $sql .= " FROM " . MAIN_DB_PREFIX . "timeclock_records";
         $sql .= " WHERE fk_user = " . (int) $userId;
-        $sql .= " AND clock_in_time >= " . (int) $monthStart;
-        $sql .= " AND clock_in_time <= " . (int) $monthEnd;
+        $sql .= " AND YEAR(clock_in_time) = " . (int) $currentYear;
+        $sql .= " AND MONTH(clock_in_time) = " . (int) $currentMonth;
         $sql .= " AND status = 3"; // Completed records only
+        
+        // Debug: Log the SQL query and parameters
+        dol_syslog("DataService::calculateMonthlySummary FIXED SQL: " . $sql, LOG_DEBUG);
+        dol_syslog("DataService::calculateMonthlySummary year: " . $currentYear . ", month: " . $currentMonth, LOG_DEBUG);
         
         $result = $this->db->query($sql);
         
         if (!$result) {
+            dol_syslog("DataService::calculateMonthlySummary SQL ERROR: " . $this->db->lasterror(), LOG_ERROR);
             return null;
         }
         
         $obj = $this->db->fetch_object($result);
         $this->db->free($result);
         
+        // Debug: Log the query results
+        dol_syslog("DataService::calculateMonthlySummary RESULT: " . json_encode($obj), LOG_DEBUG);
+        
         if (!$obj || $obj->total_records == 0) {
+            dol_syslog("DataService::calculateMonthlySummary: No records found for user $userId in $currentYear-$currentMonth", LOG_DEBUG);
             return null;
         }
         
@@ -258,7 +263,7 @@ class DataService implements DataServiceInterface
             'total_hours' => $totalHours,
             'days_worked' => (int) $obj->days_worked,
             'month_number' => $currentMonth,
-            'month_name' => date('F', $monthStart),
+            'month_name' => date('F', mktime(0, 0, 0, $currentMonth, 1, $currentYear)),
             'year' => $currentYear,
             'overtime_hours' => 0, // Calculé dans le template selon heures théoriques
             'total_records' => (int) $obj->total_records
