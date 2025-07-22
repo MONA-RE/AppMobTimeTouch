@@ -27,7 +27,12 @@
 <?php include 'Views/components/SummaryCard.tpl'; ?>
 
 <!-- Weekly Summary Component (SRP: Résumé hebdomadaire) - TK2507-0344 MVP 2: Contrôle d'affichage -->
-<?php if (getDolGlobalString('APPMOBTIMETOUCH_SHOW_WEEK_SUMMARY', '1') == '1'): ?>
+<?php 
+// TK2507-0344 MVP 2: Use $conf->global method for reliable configuration reading
+global $conf;
+$showWeekSummary = !empty($conf->global->APPMOBTIMETOUCH_SHOW_WEEK_SUMMARY) ? 1 : 0;
+if ($showWeekSummary == 1): 
+?>
     <?php include 'Views/components/WeeklySummary.tpl'; ?>
 <?php endif; ?>
 
