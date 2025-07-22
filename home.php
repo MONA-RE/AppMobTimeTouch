@@ -264,6 +264,15 @@ try {
                     <?php include 'Views/components/WeeklySummary.tpl'; ?>
                 <?php endif; ?>
                 
+                <!-- Section Résumé Mensuel (TK2507-0344 MVP 3: MonthSummary avec calculs théoriques) -->
+                <?php 
+                // TK2507-0344 MVP 3: Use $conf->global method for MonthSummary display control
+                $showMonthSummary = !empty($conf->global->APPMOBTIMETOUCH_SHOW_MONTH_SUMMARY) ? 1 : 0;
+                ?>
+                <?php if ($showMonthSummary == 1): ?>
+                    <?php include 'Views/components/MonthSummary.tpl'; ?>
+                <?php endif; ?>
+                
                 <!-- Section Enregistrements Récents -->
                 <div class="home-section">
                     <ons-card class="status-card">

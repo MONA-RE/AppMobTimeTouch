@@ -41,6 +41,12 @@ ShowWeekSummaryHelp = Afficher ou masquer le résumé hebdomadaire sur la page d
 ShowMonthSummary = Afficher le résumé mensuel
 ShowMonthSummaryHelp = Afficher ou masquer le résumé mensuel sur la page d'accueil mobile
 
+# Résumé mensuel - TK2507-0344 MVP 3
+MonthSummary = Résumé Mensuel
+MonthlySummary = Résumé Mensuel
+MonthlyTarget = Objectif mensuel
+Month = Mois
+
 #
 # Page À propos
 #

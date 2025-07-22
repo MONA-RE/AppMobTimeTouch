@@ -168,6 +168,12 @@ ShowWeekSummaryHelp = Show or hide weekly summary on mobile home page
 ShowMonthSummary = Show monthly summary
 ShowMonthSummaryHelp = Show or hide monthly summary on mobile home page
 
+# Monthly summary - TK2507-0344 MVP 3
+MonthSummary = Monthly Summary
+MonthlySummary = Monthly Summary
+MonthlyTarget = Monthly target
+Month = Month
+
 
 #
 # About page
