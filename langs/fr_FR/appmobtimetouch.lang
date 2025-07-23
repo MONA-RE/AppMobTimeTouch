@@ -47,6 +47,11 @@ MonthlySummary = Résumé Mensuel
 MonthlyTarget = Objectif mensuel
 Month = Mois
 
+# TK2507-0344 MVP 4 - Traductions pour les rapports avec colonnes théoriques
+WorkedHours = Heures travaillées
+TheoreticalHours = Heures théoriques
+Delta = Écart
+
 #
 # Page À propos
 #

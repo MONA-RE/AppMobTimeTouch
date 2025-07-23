@@ -174,6 +174,11 @@ MonthlySummary = Monthly Summary
 MonthlyTarget = Monthly target
 Month = Month
 
+# TK2507-0344 MVP 4 - Translations for reports with theoretical columns
+WorkedHours = Worked Hours
+TheoreticalHours = Theoretical Hours
+Delta = Delta
+
 
 #
 # About page
