@@ -28,10 +28,29 @@ ModuleAppMobTimeTouchDesc = Application mobile de gestion du temps et des prése
 AppMobTimeTouchSetup = Configuration AppMobTimeTouch
 Settings = Paramètres
 AppMobTimeTouchSetupPage = Page de configuration AppMobTimeTouch
-APPMOBTIMETOUCH_MYPARAM1 = Mon paramètre 1
-APPMOBTIMETOUCH_MYPARAM1Tooltip = Infobulle de mon paramètre 1
-APPMOBTIMETOUCH_MYPARAM2=Mon paramètre 2
-APPMOBTIMETOUCH_MYPARAM2Tooltip=Infobulle de mon paramètre 2
+
+# TK2507-0344 - Configuration des heures théoriques mensuelles
+TimeTrackingConfiguration = Configuration du Suivi du Temps
+MonthlyTheoreticalHours = Heures théoriques mensuelles
+MonthlyTheoreticalHoursHelp = Nombre d'heures de travail théoriques par mois (utilisé pour calculer les pourcentages d'avancement)
+
+# Configuration de l'affichage
+DisplayConfiguration = Configuration de l'Affichage
+ShowWeekSummary = Afficher le résumé hebdomadaire
+ShowWeekSummaryHelp = Afficher ou masquer le résumé hebdomadaire sur la page d'accueil mobile
+ShowMonthSummary = Afficher le résumé mensuel
+ShowMonthSummaryHelp = Afficher ou masquer le résumé mensuel sur la page d'accueil mobile
+
+# Résumé mensuel - TK2507-0344 MVP 3
+MonthSummary = Résumé Mensuel
+MonthlySummary = Résumé Mensuel
+MonthlyTarget = Objectif mensuel
+Month = Mois
+
+# TK2507-0344 MVP 4 - Traductions pour les rapports avec colonnes théoriques
+WorkedHours = Heures travaillées
+TheoreticalHours = Heures théoriques
+Delta = Écart
 
 #
 # Page À propos

@@ -213,6 +213,64 @@ class DataService implements DataServiceInterface
     }
     
     /**
+     * Calculer le résumé mensuel d'un utilisateur (TK2507-0344 MVP 3)
+     * 
+     * @param int $userId ID de l'utilisateur
+     * @return array|null Résumé mensuel avec total_hours, days_worked, month_number, etc.
+     */
+    public function calculateMonthlySummary(int $userId): ?array 
+    {
+        $currentYear = (int) date('Y');
+        $currentMonth = (int) date('n'); // 1-12
+        
+        // Use DATETIME format like WeeklySummary, not UNIX timestamps
+        $sql = "SELECT ";
+        $sql .= " SUM(work_duration) as total_minutes,";
+        $sql .= " COUNT(DISTINCT DATE(clock_in_time)) as days_worked,";
+        $sql .= " COUNT(*) as total_records";
+        $sql .= " FROM " . MAIN_DB_PREFIX . "timeclock_records";
+        $sql .= " WHERE fk_user = " . (int) $userId;
+        $sql .= " AND YEAR(clock_in_time) = " . (int) $currentYear;
+        $sql .= " AND MONTH(clock_in_time) = " . (int) $currentMonth;
+        $sql .= " AND status = 3"; // Completed records only
+        
+        // Debug: Log the SQL query and parameters
+        dol_syslog("DataService::calculateMonthlySummary FIXED SQL: " . $sql, LOG_DEBUG);
+        dol_syslog("DataService::calculateMonthlySummary year: " . $currentYear . ", month: " . $currentMonth, LOG_DEBUG);
+        
+        $result = $this->db->query($sql);
+        
+        if (!$result) {
+            dol_syslog("DataService::calculateMonthlySummary SQL ERROR: " . $this->db->lasterror(), LOG_ERROR);
+            return null;
+        }
+        
+        $obj = $this->db->fetch_object($result);
+        $this->db->free($result);
+        
+        // Debug: Log the query results
+        dol_syslog("DataService::calculateMonthlySummary RESULT: " . json_encode($obj), LOG_DEBUG);
+        
+        if (!$obj || $obj->total_records == 0) {
+            dol_syslog("DataService::calculateMonthlySummary: No records found for user $userId in $currentYear-$currentMonth", LOG_DEBUG);
+            return null;
+        }
+        
+        // Convertir minutes en heures décimales
+        $totalHours = ($obj->total_minutes ?? 0) / 60.0;
+        
+        return [
+            'total_hours' => $totalHours,
+            'days_worked' => (int) $obj->days_worked,
+            'month_number' => $currentMonth,
+            'month_name' => date('F', mktime(0, 0, 0, $currentMonth, 1, $currentYear)),
+            'year' => $currentYear,
+            'overtime_hours' => 0, // Calculé dans le template selon heures théoriques
+            'total_records' => (int) $obj->total_records
+        ];
+    }
+    
+    /**
      * Récupérer les types de pointage actifs
      */
     public function getActiveTimeclockTypes(): array 

@@ -170,10 +170,29 @@ ModuleAppMobTimeTouchDesc = AppMobTimeTouch description
 AppMobTimeTouchSetup = AppMobTimeTouch setup
 Settings = Settings
 AppMobTimeTouchSetupPage = AppMobTimeTouch setup page
-APPMOBTIMETOUCH_MYPARAM1 = My param 1
-APPMOBTIMETOUCH_MYPARAM1Tooltip = My param 1 tooltip
-APPMOBTIMETOUCH_MYPARAM2=My param 2
-APPMOBTIMETOUCH_MYPARAM2Tooltip=My param 2 tooltip
+
+# TK2507-0344 - Monthly theoretical hours configuration
+TimeTrackingConfiguration = Time Tracking Configuration
+MonthlyTheoreticalHours = Monthly theoretical hours
+MonthlyTheoreticalHoursHelp = Number of theoretical work hours per month (used to calculate progress percentages)
+
+# Display configuration
+DisplayConfiguration = Display Configuration
+ShowWeekSummary = Show weekly summary
+ShowWeekSummaryHelp = Show or hide weekly summary on mobile home page
+ShowMonthSummary = Show monthly summary
+ShowMonthSummaryHelp = Show or hide monthly summary on mobile home page
+
+# Monthly summary - TK2507-0344 MVP 3
+MonthSummary = Monthly Summary
+MonthlySummary = Monthly Summary
+MonthlyTarget = Monthly target
+Month = Month
+
+# TK2507-0344 MVP 4 - Translations for reports with theoretical columns
+WorkedHours = Worked Hours
+TheoreticalHours = Theoretical Hours
+Delta = Delta
 
 
 #

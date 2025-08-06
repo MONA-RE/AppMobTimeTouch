@@ -53,6 +53,14 @@ interface DataServiceInterface
     public function calculateWeeklySummary(int $userId): ?WeeklySummary;
     
     /**
+     * Calculer le résumé mensuel d'un utilisateur
+     * 
+     * @param int $userId ID de l'utilisateur
+     * @return array|null Résumé mensuel avec total_hours, days_worked, etc.
+     */
+    public function calculateMonthlySummary(int $userId): ?array;
+    
+    /**
      * Récupérer les types de pointage actifs
      * 
      * @return array Liste des types de pointage disponibles

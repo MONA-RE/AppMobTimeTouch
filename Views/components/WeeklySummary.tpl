@@ -8,8 +8,6 @@
  * Compatible avec array et objet $weekly_summary
  */
 
-// Debug: Log weekly summary data
-dol_syslog("WeeklySummary.tpl: weekly_summary = " . json_encode($weekly_summary), LOG_DEBUG);
 
 // Normaliser les données (compatibilité array/objet)
 $week_total_hours = 0;
@@ -36,8 +34,6 @@ if ($weekly_summary) {
     }
 }
 
-// Debug: Log extracted values
-dol_syslog("WeeklySummary.tpl: week_total_hours = $week_total_hours, week_days_worked = $week_days_worked", LOG_DEBUG);
 ?>
 
 <!-- Weekly Summary -->

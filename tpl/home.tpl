@@ -26,8 +26,24 @@
 <!-- Summary Card Component (SRP: Résumé journalier) -->
 <?php include 'Views/components/SummaryCard.tpl'; ?>
 
-<!-- Weekly Summary Component (SRP: Résumé hebdomadaire) -->
-<?php include 'Views/components/WeeklySummary.tpl'; ?>
+<!-- Weekly Summary Component (SRP: Résumé hebdomadaire) - TK2507-0344 MVP 2: Contrôle d'affichage -->
+<?php 
+// TK2507-0344 MVP 2: Use $conf->global method for reliable configuration reading
+global $conf;
+$showWeekSummary = !empty($conf->global->APPMOBTIMETOUCH_SHOW_WEEK_SUMMARY) ? 1 : 0;
+if ($showWeekSummary == 1): 
+?>
+    <?php include 'Views/components/WeeklySummary.tpl'; ?>
+<?php endif; ?>
+
+<!-- Monthly Summary Component (SRP: Résumé mensuel) - TK2507-0344 MVP 3: MonthSummary avec calculs théoriques -->
+<?php 
+// TK2507-0344 MVP 3: Use $conf->global method for MonthSummary display control
+$showMonthSummary = !empty($conf->global->APPMOBTIMETOUCH_SHOW_MONTH_SUMMARY) ? 1 : 0;
+if ($showMonthSummary == 1): 
+?>
+    <?php include 'Views/components/MonthSummary.tpl'; ?>
+<?php endif; ?>
 
 <!-- Recent Records Component (SRP: Liste enregistrements) -->
 <?php include 'Views/components/RecordsList.tpl'; ?>
