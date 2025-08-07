@@ -194,6 +194,23 @@ WorkedHours = Worked Hours
 TheoreticalHours = Theoretical Hours
 Delta = Delta
 
+# Annual reports (Year-to-Date)
+AnnualReport = Annual report
+AnnualReports = Annual reports
+MyAnnualReports = My annual reports
+AnnualReportYTD = Annual report (year-to-date)
+YearToDate = Year-to-date
+YTDInfo = Data from January through %s (%s)
+ReportType = Report type
+MonthlyReport = Monthly report
+UsersAnnualHours = Users annual hours
+TotalWorkedHours = Total worked hours
+AvgTheoreticalHours = Avg theoretical hours
+AverageWorkedHours = Avg worked hours
+MonthlyAverage = Monthly average
+MonthsIncluded = Months included
+NoActivityForYear = No activity for this year
+
 
 #
 # About page

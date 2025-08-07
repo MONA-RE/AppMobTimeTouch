@@ -1,9 +1,9 @@
 <?php
 /**
- * Template Rapports Mensuels
+ * Template Rapports Annuels (Year-to-Date)
  * 
- * Responsabilité unique : Affichage des rapports d'heures mensuels (SRP)
- * Affiche les heures cumulées par utilisateur pour un mois donné
+ * Responsabilité unique : Affichage des rapports d'heures annuels (SRP)
+ * Affiche les heures cumulées par utilisateur depuis le début de l'année
  */
 ?>
 
@@ -34,8 +34,8 @@
             </select>
           </ons-col>
           
-          <!-- Filtre Mois -->
-          <ons-col id="month_filter_col" width="33%">
+          <!-- Filtre Mois (masqué pour rapports annuels) -->
+          <ons-col id="month_filter_col" width="33%" style="display: none;">
             <label for="filter_month" style="font-weight: 500; margin-bottom: 5px; display: block;">
               <?php echo $langs->trans('Month'); ?>
             </label>
@@ -94,26 +94,32 @@
   </ons-card>
 </div>
 
-<!-- Résumé du mois -->
+<!-- Résumé annuel (Year-to-Date) -->
 <div style="padding: 0 15px 15px 15px;">
   <ons-card>
-    <div class="title" style="padding: 15px; background-color: #e3f2fd; border-bottom: 1px solid #90caf9;">
-      <h4 style="margin: 0; color: #1565c0;">
-        <ons-icon icon="md-assessment" style="color: #2196f3; margin-right: 8px;"></ons-icon>
+    <div class="title" style="padding: 15px; background-color: #e8f5e8; border-bottom: 1px solid #a5d6a7;">
+      <h4 style="margin: 0; color: #2e7d32;">
+        <ons-icon icon="md-timeline" style="color: #4caf50; margin-right: 8px;"></ons-icon>
         <?php 
-        echo $langs->trans('MonthlyReport') . ' - ' . 
-        $months[$filter_month] . ' ' . $filter_year; 
+        $isYTD = ($filter_year == date('Y'));
+        if ($isYTD) {
+            echo $langs->trans('AnnualReportYTD') . ' - ' . $filter_year . ' (' . $langs->trans('YearToDate') . ')';
+        } else {
+            echo $langs->trans('AnnualReport') . ' - ' . $filter_year;
+        }
         ?>
       </h4>
     </div>
     <div class="content" style="padding: 15px;">
       <?php
       $totalHours = 0;
-      $totalUsers = count($monthly_reports);
+      $totalUsers = count($annual_reports);
       $usersWithHours = 0;
+      $totalTheoreticalHours = 0;
       
-      foreach ($monthly_reports as $report) {
+      foreach ($annual_reports as $report) {
         $totalHours += $report['total_hours'];
+        $totalTheoreticalHours += $report['theoretical_hours'];
         if ($report['total_hours'] > 0) {
           $usersWithHours++;
         }
@@ -121,7 +127,7 @@
       ?>
       <ons-row>
         <?php if (!$is_personal_view): ?>
-        <ons-col width="25%">
+        <ons-col width="20%">
           <div style="text-align: center;">
             <div style="font-size: 20px; font-weight: bold; color: #2196f3;">
               <?php echo $totalUsers; ?>
@@ -131,7 +137,7 @@
             </div>
           </div>
         </ons-col>
-        <ons-col width="25%">
+        <ons-col width="20%">
           <div style="text-align: center;">
             <div style="font-size: 20px; font-weight: bold; color: #28a745;">
               <?php echo $usersWithHours; ?>
@@ -141,32 +147,43 @@
             </div>
           </div>
         </ons-col>
-        <ons-col width="25%">
+        <ons-col width="20%">
           <div style="text-align: center;">
             <div style="font-size: 20px; font-weight: bold; color: #ff9800;">
               <?php echo number_format($totalHours, 1); ?>h
             </div>
             <div style="font-size: 12px; color: #6c757d;">
-              <?php echo $langs->trans('TotalHours'); ?>
+              <?php echo $langs->trans('TotalWorkedHours'); ?>
             </div>
           </div>
         </ons-col>
-        <ons-col width="25%">
+        <ons-col width="20%">
+          <div style="text-align: center;">
+            <div style="font-size: 20px; font-weight: bold; color: #6c757d;">
+              <?php echo number_format($totalTheoreticalHours / max(1, $totalUsers), 1); ?>h
+            </div>
+            <div style="font-size: 12px; color: #6c757d;">
+              <?php echo $langs->trans('AvgTheoreticalHours'); ?>
+            </div>
+          </div>
+        </ons-col>
+        <ons-col width="20%">
           <div style="text-align: center;">
             <div style="font-size: 20px; font-weight: bold; color: #9c27b0;">
               <?php echo $usersWithHours > 0 ? number_format($totalHours / $usersWithHours, 1) : '0'; ?>h
             </div>
             <div style="font-size: 12px; color: #6c757d;">
-              <?php echo $langs->trans('AverageHours'); ?>
+              <?php echo $langs->trans('AverageWorkedHours'); ?>
             </div>
           </div>
         </ons-col>
         <?php else: ?>
-        <!-- Vue personnelle : statistiques avec heures théoriques (TK2507-0344 MVP 4) -->
+        <!-- Vue personnelle : statistiques avec heures théoriques annuelles -->
         <?php
-        $personal_theoretical = isset($monthly_reports[0]) ? $monthly_reports[0]['theoretical_hours'] : 140;
-        $personal_delta = isset($monthly_reports[0]) ? $monthly_reports[0]['delta_hours'] : ($totalHours - $personal_theoretical);
+        $personal_theoretical = isset($annual_reports[0]) ? $annual_reports[0]['theoretical_hours'] : 0;
+        $personal_delta = isset($annual_reports[0]) ? $annual_reports[0]['delta_hours'] : ($totalHours - $personal_theoretical);
         $delta_color = $personal_delta >= 0 ? '#28a745' : '#dc3545';
+        $months_included = isset($annual_reports[0]) ? $annual_reports[0]['months_included'] : 12;
         ?>
         <ons-col width="20%">
           <div style="text-align: center;">
@@ -201,7 +218,7 @@
         <ons-col width="20%">
           <div style="text-align: center;">
             <div style="font-size: 20px; font-weight: bold; color: #2196f3;">
-              <?php echo isset($monthly_reports[0]) ? $monthly_reports[0]['total_records'] : 0; ?>
+              <?php echo isset($annual_reports[0]) ? $annual_reports[0]['total_records'] : 0; ?>
             </div>
             <div style="font-size: 12px; color: #6c757d;">
               <?php echo $langs->trans('Records'); ?>
@@ -210,50 +227,55 @@
         </ons-col>
         <ons-col width="20%">
           <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: bold; color: <?php echo (isset($monthly_reports[0]) && $monthly_reports[0]['incomplete_records'] > 0) ? '#dc3545' : '#28a745'; ?>;">
-              <?php echo isset($monthly_reports[0]) ? $monthly_reports[0]['incomplete_records'] : 0; ?>
+            <div style="font-size: 20px; font-weight: bold; color: #4caf50;">
+              <?php echo $months_included; ?>
             </div>
             <div style="font-size: 12px; color: #6c757d;">
-              <?php echo $langs->trans('Incomplete'); ?>
+              <?php echo $langs->trans('MonthsIncluded'); ?>
             </div>
           </div>
         </ons-col>
         <?php endif; ?>
       </ons-row>
+      
+      <!-- Informations YTD -->
+      <?php if ($isYTD): ?>
+      <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-left: 4px solid #ff9800; border-radius: 4px;">
+        <small style="color: #ef6c00;">
+          <ons-icon icon="md-info" style="margin-right: 5px;"></ons-icon>
+          <?php 
+          $current_month_name = $months[date('n')];
+          echo $langs->trans('YTDInfo', $current_month_name, date('d/m/Y')); 
+          ?>
+        </small>
+      </div>
+      <?php endif; ?>
     </div>
   </ons-card>
 </div>
 
-<!-- Liste des utilisateurs et leurs heures -->
-<?php if (!empty($monthly_reports) && !$is_personal_view): ?>
+<!-- Liste des utilisateurs et leurs heures annuelles -->
+<?php if (!empty($annual_reports) && !$is_personal_view): ?>
 <div style="padding: 0 15px 15px 15px;">
   <ons-card>
     <div class="title" style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
       <h4 style="margin: 0; color: #495057;">
-        <?php if ($is_personal_view): ?>
-        <ons-icon icon="md-person" style="color: #6c757d; margin-right: 8px;"></ons-icon>
-        <?php echo $langs->trans('MyHours'); ?>
-        <?php else: ?>
         <ons-icon icon="md-people" style="color: #6c757d; margin-right: 8px;"></ons-icon>
-        <?php echo $langs->trans('UsersHours'); ?> (<?php echo count($monthly_reports); ?>)
-        <?php endif; ?>
+        <?php echo $langs->trans('UsersAnnualHours'); ?> (<?php echo count($annual_reports); ?>)
       </h4>
     </div>
     
     <!-- En-tête du tableau -->
     <div style="display: flex; padding: 10px 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; font-weight: 500; font-size: 14px;">
-      <?php if (!$is_personal_view): ?>
       <div style="flex: 2; color: #495057;">
         <?php echo $langs->trans('User'); ?>
       </div>
-      <?php endif; ?>
       <div style="flex: 1; text-align: center; color: #495057;">
         <?php echo $langs->trans('Records'); ?>
       </div>
       <div style="flex: 1; text-align: center; color: #495057;">
         <?php echo $langs->trans('WorkedHours'); ?>
       </div>
-      <!-- TK2507-0344 MVP 4: Colonnes théoriques -->
       <div style="flex: 1; text-align: center; color: #495057;">
         <?php echo $langs->trans('TheoreticalHours'); ?>
       </div>
@@ -261,14 +283,16 @@
         <?php echo $langs->trans('Delta'); ?>
       </div>
       <div style="flex: 1; text-align: center; color: #495057;">
+        <?php echo $langs->trans('MonthlyAverage'); ?>
+      </div>
+      <div style="flex: 1; text-align: center; color: #495057;">
         <?php echo $langs->trans('Status'); ?>
       </div>
     </div>
     
     <!-- Lignes des utilisateurs -->
-    <?php foreach ($monthly_reports as $index => $report): ?>
+    <?php foreach ($annual_reports as $index => $report): ?>
     <div class="user-row" style="display: flex; padding: 12px 15px; border-bottom: 1px solid #f0f0f0; align-items: center;">
-      <?php if (!$is_personal_view): ?>
       <!-- Nom utilisateur -->
       <div style="flex: 2;">
         <div style="font-weight: 500; margin-bottom: 3px;">
@@ -278,7 +302,6 @@
           <?php echo dol_escape_htmltag($report['login']); ?>
         </div>
       </div>
-      <?php endif; ?>
       
       <!-- Nombre d'enregistrements -->
       <div style="flex: 1; text-align: center;">
@@ -299,34 +322,47 @@
         </div>
       </div>
       
-      <!-- TK2507-0344 MVP 4: Heures théoriques -->
+      <!-- Heures théoriques -->
       <div style="flex: 1; text-align: center;">
         <div style="font-size: 14px; color: #6c757d;">
           <?php echo number_format($report['theoretical_hours'], 0); ?>h
         </div>
+        <div style="font-size: 11px; color: #adb5bd;">
+          (<?php echo $report['months_included']; ?> mois)
+        </div>
       </div>
       
-      <!-- TK2507-0344 MVP 4: Delta avec codage couleur -->
+      <!-- Delta avec codage couleur -->
       <div style="flex: 1; text-align: center;">
         <?php 
         $delta = $report['delta_hours'];
-        $delta_color = '#6c757d'; // Neutre par défaut
+        $delta_color = '#6c757d';
         $delta_bg = '#f8f9fa';
         $delta_icon = 'md-remove';
         
         if ($delta > 0) {
-            $delta_color = '#155724'; // Vert foncé
-            $delta_bg = '#d4edda';    // Vert clair
+            $delta_color = '#155724';
+            $delta_bg = '#d4edda';
             $delta_icon = 'md-add';
         } elseif ($delta < 0) {
-            $delta_color = '#721c24'; // Rouge foncé
-            $delta_bg = '#f8d7da';    // Rouge clair
+            $delta_color = '#721c24';
+            $delta_bg = '#f8d7da';
             $delta_icon = 'md-remove';
         }
         ?>
         <div style="display: inline-block; background-color: <?php echo $delta_bg; ?>; color: <?php echo $delta_color; ?>; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">
           <ons-icon icon="<?php echo $delta_icon; ?>" style="font-size: 10px; margin-right: 2px;"></ons-icon>
           <?php echo ($delta >= 0 ? '+' : '') . number_format($delta, 1); ?>h
+        </div>
+      </div>
+      
+      <!-- Moyenne mensuelle -->
+      <div style="flex: 1; text-align: center;">
+        <div style="font-size: 14px; color: #495057;">
+          <?php echo number_format($report['total_hours'] / max(1, $report['months_included']), 1); ?>h
+        </div>
+        <div style="font-size: 11px; color: #adb5bd;">
+          /mois
         </div>
       </div>
       
@@ -357,12 +393,12 @@
 <div style="padding: 0 15px 15px 15px;">
   <ons-card>
     <div class="content" style="text-align: center; padding: 40px;">
-      <ons-icon icon="md-bar-chart" style="font-size: 48px; color: #6c757d; margin-bottom: 15px;"></ons-icon>
+      <ons-icon icon="md-timeline" style="font-size: 48px; color: #6c757d; margin-bottom: 15px;"></ons-icon>
       <h4 style="color: #6c757d; margin-bottom: 10px;">
         <?php echo $langs->trans('NoDataFound'); ?>
       </h4>
       <p style="color: #6c757d; margin: 0;">
-        <?php echo $langs->trans('NoActivityForPeriod'); ?>
+        <?php echo $langs->trans('NoActivityForYear'); ?>
       </p>
     </div>
   </ons-card>
@@ -375,4 +411,3 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleMonthFilter();
 });
 </script>
-

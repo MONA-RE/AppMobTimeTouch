@@ -52,6 +52,23 @@ WorkedHours = Heures travaillées
 TheoreticalHours = Heures théoriques
 Delta = Écart
 
+# Rapports annuels (Year-to-Date)
+AnnualReport = Rapport annuel
+AnnualReports = Rapports annuels
+MyAnnualReports = Mes rapports annuels
+AnnualReportYTD = Rapport annuel (cumul à ce jour)
+YearToDate = Cumul à ce jour
+YTDInfo = Données depuis janvier jusqu'au %s (%s)
+ReportType = Type de rapport
+MonthlyReport = Rapport mensuel
+UsersAnnualHours = Heures annuelles des utilisateurs
+TotalWorkedHours = Total heures travaillées
+AvgTheoreticalHours = Moy. heures théoriques
+AverageWorkedHours = Moy. heures travaillées
+MonthlyAverage = Moyenne mensuelle
+MonthsIncluded = Mois inclus
+NoActivityForYear = Aucune activité pour cette année
+
 #
 # Page À propos
 #

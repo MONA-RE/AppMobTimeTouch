@@ -41,26 +41,36 @@ $errors = [];
 $messages = [];
 
 // Paramètres de filtre
+$report_type = GETPOST('report_type', 'alpha') ?: 'monthly'; // Type de rapport par défaut
 $filter_month = GETPOST('filter_month', 'int') ?: date('n'); // Mois actuel par défaut
 $filter_year = GETPOST('filter_year', 'int') ?: date('Y');   // Année actuelle par défaut
 
 try {
-    // Récupération des rapports mensuels
-    $monthlyReports = getMonthlyReports($db, $user, $filter_month, $filter_year);
+    // Récupération des rapports selon le type
+    if ($report_type === 'annual') {
+        $reports = getAnnualReports($db, $user, $filter_year);
+        $page_title = $langs->trans('AnnualReports');
+        $is_personal_view = (!$user->admin && empty($user->rights->appmobtimetouch->timeclock->readall));
+        if ($is_personal_view) {
+            $page_title = $langs->trans('MyAnnualReports');
+        }
+    } else {
+        $reports = getMonthlyReports($db, $user, $filter_month, $filter_year);
+        $page_title = $langs->trans('MonthlyReports');
+        $is_personal_view = (!$user->admin && empty($user->rights->appmobtimetouch->timeclock->readall));
+        if ($is_personal_view) {
+            $page_title = $langs->trans('MyMonthlyReports');
+        }
+    }
     
     // Récupérer le statut de pointage pour la toolbar (comme index.php)
     $is_clocked_in = getUserClockStatus($db, $user);
     
-    // Titre selon les permissions utilisateur
-    $page_title = $langs->trans('MonthlyReports');
-    $is_personal_view = (!$user->admin && empty($user->rights->appmobtimetouch->timeclock->readall));
-    
-    if ($is_personal_view) {
-        $page_title = $langs->trans('MyMonthlyReports');
-    }
-    
     $data = [
-        'monthly_reports' => $monthlyReports,
+        'reports' => $reports,
+        'monthly_reports' => $report_type === 'monthly' ? $reports : [], // Pour compatibilité template
+        'annual_reports' => $report_type === 'annual' ? $reports : [],
+        'report_type' => $report_type,
         'filter_month' => $filter_month,
         'filter_year' => $filter_year,
         'page_title' => $page_title,
@@ -72,6 +82,89 @@ try {
     $error = 1;
     $errors[] = $e->getMessage();
     dol_syslog("ReportsPage Error: " . $e->getMessage(), LOG_ERR);
+}
+
+/**
+ * Récupère les rapports annuels (year-to-date) pour tous les utilisateurs
+ */
+function getAnnualReports($db, $user, $year) {
+    global $conf;
+    
+    // Date de début et fin de l'année (YTD - jusqu'à aujourd'hui)
+    $startDate = sprintf('%04d-01-01', $year);
+    $endDate = date('Y-m-d'); // Jusqu'à aujourd'hui pour YTD
+    
+    // Si on demande une année future ou si on est encore en janvier, prendre toute l'année
+    if ($year > date('Y')) {
+        $endDate = sprintf('%04d-12-31', $year);
+    }
+    
+    // TK2507-0344: Calcul des heures théoriques annuelles
+    $monthly_theoretical = !empty($conf->global->APPMOBTIMETOUCH_NB_HEURE_THEORIQUE_MENSUEL) ? 
+        (int)$conf->global->APPMOBTIMETOUCH_NB_HEURE_THEORIQUE_MENSUEL : 140;
+    
+    // Pour YTD : heures théoriques = (mois écoulés) * heures mensuelles
+    $current_month = ($year == date('Y')) ? date('n') : 12; // Si année actuelle, mois actuel, sinon 12 mois
+    $theoretical_hours = $monthly_theoretical * $current_month;
+    
+    $sql = "SELECT 
+                u.rowid as user_id,
+                u.firstname,
+                u.lastname,
+                u.login,
+                SUM(
+                    CASE 
+                        WHEN tr.clock_out_time IS NOT NULL 
+                        THEN TIMESTAMPDIFF(SECOND, tr.clock_in_time, tr.clock_out_time)
+                        ELSE 0 
+                    END
+                ) as total_seconds,
+                COUNT(tr.rowid) as total_records,
+                COUNT(CASE WHEN tr.clock_out_time IS NULL THEN 1 END) as incomplete_records
+            FROM " . MAIN_DB_PREFIX . "user u
+            LEFT JOIN " . MAIN_DB_PREFIX . "timeclock_records tr ON (
+                tr.fk_user = u.rowid 
+                AND DATE(tr.clock_in_time) >= '" . $db->escape($startDate) . "'
+                AND DATE(tr.clock_in_time) <= '" . $db->escape($endDate) . "'
+                AND tr.status IN (1, 3)
+            )
+            WHERE u.statut = 1";
+    
+    // Filtrage selon les permissions utilisateur (même logique que monthly)
+    if (!$user->admin && empty($user->rights->appmobtimetouch->timeclock->readall)) {
+        $sql .= " AND u.rowid = " . (int)$user->id;
+    }
+    
+    $sql .= " GROUP BY u.rowid, u.firstname, u.lastname, u.login
+              ORDER BY u.lastname, u.firstname";
+    
+    $resql = $db->query($sql);
+    $reports = [];
+    
+    if ($resql) {
+        while ($obj = $db->fetch_object($resql)) {
+            $worked_hours = round($obj->total_seconds / 3600, 2);
+            $delta_hours = $worked_hours - $theoretical_hours;
+            
+            $reports[] = [
+                'user_id' => $obj->user_id,
+                'fullname' => trim($obj->firstname . ' ' . $obj->lastname),
+                'login' => $obj->login,
+                'total_seconds' => (int)$obj->total_seconds,
+                'total_hours' => $worked_hours,
+                'theoretical_hours' => $theoretical_hours,
+                'delta_hours' => $delta_hours,
+                'total_records' => (int)$obj->total_records,
+                'incomplete_records' => (int)$obj->incomplete_records,
+                'period_type' => 'annual',
+                'year' => $year,
+                'months_included' => $current_month
+            ];
+        }
+        $db->free($resql);
+    }
+    
+    return $reports;
 }
 
 /**
@@ -173,7 +266,10 @@ function getUserClockStatus($db, $user) {
 
 // Configuration page et extraction des variables pour le template
 $page_title = $data['page_title'] ?? $langs->trans('Reports');
+$reports = $data['reports'] ?? [];
 $monthly_reports = $data['monthly_reports'] ?? [];
+$annual_reports = $data['annual_reports'] ?? [];
+$report_type = $data['report_type'] ?? 'monthly';
 $filter_month = $data['filter_month'] ?? date('n');
 $filter_year = $data['filter_year'] ?? date('Y');
 $is_personal_view = $data['is_personal_view'] ?? false;
@@ -288,7 +384,13 @@ $pending_validation_count = 0; // Pas utilisé dans reports mais requis pour rig
 
                 <!-- Contenu Rapports -->
                 <div class="reports-content">
-                    <?php include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/reports/monthly.tpl'; ?>
+                    <?php 
+                    if ($report_type === 'annual') {
+                        include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/reports/annual.tpl';
+                    } else {
+                        include DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Views/reports/monthly.tpl';
+                    }
+                    ?>
                 </div>
             </div>
             
@@ -384,16 +486,35 @@ function toggleMenu() {
  * Apply filters
  */
 function applyFilters() {
-    const month = document.getElementById('filter_month').value;
+    const reportType = document.getElementById('report_type').value;
     const year = document.getElementById('filter_year').value;
+    let url = '<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/reports.php?report_type=' + reportType + '&filter_year=' + year;
+    
+    // Ajouter le mois seulement pour les rapports mensuels
+    if (reportType === 'monthly') {
+        const month = document.getElementById('filter_month').value;
+        url += '&filter_month=' + month;
+    }
     
     // Show loading message
     ons.notification.toast('<?php echo $langs->trans("LoadingReports"); ?>...', {timeout: 1000});
     
     // Redirect with new filters
     setTimeout(() => {
-        window.location.href = '<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/reports.php?filter_month=' + month + '&filter_year=' + year;
+        window.location.href = url;
     }, 500);
+}
+
+/**
+ * Toggle month filter visibility based on report type
+ */
+function toggleMonthFilter() {
+    const reportType = document.getElementById('report_type').value;
+    const monthCol = document.getElementById('month_filter_col');
+    
+    if (monthCol) {
+        monthCol.style.display = (reportType === 'monthly') ? 'block' : 'none';
+    }
 }
 
 // Debug et initialisation OnsenUI
