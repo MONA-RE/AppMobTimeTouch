@@ -48,7 +48,7 @@ class modAppMobTimeTouch extends DolibarrModules
 		$this->db = $db;
 
 		// Id for module (must be unique).
-		$this->numero = 136007; // TODO Go on page https://wiki.dolibarr.org/index.php/List_of_modules_id to reserve an id number for your module
+		$this->numero = 136007; 
 
 		// Key text used to identify module (for permissions, menus, etc...)
 		$this->rights_class = 'appmobtimetouch';
@@ -73,7 +73,7 @@ class modAppMobTimeTouch extends DolibarrModules
 		$this->editor_url = '';
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr', 'dolibarr_deprecated' or a version string like 'x.y.z'
-		$this->version = '1.2.0';
+		$this->version = '1.2.1';
 
 		// Key used in llx_const table to save module status enabled/disabled
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
