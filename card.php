@@ -336,7 +336,7 @@ if ($action == 'create') {
 		exit;
 	}
 
-	print load_fiche_titre($langs->trans("NewTimeclockRecord"), '', 'clock');
+	print load_fiche_titre($langs->trans("NewTimeclockRecord"), '', 'fa-clock-o');
 
 	print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
 	print '<input type="hidden" name="token" value="'.newToken().'">';
@@ -353,43 +353,43 @@ if ($action == 'create') {
 	print '<table class="border centpercent tableforfieldcreate">'."\n";
 
 	// Employee
-	print '<tr><td class="fieldrequired">'.$langs->trans("Employee").'</td><td>';
+	print '<tr><td class="titlefield fieldrequired">'.$langs->trans("Employee").'</td><td>';
 	print $form->selectarray('fk_user', $array_users, GETPOST('fk_user', 'int'), 1, 0, 0, '', 1, 0, 0, '', 'maxwidth300', 1);
 	print '</td></tr>';
 
 	// Clock In Time
-	print '<tr><td class="fieldrequired">'.$langs->trans("ClockInTime").'</td><td>';
+	print '<tr><td class="titlefield fieldrequired">'.$langs->trans("ClockInTime").'</td><td>';
 	print $form->selectDate(GETPOST('clock_in_time') ? GETPOST('clock_in_time') : dol_now(), "clock_in_time", 1, 1, 0, '', 1, 1);
 	print '</td></tr>';
 
 	// Clock Out Time
-	print '<tr><td>'.$langs->trans("ClockOutTime").'</td><td>';
+	print '<tr><td class="titlefield">'.$langs->trans("ClockOutTime").'</td><td>';
 	print $form->selectDate(GETPOST('clock_out_time') ? GETPOST('clock_out_time') : -1, "clock_out_time", 1, 1, 1, '', 1, 1);
 	print '</td></tr>';
 
 	// Work Type
-	print '<tr><td>'.$langs->trans("WorkType").'</td><td>';
+	print '<tr><td class="titlefield">'.$langs->trans("WorkType").'</td><td>';
 	print $form->selectarray('fk_timeclock_type', $array_types, GETPOST('fk_timeclock_type', 'int'), 1, 0, 0, '', 1, 0, 0, '', 'maxwidth300', 1);
 	print '</td></tr>';
 
 	// Location In
-	print '<tr><td>'.$langs->trans("LocationIn").'</td><td>';
+	print '<tr><td class="titlefield">'.$langs->trans("LocationIn").'</td><td>';
 	print '<input type="text" class="flat maxwidth300" name="location_in" value="'.dol_escape_htmltag(GETPOST('location_in', 'alpha')).'">';
 	print '</td></tr>';
 
 	// Location Out
-	print '<tr><td>'.$langs->trans("LocationOut").'</td><td>';
+	print '<tr><td class="titlefield">'.$langs->trans("LocationOut").'</td><td>';
 	print '<input type="text" class="flat maxwidth300" name="location_out" value="'.dol_escape_htmltag(GETPOST('location_out', 'alpha')).'">';
 	print '</td></tr>';
 
 	// Status
-	print '<tr><td>'.$langs->trans("Status").'</td><td>';
+	print '<tr><td class="titlefield">'.$langs->trans("Status").'</td><td>';
 	print $form->selectarray('status', $array_status, GETPOST('status', 'int') ? GETPOST('status', 'int') : 2, 1, 0, 0, '', 1, 0, 0, '', 'maxwidth300', 1);
 	print '</td></tr>';
 
 	// Duration (calculated automatically)
-	print '<tr id="duration_row"><td><strong>'.$langs->trans("WorkDuration").'</strong></td><td>';
-	print '<span id="duration_display" style="color: #4CAF50; font-weight: bold;">-</span>';
+	print '<tr id="duration_row"><td class="titlefield">'.$langs->trans("WorkDuration").'</td><td>';
+	print '<span id="duration_display" class="badge badge-info">-</span>';
 	print '<input type="hidden" id="calculated_duration" name="calculated_duration" value="">';
 	print '</td></tr>';
 
@@ -409,7 +409,7 @@ if (($id || $ref) && $action == 'edit') {
 		exit;
 	}
 
-	print load_fiche_titre($langs->trans("EditTimeclockRecord"), '', 'clock');
+	print load_fiche_titre($langs->trans("EditTimeclockRecord"), '', 'fa-edit');
 
 	print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
 	print '<input type="hidden" name="token" value="'.newToken().'">';
@@ -427,12 +427,12 @@ if (($id || $ref) && $action == 'edit') {
 	print '<table class="border centpercent tableforfieldedit">'."\n";
 
 	// Employee
-	print '<tr><td class="fieldrequired">'.$langs->trans("Employee").'</td><td>';
+	print '<tr><td class="titlefield fieldrequired">'.$langs->trans("Employee").'</td><td>';
 	print $form->selectarray('fk_user', $array_users, $object->fk_user, 1, 0, 0, '', 1, 0, 0, '', 'maxwidth300', 1);
 	print '</td></tr>';
 
 	// Clock In Time
-	print '<tr><td class="fieldrequired">'.$langs->trans("ClockInTime").'</td><td>';
+	print '<tr><td class="titlefield fieldrequired">'.$langs->trans("ClockInTime").'</td><td>';
 	// FIX: Use proper Dolibarr method for datetime conversion
 	if (is_string($object->clock_in_time)) {
 		// Convert MySQL datetime string to timestamp using strtotime (standard PHP)
@@ -446,7 +446,7 @@ if (($id || $ref) && $action == 'edit') {
 	print '</td></tr>';
 
 	// Clock Out Time  
-	print '<tr><td>'.$langs->trans("ClockOutTime").'</td><td>';
+	print '<tr><td class="titlefield">'.$langs->trans("ClockOutTime").'</td><td>';
 	// FIX: Use proper Dolibarr method for datetime conversion
 	if (is_string($object->clock_out_time)) {
 		// Convert MySQL datetime string to timestamp using strtotime (standard PHP)
@@ -460,27 +460,27 @@ if (($id || $ref) && $action == 'edit') {
 	print '</td></tr>';
 
 	// Work Type
-	print '<tr><td>'.$langs->trans("WorkType").'</td><td>';
+	print '<tr><td class="titlefield">'.$langs->trans("WorkType").'</td><td>';
 	print $form->selectarray('fk_timeclock_type', $array_types, $object->fk_timeclock_type, 1, 0, 0, '', 1, 0, 0, '', 'maxwidth300', 1);
 	print '</td></tr>';
 
 	// Location In
-	print '<tr><td>'.$langs->trans("LocationIn").'</td><td>';
+	print '<tr><td class="titlefield">'.$langs->trans("LocationIn").'</td><td>';
 	print '<input type="text" class="flat maxwidth300" name="location_in" value="'.dol_escape_htmltag($object->location_in).'">';
 	print '</td></tr>';
 
 	// Location Out
-	print '<tr><td>'.$langs->trans("LocationOut").'</td><td>';
+	print '<tr><td class="titlefield">'.$langs->trans("LocationOut").'</td><td>';
 	print '<input type="text" class="flat maxwidth300" name="location_out" value="'.dol_escape_htmltag($object->location_out).'">';
 	print '</td></tr>';
 
 	// Status
-	print '<tr><td>'.$langs->trans("Status").'</td><td>';
+	print '<tr><td class="titlefield">'.$langs->trans("Status").'</td><td>';
 	print $form->selectarray('status', $array_status, $object->status, 1, 0, 0, '', 1, 0, 0, '', 'maxwidth300', 1);
 	print '</td></tr>';
 
 	// Duration (calculated automatically)
-	print '<tr id="duration_row"><td><strong>'.$langs->trans("WorkDuration").'</strong></td><td>';
+	print '<tr id="duration_row"><td class="titlefield">'.$langs->trans("WorkDuration").'</td><td>';
 	// Show current duration if available
 	$current_duration_display = '-';
 	if ($object->work_duration && $object->work_duration > 0) {
@@ -488,7 +488,7 @@ if (($id || $ref) && $action == 'edit') {
 		$minutes = $object->work_duration % 60;
 		$current_duration_display = sprintf('%dh %02dm (%d minutes)', $hours, $minutes, $object->work_duration);
 	}
-	print '<span id="duration_display" style="color: #4CAF50; font-weight: bold;">'.$current_duration_display.'</span>';
+	print '<span id="duration_display" class="badge badge-info">'.$current_duration_display.'</span>';
 	print '<input type="hidden" id="calculated_duration" name="calculated_duration" value="'.$object->work_duration.'">';
 	print '</td></tr>';
 
@@ -522,6 +522,14 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 	$morehtmlref .= '</div>';
 
 	dol_banner_tab($object, 'ref', $linkback, 1, 'ref', 'ref', $morehtmlref);
+	
+	// Prepare head (tabs)
+	$head = array();
+	$head[0][0] = dol_buildpath('/custom/appmobtimetouch/card.php', 1).'?id='.$object->id;
+	$head[0][1] = $langs->trans("TimeclockRecord");
+	$head[0][2] = 'card';
+	
+	print dol_get_fiche_head($head, 'card', '', -1, 'object_appmobtimetouch', 0, '', '', 0, '', 1);
 
 	print '<div class="fichecenter">';
 	print '<div class="fichehalfleft">';
@@ -666,18 +674,18 @@ if ($action == 'create' || $action == 'edit') {
 				if (diffMinutes > 0) {
 					var hours = Math.floor(diffMinutes / 60);
 					var minutes = diffMinutes % 60;
-					var durationText = hours + "h " + (minutes < 10 ? "0" : "") + minutes + "m (" + diffMinutes + " minutes)";
+					var durationText = "<span class=\"badge badge-info\">" + hours + "h " + (minutes < 10 ? "0" : "") + minutes + "m (" + diffMinutes + " minutes)</span>";
 					
 					$("#duration_display").html(durationText);
 					$("#calculated_duration").val(diffMinutes); // Update hidden field for form submission
 				} else {
-					$("#duration_display").html("<span style=\"color: #f44336;\">Durée invalide</span>");
+					$("#duration_display").html("<span class=\"badge badge-danger\">Durée invalide</span>");
 					$("#calculated_duration").val(""); // Clear hidden field
 				}
 			} else {
 				// Missing data - show current state or empty
 				if (clockOutHour === "" || clockOutHour === "-1" || clockOutMin === "" || clockOutMin === "-1") {
-					$("#duration_display").html("<span style=\"color: #999;\">En cours...</span>");
+					$("#duration_display").html("<span class=\"badge badge-warning\">En cours...</span>");
 				} else {
 					$("#duration_display").html("-");
 				}
