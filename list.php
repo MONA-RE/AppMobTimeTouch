@@ -112,6 +112,7 @@ $arrayfields = array(
 	'u.lastname' => array('label' => 'LastName', 'checked' => 1, 'position' => 25, 'type' => 'varchar'),
 	'u.firstname' => array('label' => 'FirstName', 'checked' => 1, 'position' => 30, 'type' => 'varchar'),
 	't.work_duration' => array('label' => 'Duration', 'checked' => 1, 'position' => 35, 'type' => 'integer'),
+	't.fk_timeclock_type' => array('label' => 'WorkType', 'checked' => 1, 'position' => 37, 'type' => 'integer'),
 	't.location_in' => array('label' => 'Location', 'checked' => 0, 'position' => 40, 'type' => 'varchar'),
 	't.status' => array('label' => 'Status', 'checked' => 1, 'position' => 45, 'type' => 'integer'),
 	't.validation_status' => array('label' => 'ValidationStatus', 'checked' => 1, 'position' => 50, 'type' => 'integer'),
@@ -209,6 +210,17 @@ if ($resql_users) {
     $db->free($resql_users);
 }
 
+// Build timeclock type list for display
+$array_types = array();
+$sql_types = "SELECT rowid, label FROM ".MAIN_DB_PREFIX."timeclock_types WHERE active = 1 ORDER BY label";
+$resql_types = $db->query($sql_types);
+if ($resql_types) {
+    while ($obj_type = $db->fetch_object($resql_types)) {
+        $array_types[$obj_type->rowid] = $obj_type->label;
+    }
+    $db->free($resql_types);
+}
+
 $title = $langs->trans("AllRecords");
 $morejs = array();
 $morecss = array();
@@ -219,6 +231,7 @@ $sql .= 't.rowid,';
 $sql .= ' t.clock_in_time,';
 $sql .= ' t.clock_out_time,';
 $sql .= ' t.work_duration,';
+$sql .= ' t.fk_timeclock_type,';
 $sql .= ' t.location_in,';
 $sql .= ' t.status,';
 $sql .= ' t.validation_status,';
@@ -512,6 +525,13 @@ if (!empty($arrayfields['t.work_duration']['checked'])) {
 	print '</td>';
 }
 
+// Work Type
+if (!empty($arrayfields['t.fk_timeclock_type']['checked'])) {
+	print '<td class="liste_titre center">';
+	print $form->selectarray('search_type', $array_types, $search_type, 1, 0, 0, '', 1, 0, 0, '', 'maxwidth100', 1);
+	print '</td>';
+}
+
 // Location
 if (!empty($arrayfields['t.location_in']['checked'])) {
 	print '<td class="liste_titre">';
@@ -625,7 +645,11 @@ while ($i < $imaxinloop) {
 	// Clock In
 	if (!empty($arrayfields['t.clock_in_time']['checked'])) {
 		print '<td class="center">';
-		print $obj->clock_in_time ? dol_print_date($db->jdate($obj->clock_in_time), 'dayhour') : '';
+		// FIX: Use proper datetime conversion for list display
+		if ($obj->clock_in_time) {
+			$clock_in_ts = is_string($obj->clock_in_time) ? strtotime($obj->clock_in_time) : $obj->clock_in_time;
+			print dol_print_date($clock_in_ts, 'dayhour');
+		}
 		print '</td>';
 		if (!$i) $totalarray['nbfield']++;
 	}
@@ -633,7 +657,13 @@ while ($i < $imaxinloop) {
 	// Clock Out
 	if (!empty($arrayfields['t.clock_out_time']['checked'])) {
 		print '<td class="center">';
-		print $obj->clock_out_time ? dol_print_date($db->jdate($obj->clock_out_time), 'dayhour') : '<span class="opacitymedium">'.$langs->trans("InProgress").'</span>';
+		// FIX: Use proper datetime conversion for list display
+		if ($obj->clock_out_time) {
+			$clock_out_ts = is_string($obj->clock_out_time) ? strtotime($obj->clock_out_time) : $obj->clock_out_time;
+			print dol_print_date($clock_out_ts, 'dayhour');
+		} else {
+			print '<span class="opacitymedium">'.$langs->trans("InProgress").'</span>';
+		}
 		print '</td>';
 		if (!$i) $totalarray['nbfield']++;
 	}
@@ -670,6 +700,18 @@ while ($i < $imaxinloop) {
 			$hours = floor($obj->work_duration / 60);
 			$minutes = $obj->work_duration % 60;
 			print sprintf('%dh %02dm', $hours, $minutes);
+		} else {
+			print '<span class="opacitymedium">-</span>';
+		}
+		print '</td>';
+		if (!$i) $totalarray['nbfield']++;
+	}
+
+	// Work Type
+	if (!empty($arrayfields['t.fk_timeclock_type']['checked'])) {
+		print '<td class="nowrap">';
+		if (isset($array_types[$obj->fk_timeclock_type])) {
+			print $array_types[$obj->fk_timeclock_type];
 		} else {
 			print '<span class="opacitymedium">-</span>';
 		}

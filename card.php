@@ -55,6 +55,31 @@ if (empty($action) && empty($id) && empty($ref)) {
 // Load object
 include DOL_DOCUMENT_ROOT.'/core/actions_fetchobject.inc.php';
 
+// DEBUG: Log object loading and timestamp data
+if ($object->id > 0) {
+	dol_syslog("DEBUG card.php - Object loaded ID: ".$object->id, LOG_DEBUG);
+	dol_syslog("DEBUG card.php - clock_in_time raw: ".$object->clock_in_time, LOG_DEBUG);
+	dol_syslog("DEBUG card.php - clock_out_time raw: ".$object->clock_out_time, LOG_DEBUG);
+	dol_syslog("DEBUG card.php - clock_in_time jdate: ".($object->clock_in_time ? $db->jdate($object->clock_in_time) : 'NULL'), LOG_DEBUG);
+	dol_syslog("DEBUG card.php - clock_out_time jdate: ".($object->clock_out_time ? $db->jdate($object->clock_out_time) : 'NULL'), LOG_DEBUG);
+	dol_syslog("DEBUG card.php - Action: ".$action, LOG_DEBUG);
+	
+	// DEBUG: Add visible debug info for user
+	if ($conf->global->MAIN_MODULE_DOLIBARR_DEBUGBAR || 1) { // Always show for now
+		$debug_msg = "<strong>DEBUG TimeClock Card - DATA TYPES</strong><br>";
+		$debug_msg .= "Object ID: ".$object->id."<br>";
+		$debug_msg .= "Clock In Raw: ".$object->clock_in_time." (".gettype($object->clock_in_time).")<br>";
+		$debug_msg .= "Clock Out Raw: ".$object->clock_out_time." (".gettype($object->clock_out_time).")<br>";
+		// Test strtotime conversion
+		$clock_in_test = is_string($object->clock_in_time) ? strtotime($object->clock_in_time) : $object->clock_in_time;
+		$clock_out_test = is_string($object->clock_out_time) ? strtotime($object->clock_out_time) : $object->clock_out_time;
+		$debug_msg .= "<strong>Clock In strtotime(): ".$clock_in_test."</strong><br>";
+		$debug_msg .= "<strong>Clock Out strtotime(): ".$clock_out_test."</strong><br>";
+		$debug_msg .= "Action: ".$action;
+		setEventMessages($debug_msg, null, 'mesgs');
+	}
+}
+
 // Permission checks
 $permissiontoread = $user->hasRight('appmobtimetouch', 'timeclock', 'read');
 $permissiontoadd = $user->hasRight('appmobtimetouch', 'timeclock', 'write');
@@ -168,6 +193,13 @@ if (empty($reshook)) {
 		$location_in = GETPOST('location_in', 'alpha');
 		$location_out = GETPOST('location_out', 'alpha');
 		$status = GETPOST('status', 'int');
+		
+		// DEBUG: Log form data received
+		dol_syslog("DEBUG update action - POST data received:", LOG_DEBUG);
+		dol_syslog("DEBUG update - fk_user: ".$fk_user, LOG_DEBUG);
+		dol_syslog("DEBUG update - clock_in_time: ".$clock_in_time, LOG_DEBUG);
+		dol_syslog("DEBUG update - clock_out_time: ".$clock_out_time, LOG_DEBUG);
+		dol_syslog("DEBUG update - Raw POST clock_in: hour=".GETPOST('clock_in_timehour', 'int')." min=".GETPOST('clock_in_timemin', 'int')." day=".GETPOST('clock_in_timeday', 'int')." month=".GETPOST('clock_in_timemonth', 'int')." year=".GETPOST('clock_in_timeyear', 'int'), LOG_DEBUG);
 
 		// Validation
 		if (empty($fk_user)) {
@@ -201,11 +233,14 @@ if (empty($reshook)) {
 			}
 
 			$result = $object->update($user);
+			dol_syslog("DEBUG update - Object update result: ".$result, LOG_DEBUG);
 			if ($result > 0) {
+				dol_syslog("DEBUG update - Update successful", LOG_DEBUG);
 				setEventMessages($langs->trans("RecordSaved"), null, 'mesgs');
 				$action = '';
 			} else {
 				$error++;
+				dol_syslog("DEBUG update - Update failed: ".$object->error, LOG_ERR);
 				setEventMessages($object->error, $object->errors, 'errors');
 				$action = 'edit';
 			}
@@ -243,16 +278,20 @@ if ($resql_users) {
 
 // Build timeclock type list
 $array_types = array();
-$sql_types = "SELECT rowid, label FROM ".MAIN_DB_PREFIX."appmobtimetouch_timeclocktype WHERE active = 1 ORDER BY label";
+$sql_types = "SELECT rowid, label FROM ".MAIN_DB_PREFIX."timeclock_types WHERE active = 1 ORDER BY label";
 $resql_types = $db->query($sql_types);
 if ($resql_types) {
     while ($obj_type = $db->fetch_object($resql_types)) {
         $array_types[$obj_type->rowid] = $obj_type->label;
     }
     $db->free($resql_types);
+    dol_syslog("DEBUG card.php - Loaded ".count($array_types)." timeclock types", LOG_DEBUG);
+} else {
+    dol_syslog("DEBUG card.php - Failed to load timeclock types: ".$db->lasterror(), LOG_ERR);
 }
 if (empty($array_types)) {
     $array_types[1] = $langs->trans("Standard");
+    dol_syslog("DEBUG card.php - Using fallback 'Standard' type", LOG_DEBUG);
 }
 
 // Build status array (excluding STATUS_VALIDATED as validation is managed separately)
@@ -361,12 +400,30 @@ if (($id || $ref) && $action == 'edit') {
 
 	// Clock In Time
 	print '<tr><td class="fieldrequired">'.$langs->trans("ClockInTime").'</td><td>';
-	print $form->selectDate($db->jdate($object->clock_in_time), "clock_in_time", 1, 1, 0, '', 1, 1);
+	// FIX: Use proper Dolibarr method for datetime conversion
+	if (is_string($object->clock_in_time)) {
+		// Convert MySQL datetime string to timestamp using strtotime (standard PHP)
+		$clock_in_jdate = strtotime($object->clock_in_time);
+	} else {
+		// Already a timestamp
+		$clock_in_jdate = $object->clock_in_time ? (int)$object->clock_in_time : '';
+	}
+	dol_syslog("DEBUG edit form - clock_in_time STANDARD conversion: raw=".$object->clock_in_time." -> timestamp=".$clock_in_jdate, LOG_DEBUG);
+	print $form->selectDate($clock_in_jdate, "clock_in_time", 1, 1, 0, '', 1, 1);
 	print '</td></tr>';
 
-	// Clock Out Time
+	// Clock Out Time  
 	print '<tr><td>'.$langs->trans("ClockOutTime").'</td><td>';
-	print $form->selectDate($object->clock_out_time ? $db->jdate($object->clock_out_time) : -1, "clock_out_time", 1, 1, 1, '', 1, 1);
+	// FIX: Use proper Dolibarr method for datetime conversion
+	if (is_string($object->clock_out_time)) {
+		// Convert MySQL datetime string to timestamp using strtotime (standard PHP)
+		$clock_out_jdate = strtotime($object->clock_out_time);
+	} else {
+		// Already a timestamp or null
+		$clock_out_jdate = $object->clock_out_time ? (int)$object->clock_out_time : -1;
+	}
+	dol_syslog("DEBUG edit form - clock_out_time STANDARD conversion: raw=".$object->clock_out_time." -> timestamp=".$clock_out_jdate, LOG_DEBUG);
+	print $form->selectDate($clock_out_jdate, "clock_out_time", 1, 1, 1, '', 1, 1);
 	print '</td></tr>';
 
 	// Work Type
@@ -436,13 +493,17 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 
 	// Clock In Time
 	print '<tr><td>'.$langs->trans("ClockInTime").'</td><td>';
-	print dol_print_date($db->jdate($object->clock_in_time), 'dayhour');
+	// FIX: Use proper datetime conversion for VIEW mode
+	$clock_in_timestamp = is_string($object->clock_in_time) ? strtotime($object->clock_in_time) : $object->clock_in_time;
+	print dol_print_date($clock_in_timestamp, 'dayhour');
 	print '</td></tr>';
 
 	// Clock Out Time
 	print '<tr><td>'.$langs->trans("ClockOutTime").'</td><td>';
 	if ($object->clock_out_time) {
-		print dol_print_date($db->jdate($object->clock_out_time), 'dayhour');
+		// FIX: Use proper datetime conversion for VIEW mode
+		$clock_out_timestamp = is_string($object->clock_out_time) ? strtotime($object->clock_out_time) : $object->clock_out_time;
+		print dol_print_date($clock_out_timestamp, 'dayhour');
 	} else {
 		print '<span class="opacitymedium">'.$langs->trans("InProgress").'</span>';
 	}
