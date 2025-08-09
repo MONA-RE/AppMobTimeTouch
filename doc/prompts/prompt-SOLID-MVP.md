@@ -143,3 +143,33 @@ MVP 3 : Persistance des notifications
 ```
 
 Cette approche garantit que chaque étape de développement produit un résultat tangible, testable et validable par l'utilisateur final.
+
+Principes à respecter systématiquement :
+
+  🏗️ Architecture Dolibarr
+
+  - Utiliser actions_addupdatedelete.inc.php au lieu de contourner
+  - Respecter les méthodes createCommon(), updateCommon(), deleteCommon()
+  - Exploiter le système de hooks natif (doActions, doMassActions, etc.)
+  - Suivre les patterns de classe standard Dolibarr
+
+  🔧 Méthodes privilégiées
+
+  - Hooks système plutôt que code personnalisé intercepteur
+  - Modification des classes entity (TimeclockRecord::update()) plutôt que logique externe
+  - Utilisation des triggers pour les actions automatiques
+  - Templates standard avec extensions au lieu de refonte complète
+
+  📋 Bonnes pratiques
+
+  - Toujours vérifier s'il existe une méthode Dolibarr native avant d'implémenter
+  - Consulter la documentation Dolibarr et les exemples de modules standard
+  - Privilégier l'extension/surcharge plutôt que le remplacement
+  - Maintenir la compatibilité avec les mises à jour du core
+
+  ⚡ Réflexe développement
+
+  Avant chaque implémentation, me poser :
+  1. "Est-ce que Dolibarr a déjà une méthode pour ça ?"
+  2. "Comment les modules standard font-ils ça ?"
+  3. "Cette approche sera-t-elle compatible avec les futures mises à jour ?"
