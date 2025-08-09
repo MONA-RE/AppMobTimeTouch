@@ -32,12 +32,16 @@ Debug et correction des problèmes dans l'interface Dolibarr pour la gestion des
 - ✅ Tables seront créées automatiquement lors de l'installation/mise à jour du module
 **Statut** : **RÉSOLU** - La suppression d'entrées fonctionnera après réinstallation du module
 
-### 4. ⏱️ Calcul de durée manquant lors de la création
-**Problème** : Lors de la création d'une nouvelle entrée, la durée n'est pas calculée automatiquement
-**Détails** :
-- Champ durée reste vide après saisie des heures
-- Logic de calcul automatique non fonctionnelle
-**Impact** : Saisie manuelle obligatoire, risque d'erreur
+### 4. ⏱️ ✅ RÉSOLU - Calcul automatique de durée manquant
+**~~Problème~~** : ~~Lors de la création d'une nouvelle entrée, la durée n'est pas calculée automatiquement~~
+**SOLUTION APPLIQUÉE** :
+- ✅ Ajouté champs durée permanents dans les formulaires CREATE et EDIT (toujours visibles)
+- ✅ Implémenté calcul automatique en temps réel via JavaScript (lignes 612-677)
+- ✅ Ajouté champs cachés pour transmission des valeurs calculées au serveur
+- ✅ Modifié logique serveur pour prioriser les valeurs calculées côté client
+- ✅ Système hybride : calcul JavaScript avec fallback serveur pour compatibilité
+- ✅ Champs durée en lecture seule pour éviter saisie manuelle incorrecte
+**Statut** : **RÉSOLU** - Calcul automatique fonctionnel avec sauvegarde correcte en base
 
 ### 5. 🕒 Décalage horaire lors de la création
 **Problème** : Les heures `clock_in_time` et `clock_out_time` ne correspondent pas à la saisie utilisateur
@@ -55,11 +59,11 @@ Debug et correction des problèmes dans l'interface Dolibarr pour la gestion des
 - [x] Vérifier la logique de traitement des formulaires
 - [x] Examiner la gestion des fuseaux horaires
 
-### Phase 2 : Corrections critiques
+### Phase 2 : Corrections critiques ✅ COMPLETÉ
 - [x] **RÉSOLU** : Créer la table extrafields manquante
 - [x] **RÉSOLU** : Corriger la récupération des données clock_in/clock_out
 - [x] **RÉSOLU** : Réparer la logique de sauvegarde des modifications
-- [ ] Implémenter le calcul automatique de durée
+- [x] **RÉSOLU** : Implémenter le calcul automatique de durée
 
 ### Phase 3 : Harmonisation interface
 - [ ] Aligner le style sur les standards Dolibarr
@@ -69,8 +73,8 @@ Debug et correction des problèmes dans l'interface Dolibarr pour la gestion des
 ## Priorités
 1. **✅ RÉSOLU** : ~~Correction table extrafields (suppression bloquée)~~
 2. **✅ RÉSOLU** : ~~Récupération données modification + sauvegarde~~  
-3. **HAUTE** : Gestion fuseaux horaires
-4. **MOYENNE** : Calcul automatique durée
+3. **✅ RÉSOLU** : ~~Calcul automatique durée~~
+4. **HAUTE** : Gestion fuseaux horaires
 5. **MOYENNE** : Harmonisation style interface
 
 ## Impact utilisateur

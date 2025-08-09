@@ -64,8 +64,8 @@ if ($object->id > 0) {
 	dol_syslog("DEBUG card.php - clock_out_time jdate: ".($object->clock_out_time ? $db->jdate($object->clock_out_time) : 'NULL'), LOG_DEBUG);
 	dol_syslog("DEBUG card.php - Action: ".$action, LOG_DEBUG);
 	
-	// DEBUG: Add visible debug info for user
-	if ($conf->global->MAIN_MODULE_DOLIBARR_DEBUGBAR || 1) { // Always show for now
+	// DEBUG: Add visible debug info for user (disabled in production)
+	if ($conf->global->MAIN_MODULE_DOLIBARR_DEBUGBAR && 0) { // Disabled - only show if debugbar is enabled AND manual flag set
 		$debug_msg = "<strong>DEBUG TimeClock Card - DATA TYPES</strong><br>";
 		$debug_msg .= "Object ID: ".$object->id."<br>";
 		$debug_msg .= "Clock In Raw: ".$object->clock_in_time." (".gettype($object->clock_in_time).")<br>";
@@ -120,6 +120,90 @@ if (empty($reshook)) {
 
 	$triggermodname = 'APPMOBTIMETOUCH_TIMECLOCKRECORD_MODIFY';
 
+	// CUSTOM: Handle update action with duration calculation before standard actions
+	if ($action == 'update' && $permissiontoadd) {
+		$error = 0;
+
+		// Get form data
+		$fk_user = GETPOST('fk_user', 'int');
+		$clock_in_time = dol_mktime(GETPOST('clock_in_timehour', 'int'), GETPOST('clock_in_timemin', 'int'), 0, GETPOST('clock_in_timemonth', 'int'), GETPOST('clock_in_timeday', 'int'), GETPOST('clock_in_timeyear', 'int'));
+		$clock_out_time = dol_mktime(GETPOST('clock_out_timehour', 'int'), GETPOST('clock_out_timemin', 'int'), 0, GETPOST('clock_out_timemonth', 'int'), GETPOST('clock_out_timeday', 'int'), GETPOST('clock_out_timeyear', 'int'));
+		$fk_timeclock_type = GETPOST('fk_timeclock_type', 'int');
+		$location_in = GETPOST('location_in', 'alpha');
+		$location_out = GETPOST('location_out', 'alpha');
+		$status = GETPOST('status', 'int');
+		$calculated_duration = GETPOST('calculated_duration', 'int'); // Duration from client-side calculation
+		
+		// DEBUG: Log form data received
+		dol_syslog("DEBUG update action - POST data received:", LOG_DEBUG);
+		dol_syslog("DEBUG update - fk_user: ".$fk_user, LOG_DEBUG);
+		dol_syslog("DEBUG update - clock_in_time: ".$clock_in_time, LOG_DEBUG);
+		dol_syslog("DEBUG update - clock_out_time: ".$clock_out_time, LOG_DEBUG);
+		dol_syslog("DEBUG update - calculated_duration: ".$calculated_duration, LOG_DEBUG);
+		dol_syslog("DEBUG update - Raw POST clock_in: hour=".GETPOST('clock_in_timehour', 'int')." min=".GETPOST('clock_in_timemin', 'int')." day=".GETPOST('clock_in_timeday', 'int')." month=".GETPOST('clock_in_timemonth', 'int')." year=".GETPOST('clock_in_timeyear', 'int'), LOG_DEBUG);
+		dol_syslog("DEBUG update - Raw POST clock_out: hour=".GETPOST('clock_out_timehour', 'int')." min=".GETPOST('clock_out_timemin', 'int')." day=".GETPOST('clock_out_timeday', 'int')." month=".GETPOST('clock_out_timemonth', 'int')." year=".GETPOST('clock_out_timeyear', 'int'), LOG_DEBUG);
+
+		// Validation
+		if (empty($fk_user)) {
+			$error++;
+			setEventMessages($langs->trans("ErrorFieldRequired", $langs->transnoentitiesnoconv("Employee")), null, 'errors');
+		}
+		if (empty($clock_in_time)) {
+			$error++;
+			setEventMessages($langs->trans("ErrorFieldRequired", $langs->transnoentitiesnoconv("ClockIn")), null, 'errors');
+		}
+		if (!empty($clock_out_time) && $clock_out_time <= $clock_in_time) {
+			$error++;
+			setEventMessages($langs->trans("ErrorClockOutBeforeClockIn"), null, 'errors');
+		}
+
+		if (!$error) {
+			// DEBUG: Log object state before modification
+			dol_syslog("DEBUG update - BEFORE: Object work_duration = ".$object->work_duration, LOG_DEBUG);
+			
+			$object->fk_user = $fk_user;
+			$object->clock_in_time = $db->idate($clock_in_time);
+			$object->clock_out_time = !empty($clock_out_time) ? $db->idate($clock_out_time) : null;
+			$object->fk_timeclock_type = $fk_timeclock_type;
+			$object->location_in = $location_in;
+			$object->location_out = $location_out;
+			$object->status = !empty($status) ? $status : (!empty($clock_out_time) ? 3 : 2); // Use selected status or auto-determine
+
+			// Calculate work duration - prioritize client-calculated value, fallback to server calculation
+			if (!empty($calculated_duration) && $calculated_duration > 0) {
+				// Use client-calculated duration (from JavaScript)
+				$object->work_duration = (int)$calculated_duration;
+				dol_syslog("DEBUG update - Using client-calculated duration: ".$object->work_duration." minutes", LOG_DEBUG);
+			} elseif (!empty($clock_out_time)) {
+				// Fallback to server-side calculation
+				$duration_seconds = $clock_out_time - $clock_in_time;
+				$object->work_duration = round($duration_seconds / 60); // Convert to minutes
+				dol_syslog("DEBUG update - Server-calculated duration: clock_in=$clock_in_time, clock_out=$clock_out_time, diff=$duration_seconds seconds, duration=".$object->work_duration." minutes", LOG_DEBUG);
+			} else {
+				$object->work_duration = null;
+				dol_syslog("DEBUG update - No clock_out_time, duration set to null", LOG_DEBUG);
+			}
+
+			// DEBUG: Log final object state before update call
+			dol_syslog("DEBUG update - FINAL: Object work_duration = ".$object->work_duration." minutes before update() call", LOG_DEBUG);
+			
+			$result = $object->update($user);
+			dol_syslog("DEBUG update - Object update result: ".$result, LOG_DEBUG);
+			if ($result > 0) {
+				dol_syslog("DEBUG update - Update successful", LOG_DEBUG);
+				setEventMessages($langs->trans("RecordSaved"), null, 'mesgs');
+				$action = '';
+			} else {
+				$error++;
+				dol_syslog("DEBUG update - Update failed: ".$object->error, LOG_ERR);
+				setEventMessages($object->error, $object->errors, 'errors');
+				$action = 'edit';
+			}
+		} else {
+			$action = 'edit';
+		}
+	}
+
 	// Actions cancel, add, update, update_extras, confirm_validate, confirm_delete, confirm_deleteline, confirm_clone, confirm_close, confirm_setdraft, confirm_reopen
 	include DOL_DOCUMENT_ROOT.'/core/actions_addupdatedelete.inc.php';
 
@@ -135,6 +219,7 @@ if (empty($reshook)) {
 		$location_in = GETPOST('location_in', 'alpha');
 		$location_out = GETPOST('location_out', 'alpha');
 		$status = GETPOST('status', 'int');
+		$calculated_duration = GETPOST('calculated_duration', 'int'); // Duration from client-side calculation
 
 		// Validation
 		if (empty($fk_user)) {
@@ -161,10 +246,19 @@ if (empty($reshook)) {
 			$object->fk_user_creat = $user->id;
 			$object->datec = dol_now();
 
-			// Calculate work duration if both times are set
-			if (!empty($clock_out_time)) {
+			// Calculate work duration - prioritize client-calculated value, fallback to server calculation
+			if (!empty($calculated_duration) && $calculated_duration > 0) {
+				// Use client-calculated duration (from JavaScript)
+				$object->work_duration = (int)$calculated_duration;
+				dol_syslog("DEBUG create - Using client-calculated duration: ".$object->work_duration." minutes", LOG_DEBUG);
+			} elseif (!empty($clock_out_time)) {
+				// Fallback to server-side calculation
 				$duration_seconds = $clock_out_time - $clock_in_time;
 				$object->work_duration = round($duration_seconds / 60); // Convert to minutes
+				dol_syslog("DEBUG create - Server-calculated duration: clock_in=$clock_in_time, clock_out=$clock_out_time, diff=$duration_seconds seconds, duration=".$object->work_duration." minutes", LOG_DEBUG);
+			} else {
+				$object->work_duration = null;
+				dol_syslog("DEBUG create - No clock_out_time, duration set to null", LOG_DEBUG);
 			}
 
 			$result = $object->create($user);
@@ -179,73 +273,6 @@ if (empty($reshook)) {
 			}
 		} else {
 			$action = 'create';
-		}
-	}
-
-	if ($action == 'update' && $permissiontoadd) {
-		$error = 0;
-
-		// Get form data
-		$fk_user = GETPOST('fk_user', 'int');
-		$clock_in_time = dol_mktime(GETPOST('clock_in_timehour', 'int'), GETPOST('clock_in_timemin', 'int'), 0, GETPOST('clock_in_timemonth', 'int'), GETPOST('clock_in_timeday', 'int'), GETPOST('clock_in_timeyear', 'int'));
-		$clock_out_time = dol_mktime(GETPOST('clock_out_timehour', 'int'), GETPOST('clock_out_timemin', 'int'), 0, GETPOST('clock_out_timemonth', 'int'), GETPOST('clock_out_timeday', 'int'), GETPOST('clock_out_timeyear', 'int'));
-		$fk_timeclock_type = GETPOST('fk_timeclock_type', 'int');
-		$location_in = GETPOST('location_in', 'alpha');
-		$location_out = GETPOST('location_out', 'alpha');
-		$status = GETPOST('status', 'int');
-		
-		// DEBUG: Log form data received
-		dol_syslog("DEBUG update action - POST data received:", LOG_DEBUG);
-		dol_syslog("DEBUG update - fk_user: ".$fk_user, LOG_DEBUG);
-		dol_syslog("DEBUG update - clock_in_time: ".$clock_in_time, LOG_DEBUG);
-		dol_syslog("DEBUG update - clock_out_time: ".$clock_out_time, LOG_DEBUG);
-		dol_syslog("DEBUG update - Raw POST clock_in: hour=".GETPOST('clock_in_timehour', 'int')." min=".GETPOST('clock_in_timemin', 'int')." day=".GETPOST('clock_in_timeday', 'int')." month=".GETPOST('clock_in_timemonth', 'int')." year=".GETPOST('clock_in_timeyear', 'int'), LOG_DEBUG);
-
-		// Validation
-		if (empty($fk_user)) {
-			$error++;
-			setEventMessages($langs->trans("ErrorFieldRequired", $langs->transnoentitiesnoconv("Employee")), null, 'errors');
-		}
-		if (empty($clock_in_time)) {
-			$error++;
-			setEventMessages($langs->trans("ErrorFieldRequired", $langs->transnoentitiesnoconv("ClockIn")), null, 'errors');
-		}
-		if (!empty($clock_out_time) && $clock_out_time <= $clock_in_time) {
-			$error++;
-			setEventMessages($langs->trans("ErrorClockOutBeforeClockIn"), null, 'errors');
-		}
-
-		if (!$error) {
-			$object->fk_user = $fk_user;
-			$object->clock_in_time = $db->idate($clock_in_time);
-			$object->clock_out_time = !empty($clock_out_time) ? $db->idate($clock_out_time) : null;
-			$object->fk_timeclock_type = $fk_timeclock_type;
-			$object->location_in = $location_in;
-			$object->location_out = $location_out;
-			$object->status = !empty($status) ? $status : (!empty($clock_out_time) ? 3 : 2); // Use selected status or auto-determine
-
-			// Calculate work duration if both times are set
-			if (!empty($clock_out_time)) {
-				$duration_seconds = $clock_out_time - $clock_in_time;
-				$object->work_duration = round($duration_seconds / 60); // Convert to minutes
-			} else {
-				$object->work_duration = null;
-			}
-
-			$result = $object->update($user);
-			dol_syslog("DEBUG update - Object update result: ".$result, LOG_DEBUG);
-			if ($result > 0) {
-				dol_syslog("DEBUG update - Update successful", LOG_DEBUG);
-				setEventMessages($langs->trans("RecordSaved"), null, 'mesgs');
-				$action = '';
-			} else {
-				$error++;
-				dol_syslog("DEBUG update - Update failed: ".$object->error, LOG_ERR);
-				setEventMessages($object->error, $object->errors, 'errors');
-				$action = 'edit';
-			}
-		} else {
-			$action = 'edit';
 		}
 	}
 }
@@ -360,6 +387,12 @@ if ($action == 'create') {
 	print $form->selectarray('status', $array_status, GETPOST('status', 'int') ? GETPOST('status', 'int') : 2, 1, 0, 0, '', 1, 0, 0, '', 'maxwidth300', 1);
 	print '</td></tr>';
 
+	// Duration (calculated automatically)
+	print '<tr id="duration_row"><td><strong>'.$langs->trans("WorkDuration").'</strong></td><td>';
+	print '<span id="duration_display" style="color: #4CAF50; font-weight: bold;">-</span>';
+	print '<input type="hidden" id="calculated_duration" name="calculated_duration" value="">';
+	print '</td></tr>';
+
 	print '</table>'."\n";
 
 	print dol_get_fiche_end();
@@ -444,6 +477,19 @@ if (($id || $ref) && $action == 'edit') {
 	// Status
 	print '<tr><td>'.$langs->trans("Status").'</td><td>';
 	print $form->selectarray('status', $array_status, $object->status, 1, 0, 0, '', 1, 0, 0, '', 'maxwidth300', 1);
+	print '</td></tr>';
+
+	// Duration (calculated automatically)
+	print '<tr id="duration_row"><td><strong>'.$langs->trans("WorkDuration").'</strong></td><td>';
+	// Show current duration if available
+	$current_duration_display = '-';
+	if ($object->work_duration && $object->work_duration > 0) {
+		$hours = floor($object->work_duration / 60);
+		$minutes = $object->work_duration % 60;
+		$current_duration_display = sprintf('%dh %02dm (%d minutes)', $hours, $minutes, $object->work_duration);
+	}
+	print '<span id="duration_display" style="color: #4CAF50; font-weight: bold;">'.$current_duration_display.'</span>';
+	print '<input type="hidden" id="calculated_duration" name="calculated_duration" value="'.$object->work_duration.'">';
 	print '</td></tr>';
 
 	print '</table>';
@@ -581,6 +627,74 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 		}
 		print '</div>'."\n";
 	}
+}
+
+// JavaScript for automatic duration calculation
+if ($action == 'create' || $action == 'edit') {
+	print '<script type="text/javascript">
+	$(document).ready(function() {
+		// Function to calculate duration automatically
+		function calculateDuration() {
+			// Get clock-in values
+			var clockInYear = $("#clock_in_timeyear").val();
+			var clockInMonth = $("#clock_in_timemonth").val();
+			var clockInDay = $("#clock_in_timeday").val();
+			var clockInHour = $("#clock_in_timehour").val();
+			var clockInMin = $("#clock_in_timemin").val();
+			
+			// Get clock-out values  
+			var clockOutYear = $("#clock_out_timeyear").val();
+			var clockOutMonth = $("#clock_out_timemonth").val();
+			var clockOutDay = $("#clock_out_timeday").val();
+			var clockOutHour = $("#clock_out_timehour").val();
+			var clockOutMin = $("#clock_out_timemin").val();
+			
+			// Check if all required values are present and not empty/null
+			if (clockInYear && clockInMonth && clockInDay && clockInHour !== "" && clockInMin !== "" &&
+			    clockOutYear && clockOutMonth && clockOutDay && clockOutHour !== "" && clockOutHour !== "-1" && 
+			    clockOutMin !== "" && clockOutMin !== "-1") {
+				
+				// Create Date objects
+				var clockInDate = new Date(clockInYear, clockInMonth-1, clockInDay, clockInHour, clockInMin, 0);
+				var clockOutDate = new Date(clockOutYear, clockOutMonth-1, clockOutDay, clockOutHour, clockOutMin, 0);
+				
+				// Calculate difference in minutes
+				var diffMs = clockOutDate.getTime() - clockInDate.getTime();
+				var diffMinutes = Math.round(diffMs / (1000 * 60));
+				
+				// Display result and update hidden field
+				if (diffMinutes > 0) {
+					var hours = Math.floor(diffMinutes / 60);
+					var minutes = diffMinutes % 60;
+					var durationText = hours + "h " + (minutes < 10 ? "0" : "") + minutes + "m (" + diffMinutes + " minutes)";
+					
+					$("#duration_display").html(durationText);
+					$("#calculated_duration").val(diffMinutes); // Update hidden field for form submission
+				} else {
+					$("#duration_display").html("<span style=\"color: #f44336;\">Durée invalide</span>");
+					$("#calculated_duration").val(""); // Clear hidden field
+				}
+			} else {
+				// Missing data - show current state or empty
+				if (clockOutHour === "" || clockOutHour === "-1" || clockOutMin === "" || clockOutMin === "-1") {
+					$("#duration_display").html("<span style=\"color: #999;\">En cours...</span>");
+				} else {
+					$("#duration_display").html("-");
+				}
+				$("#calculated_duration").val(""); // Clear hidden field
+			}
+		}
+		
+		// Calculate on load
+		calculateDuration();
+		
+		// Attach change events to all date/time inputs
+		$("select[id*=\"clock_in_time\"], select[id*=\"clock_out_time\"]").change(calculateDuration);
+		
+		// Also trigger when date input changes
+		$("#clock_in_time, #clock_out_time").change(calculateDuration);
+	});
+	</script>';
 }
 
 // End of page
