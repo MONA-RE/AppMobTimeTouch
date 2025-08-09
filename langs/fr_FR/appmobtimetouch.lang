@@ -658,3 +658,9 @@ QuickAccess = Accès Rapide
 ViewAllRecords = Voir Tous les Enregistrements
 MobileInterface = Interface Mobile
 ValidationInterface = Interface de Validation
+
+#
+# User Information
+#
+LastName = Nom
+FirstName = Prénom

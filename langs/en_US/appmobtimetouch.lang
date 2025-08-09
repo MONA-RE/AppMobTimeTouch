@@ -301,3 +301,9 @@ QuickAccess = Quick Access
 ViewAllRecords = View All Records
 MobileInterface = Mobile Interface
 ValidationInterface = Validation Interface
+
+#
+# User Information
+#
+LastName = Last Name
+FirstName = First Name
