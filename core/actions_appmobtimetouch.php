@@ -317,7 +317,7 @@ class ActionsAppMobTimeTouch
                 }
                 
                 $this->resprints .= '<div class="weekly-actions">';
-                $this->resprints .= '<a href="'.dol_buildpath('/appmobtimetouch/timeclock_list.php', 1).'" class="butAction">';
+                $this->resprints .= '<a href="'.dol_buildpath('/appmobtimetouch/list.php', 1).'" class="butAction">';
                 $this->resprints .= $langs->trans("ViewMyRecords");
                 $this->resprints .= '</a>';
                 $this->resprints .= '</div>';
