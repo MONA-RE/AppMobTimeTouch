@@ -20,6 +20,15 @@
  * # Forcer si des entrées existent déjà
  * https://domain.com/custom/appmobtimetouch/scripts/add_monthly_entry.php?month=8&user_id=3&confirm=yes
  * 
+ * 
+ * https://test-smta.mona.re/custom/appmobtimetouch/scripts/add_monthly_entry.php?month=1&user_id=4
+ * https://test-smta.mona.re/custom/appmobtimetouch/scripts/add_monthly_entry.php?month=2&user_id=4
+ * https://test-smta.mona.re/custom/appmobtimetouch/scripts/add_monthly_entry.php?month=3&user_id=4
+ * https://test-smta.mona.re/custom/appmobtimetouch/scripts/add_monthly_entry.php?month=4&user_id=4
+ * https://test-smta.mona.re/custom/appmobtimetouch/scripts/add_monthly_entry.php?month=5&user_id=4
+ * https://test-smta.mona.re/custom/appmobtimetouch/scripts/add_monthly_entry.php?month=6&user_id=4
+ 
+ * 
  */
 
 require '../../../main.inc.php';
