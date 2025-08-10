@@ -46,6 +46,10 @@ MyRecords=My Records
 Summary=Summary
 Settings=Settings
 
+# Hierarchical filter
+HierarchicalManager=Hierarchical Manager
+AllUsers=All Users
+
 # Additional validation interface
 ClockedIn=Clocked In
 NotClockedIn=Not Clocked In

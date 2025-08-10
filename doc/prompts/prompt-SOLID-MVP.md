@@ -1,4 +1,13 @@
+
+
+# instruction pour Claude Code - intéraction avec l'utilisateur.
+quand tu t'adresses à l'utilisateur tu utiliseras le vous de politesse.
+
+
+
 # Instructions pour Claude Code - Développement SOLID, MVP et Incrémental avec Interface
+lis le fichier /var/www/html/dev-smta/htdocs/conf/conf.php pour savoir comment requeter la base de donnée
+
 
 ## Principes de base obligatoires
 

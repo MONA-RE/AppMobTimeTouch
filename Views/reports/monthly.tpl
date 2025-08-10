@@ -20,7 +20,7 @@
       <form id="filters-form">
         <ons-row>
           <!-- Filtre Type de rapport -->
-          <ons-col width="33%">
+          <ons-col width="25%">
             <label for="report_type" style="font-weight: 500; margin-bottom: 5px; display: block;">
               <?php echo $langs->trans('ReportType'); ?>
             </label>
@@ -35,7 +35,7 @@
           </ons-col>
           
           <!-- Filtre Mois -->
-          <ons-col id="month_filter_col" width="33%">
+          <ons-col id="month_filter_col" width="25%">
             <label for="filter_month" style="font-weight: 500; margin-bottom: 5px; display: block;">
               <?php echo $langs->trans('Month'); ?>
             </label>
@@ -65,7 +65,7 @@
           </ons-col>
           
           <!-- Filtre Année -->
-          <ons-col width="33%">
+          <ons-col width="25%">
             <label for="filter_year" style="font-weight: 500; margin-bottom: 5px; display: block;">
               <?php echo $langs->trans('Year'); ?>
             </label>
@@ -78,6 +78,24 @@
                 <?php echo $year; ?>
               </option>
               <?php endfor; ?>
+            </select>
+          </ons-col>
+          
+          <!-- Filtre Responsable hiérarchique -->
+          <ons-col width="25%">
+            <label for="search_hierarchical_manager" style="font-weight: 500; margin-bottom: 5px; display: block;">
+              <ons-icon icon="md-account-circle" style="color: #28a745; margin-right: 3px;"></ons-icon>
+              <?php echo $langs->trans('HierarchicalManager'); ?>
+            </label>
+            <select id="search_hierarchical_manager" name="search_hierarchical_manager" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; background-color: #f8f9fa;">
+              <option value=""><?php echo $langs->trans('AllUsers'); ?></option>
+              <?php if (!empty($user_list)): ?>
+                <?php foreach ($user_list as $userId => $userData): ?>
+                  <option value="<?php echo $userId; ?>" <?php echo ($search_hierarchical_manager == $userId) ? 'selected' : ''; ?>>
+                    <?php echo dol_escape_htmltag($userData['fullname']); ?> (<?php echo dol_escape_htmltag($userData['login']); ?>)
+                  </option>
+                <?php endforeach; ?>
+              <?php endif; ?>
             </select>
           </ons-col>
         </ons-row>

@@ -18,6 +18,9 @@ require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/Constants.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/TimeHelper.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/Utils/LocationHelper.php';
 
+// Classes Dolibarr pour les formulaires
+require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
+
 // Vérification module activé
 if (!isModEnabled('appmobtimetouch')) {
     accessforbidden('Module AppMobTimeTouch not enabled');
@@ -45,17 +48,32 @@ $report_type = GETPOST('report_type', 'alpha') ?: 'monthly'; // Type de rapport 
 $filter_month = GETPOST('filter_month', 'int') ?: date('n'); // Mois actuel par défaut
 $filter_year = GETPOST('filter_year', 'int') ?: date('Y');   // Année actuelle par défaut
 
+// Logique pour la valeur par défaut du responsable hiérarchique
+$default_manager_id = $user->id; // Par défaut : utilisateur connecté
+dol_syslog("DEBUG HierarchicalFilter: user->id=" . $user->id . ", user->fk_user=" . (isset($user->fk_user) ? $user->fk_user : 'NOT_SET'), LOG_DEBUG);
+
+if (!empty($user->fk_user) && $user->fk_user > 0) {
+    // Si l'utilisateur a un responsable hiérarchique défini, l'utiliser comme défaut
+    $default_manager_id = $user->fk_user;
+    dol_syslog("DEBUG HierarchicalFilter: Using hierarchical manager as default: " . $default_manager_id, LOG_DEBUG);
+} else {
+    dol_syslog("DEBUG HierarchicalFilter: No hierarchical manager found, using user id: " . $default_manager_id, LOG_DEBUG);
+}
+
+$search_hierarchical_manager = GETPOST('search_hierarchical_manager', 'int') ?: $default_manager_id;
+dol_syslog("DEBUG HierarchicalFilter: Final search_hierarchical_manager=" . $search_hierarchical_manager, LOG_DEBUG);
+
 try {
     // Récupération des rapports selon le type
     if ($report_type === 'annual') {
-        $reports = getAnnualReports($db, $user, $filter_year);
+        $reports = getAnnualReports($db, $user, $filter_year, $search_hierarchical_manager);
         $page_title = $langs->trans('AnnualReports');
         $is_personal_view = (!$user->admin && empty($user->rights->appmobtimetouch->timeclock->readall));
         if ($is_personal_view) {
             $page_title = $langs->trans('MyAnnualReports');
         }
     } else {
-        $reports = getMonthlyReports($db, $user, $filter_month, $filter_year);
+        $reports = getMonthlyReports($db, $user, $filter_month, $filter_year, $search_hierarchical_manager);
         $page_title = $langs->trans('MonthlyReports');
         $is_personal_view = (!$user->admin && empty($user->rights->appmobtimetouch->timeclock->readall));
         if ($is_personal_view) {
@@ -66,6 +84,18 @@ try {
     // Récupérer le statut de pointage pour la toolbar (comme index.php)
     $is_clocked_in = getUserClockStatus($db, $user);
     
+    // Récupérer la liste des utilisateurs pour le filtre (si droits suffisants)
+    $user_list = [];
+    if ($user->admin || !empty($user->rights->appmobtimetouch->timeclock->readall)) {
+        $formother = new FormOther($db);
+        $user_list = getManagerUsers($db, $user);
+        dol_syslog("DEBUG HierarchicalFilter: Retrieved " . count($user_list) . " users for filter", LOG_DEBUG);
+    } else {
+        // Même pour les employés, récupérer au moins leur responsable hiérarchique pour l'affichage
+        $user_list = getManagerUsers($db, $user, true); // Mode employé
+        dol_syslog("DEBUG HierarchicalFilter: Employee mode - Retrieved " . count($user_list) . " users for filter", LOG_DEBUG);
+    }
+    
     $data = [
         'reports' => $reports,
         'monthly_reports' => $report_type === 'monthly' ? $reports : [], // Pour compatibilité template
@@ -73,6 +103,8 @@ try {
         'report_type' => $report_type,
         'filter_month' => $filter_month,
         'filter_year' => $filter_year,
+        'search_hierarchical_manager' => $search_hierarchical_manager,
+        'user_list' => $user_list,
         'page_title' => $page_title,
         'is_personal_view' => $is_personal_view,
         'is_clocked_in' => $is_clocked_in
@@ -87,7 +119,7 @@ try {
 /**
  * Récupère les rapports annuels (year-to-date) pour tous les utilisateurs
  */
-function getAnnualReports($db, $user, $year) {
+function getAnnualReports($db, $user, $year, $hierarchical_manager_id = null) {
     global $conf;
     
     // Date de début et fin de l'année (YTD - jusqu'à aujourd'hui)
@@ -130,6 +162,11 @@ function getAnnualReports($db, $user, $year) {
             )
             WHERE u.statut = 1";
     
+    // Filtre par responsable hiérarchique si spécifié
+    if (!empty($hierarchical_manager_id) && $hierarchical_manager_id > 0) {
+        $sql .= " AND u.fk_user = " . (int)$hierarchical_manager_id;
+    }
+    
     // Filtrage selon les permissions utilisateur (même logique que monthly)
     if (!$user->admin && empty($user->rights->appmobtimetouch->timeclock->readall)) {
         $sql .= " AND u.rowid = " . (int)$user->id;
@@ -170,7 +207,7 @@ function getAnnualReports($db, $user, $year) {
 /**
  * Récupère les rapports mensuels pour tous les utilisateurs
  */
-function getMonthlyReports($db, $user, $month, $year) {
+function getMonthlyReports($db, $user, $month, $year, $hierarchical_manager_id = null) {
     global $conf;
     
     // Date de début et fin du mois
@@ -203,6 +240,11 @@ function getMonthlyReports($db, $user, $month, $year) {
                 AND tr.status IN (1, 3)
             )
             WHERE u.statut = 1";
+    
+    // Filtre par responsable hiérarchique si spécifié
+    if (!empty($hierarchical_manager_id) && $hierarchical_manager_id > 0) {
+        $sql .= " AND u.fk_user = " . (int)$hierarchical_manager_id;
+    }
     
     // Filtrage selon les permissions utilisateur
     if (!$user->admin && empty($user->rights->appmobtimetouch->timeclock->readall)) {
@@ -264,6 +306,59 @@ function getUserClockStatus($db, $user) {
     return false;
 }
 
+/**
+ * Récupère la liste des utilisateurs qui peuvent être responsables hiérarchiques
+ */
+function getManagerUsers($db, $user, $employee_mode = false) {
+    $users = [];
+    
+    if ($employee_mode) {
+        // Mode employé : récupérer seulement lui-même et son responsable hiérarchique
+        $sql = "SELECT u.rowid, u.firstname, u.lastname, u.login
+                FROM " . MAIN_DB_PREFIX . "user u
+                WHERE u.statut = 1 AND (u.rowid = " . (int)$user->id;
+        
+        if (!empty($user->fk_user) && $user->fk_user > 0) {
+            $sql .= " OR u.rowid = " . (int)$user->fk_user;
+        }
+        
+        $sql .= ") ORDER BY u.lastname, u.firstname";
+        
+        dol_syslog("DEBUG HierarchicalFilter: Employee SQL: " . $sql, LOG_DEBUG);
+    } else {
+        // Mode manager/admin : tous les utilisateurs
+        $sql = "SELECT u.rowid, u.firstname, u.lastname, u.login
+                FROM " . MAIN_DB_PREFIX . "user u
+                WHERE u.statut = 1";
+        
+        // Si l'utilisateur n'est pas admin, ne montrer que les utilisateurs de son entité
+        if (!$user->admin) {
+            $sql .= " AND u.entity = " . (int)$user->entity;
+        }
+        
+        $sql .= " ORDER BY u.lastname, u.firstname";
+        
+        dol_syslog("DEBUG HierarchicalFilter: Manager SQL: " . $sql, LOG_DEBUG);
+    }
+    
+    $resql = $db->query($sql);
+    if ($resql) {
+        while ($obj = $db->fetch_object($resql)) {
+            $users[$obj->rowid] = [
+                'id' => $obj->rowid,
+                'fullname' => trim($obj->firstname . ' ' . $obj->lastname),
+                'login' => $obj->login
+            ];
+            dol_syslog("DEBUG HierarchicalFilter: Added user " . $obj->rowid . " - " . trim($obj->firstname . ' ' . $obj->lastname), LOG_DEBUG);
+        }
+        $db->free($resql);
+    } else {
+        dol_syslog("DEBUG HierarchicalFilter: SQL query failed: " . $db->lasterror(), LOG_ERR);
+    }
+    
+    return $users;
+}
+
 // Configuration page et extraction des variables pour le template
 $page_title = $data['page_title'] ?? $langs->trans('Reports');
 $reports = $data['reports'] ?? [];
@@ -272,8 +367,15 @@ $annual_reports = $data['annual_reports'] ?? [];
 $report_type = $data['report_type'] ?? 'monthly';
 $filter_month = $data['filter_month'] ?? date('n');
 $filter_year = $data['filter_year'] ?? date('Y');
+$search_hierarchical_manager = $data['search_hierarchical_manager'] ?? $user->id;
+$user_list = $data['user_list'] ?? [];
 $is_personal_view = $data['is_personal_view'] ?? false;
 $is_clocked_in = $data['is_clocked_in'] ?? false;
+
+// Debug des variables template
+dol_syslog("DEBUG Template Variables: search_hierarchical_manager=" . $search_hierarchical_manager, LOG_DEBUG);
+dol_syslog("DEBUG Template Variables: user_list count=" . count($user_list), LOG_DEBUG);
+dol_syslog("DEBUG Template Variables: is_personal_view=" . ($is_personal_view ? 'true' : 'false'), LOG_DEBUG);
 
 // Variables pour compatibilité rightmenu.tpl selon INDEX_HOME_COMPATIBILITY.md
 $pending_validation_count = 0; // Pas utilisé dans reports mais requis pour rightmenu.tpl
@@ -488,12 +590,18 @@ function toggleMenu() {
 function applyFilters() {
     const reportType = document.getElementById('report_type').value;
     const year = document.getElementById('filter_year').value;
+    const hierarchicalManager = document.getElementById('search_hierarchical_manager').value;
     let url = '<?php echo DOL_URL_ROOT; ?>/custom/appmobtimetouch/reports.php?report_type=' + reportType + '&filter_year=' + year;
     
     // Ajouter le mois seulement pour les rapports mensuels
     if (reportType === 'monthly') {
         const month = document.getElementById('filter_month').value;
         url += '&filter_month=' + month;
+    }
+    
+    // Ajouter le filtre responsable hiérarchique
+    if (hierarchicalManager && hierarchicalManager !== '') {
+        url += '&search_hierarchical_manager=' + hierarchicalManager;
     }
     
     // Show loading message
