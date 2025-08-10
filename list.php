@@ -26,6 +26,7 @@ require '../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formcompany.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/date.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 require_once DOL_DOCUMENT_ROOT.'/custom/appmobtimetouch/class/timeclockrecord.class.php';
 
 // Load translation files required by the page
@@ -86,6 +87,17 @@ $search_user = GETPOST('search_user', 'int');
 $search_status = GETPOST('search_status', 'int');
 $search_type = GETPOST('search_type', 'int');
 $search_validation_status = GETPOST('search_validation_status', 'int');
+
+// Filtre responsable hiérarchique avec logique intelligente
+$default_hierarchical_manager = $user->id;
+if (!empty($user->fk_user) && $user->fk_user > 0) {
+    $default_hierarchical_manager = $user->fk_user;
+    dol_syslog("DEBUG ListFilter: Using hierarchical manager as default: " . $default_hierarchical_manager, LOG_DEBUG);
+} else {
+    dol_syslog("DEBUG ListFilter: No hierarchical manager found, using user id: " . $default_hierarchical_manager, LOG_DEBUG);
+}
+$search_hierarchical_manager = GETPOST('search_hierarchical_manager', 'int') ?: $default_hierarchical_manager;
+dol_syslog("DEBUG ListFilter: Final search_hierarchical_manager=" . $search_hierarchical_manager, LOG_DEBUG);
 $search_clock_in_dtstart = dol_mktime(0, 0, 0, GETPOST('search_clock_in_dtstartmonth', 'int'), GETPOST('search_clock_in_dtstartday', 'int'), GETPOST('search_clock_in_dtstartyear', 'int'));
 $search_clock_in_dtend = dol_mktime(23, 59, 59, GETPOST('search_clock_in_dtendmonth', 'int'), GETPOST('search_clock_in_dtendday', 'int'), GETPOST('search_clock_in_dtendyear', 'int'));
 $search_clock_out_dtstart = dol_mktime(0, 0, 0, GETPOST('search_clock_out_dtstartmonth', 'int'), GETPOST('search_clock_out_dtstartday', 'int'), GETPOST('search_clock_out_dtstartyear', 'int'));
@@ -167,6 +179,7 @@ if (empty($reshook)) {
 		$search_status = '';
 		$search_type = '';
 		$search_validation_status = '';
+		$search_hierarchical_manager = $default_hierarchical_manager; // Reset to default
 		$search_clock_in_dtstart = '';
 		$search_clock_in_dtend = '';
 		$search_clock_out_dtstart = '';
@@ -208,6 +221,37 @@ if ($resql_users) {
         $array_users[$obj_user->rowid] = $user_name.' ('.$obj_user->login.')';
     }
     $db->free($resql_users);
+}
+
+// Build hierarchical manager list for dropdown
+$array_hierarchical_managers = array();
+if ($user->admin || !empty($user->rights->appmobtimetouch->timeclock->readall)) {
+    // Mode manager/admin : tous les utilisateurs
+    $sql_managers = "SELECT u.rowid, u.login, u.lastname, u.firstname FROM ".MAIN_DB_PREFIX."user as u 
+                    WHERE u.entity IN (".getEntity('user').") AND u.statut = 1 
+                    ORDER BY u.lastname, u.firstname, u.login";
+} else {
+    // Mode employé : seulement lui-même et son responsable
+    $sql_managers = "SELECT u.rowid, u.login, u.lastname, u.firstname FROM ".MAIN_DB_PREFIX."user as u 
+                    WHERE u.statut = 1 AND (u.rowid = ".(int)$user->id;
+    if (!empty($user->fk_user) && $user->fk_user > 0) {
+        $sql_managers .= " OR u.rowid = ".(int)$user->fk_user;
+    }
+    $sql_managers .= ") ORDER BY u.lastname, u.firstname";
+}
+dol_syslog("DEBUG ListFilter: Manager SQL: " . $sql_managers, LOG_DEBUG);
+
+$resql_managers = $db->query($sql_managers);
+if ($resql_managers) {
+    while ($obj_manager = $db->fetch_object($resql_managers)) {
+        $manager_name = trim($obj_manager->lastname.' '.$obj_manager->firstname);
+        if (empty($manager_name)) $manager_name = $obj_manager->login;
+        $array_hierarchical_managers[$obj_manager->rowid] = $manager_name.' ('.$obj_manager->login.')';
+        dol_syslog("DEBUG ListFilter: Added manager " . $obj_manager->rowid . " - " . $manager_name, LOG_DEBUG);
+    }
+    $db->free($resql_managers);
+} else {
+    dol_syslog("DEBUG ListFilter: Manager SQL query failed: " . $db->lasterror(), LOG_ERR);
 }
 
 // Build timeclock type list for display
@@ -265,6 +309,11 @@ if ($search_id) {
 }
 if ($search_user && $search_user != '-1') {
 	$sql .= " AND t.fk_user = ".((int) $search_user);
+}
+// Filtre par responsable hiérarchique
+if ($search_hierarchical_manager && $search_hierarchical_manager > 0) {
+	$sql .= " AND u.fk_user = ".((int) $search_hierarchical_manager);
+	dol_syslog("DEBUG ListFilter: Applied hierarchical filter for manager ID: " . $search_hierarchical_manager, LOG_DEBUG);
 }
 if ($search_status != '' && $search_status != '-1') {
 	$sql .= " AND t.status = ".((int) $search_status);
@@ -354,6 +403,9 @@ if ($search_id != '') {
 if ($search_user != '' && $search_user != '-1') {
 	$param .= '&search_user='.urlencode($search_user);
 }
+if ($search_hierarchical_manager != '' && $search_hierarchical_manager != '-1') {
+	$param .= '&search_hierarchical_manager='.urlencode($search_hierarchical_manager);
+}
 if ($search_status != '') {
 	$param .= '&search_status='.urlencode($search_status);
 }
@@ -437,6 +489,22 @@ if ($search_all) {
 }
 
 $moreforfilter = '';
+
+// Ajout du filtre responsable hiérarchique
+if ($user->rights->user->user->lire) {
+	$langs->load("appmobtimetouch@appmobtimetouch");
+	$moreforfilter .= '<div class="divsearchfield">';
+	$tmptitle = $langs->trans('HierarchicalManager');
+	$moreforfilter .= img_picto($tmptitle, 'user', 'class="pictofixedwidth"');
+	$moreforfilter .= '<select name="search_hierarchical_manager" id="search_hierarchical_manager" class="flat maxwidth250">';
+	$moreforfilter .= '<option value="">'.$langs->trans('AllUsers').'</option>';
+	foreach ($array_hierarchical_managers as $manager_id => $manager_name) {
+		$selected = ($search_hierarchical_manager == $manager_id) ? ' selected' : '';
+		$moreforfilter .= '<option value="'.$manager_id.'"'.$selected.'>'.$manager_name.'</option>';
+	}
+	$moreforfilter .= '</select>';
+	$moreforfilter .= '</div>';
+}
 
 $parameters = array();
 $reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters, $object);
