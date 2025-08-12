@@ -8,6 +8,9 @@ quand tu t'adresses à l'utilisateur tu utiliseras le vous de politesse.
 # Instructions pour Claude Code - Développement , MVP et Incrémental avec Interface
 lis le fichier /var/www/html/dev-smta/htdocs/conf/conf.php pour savoir comment requeter la base de donnée
 
+lis le fichier /var/www/html/dev-smta/htdocs/core/lib/functions.lib.php pour voir comment utiliser les fonctions standard de dolibarr, dont dol_print_date(pour l'affichage des heures dans le fuseau horaires de l'utilisateur)
+
+
 
 ## Principes de base obligatoires
 
