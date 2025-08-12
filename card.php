@@ -547,17 +547,17 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 
 	// Clock In Time
 	print '<tr><td>'.$langs->trans("ClockInTime").'</td><td>';
-	// FIX: Use proper datetime conversion for VIEW mode
-	$clock_in_timestamp = is_string($object->clock_in_time) ? strtotime($object->clock_in_time) : $object->clock_in_time;
-	print dol_print_date($clock_in_timestamp, 'dayhour');
+	// Clock In avec gestion fuseau utilisateur
+	// Utilisation directe de la valeur base sans conversion préalable
+	print dol_print_date($object->clock_in_time, 'dayhour', 'user');
 	print '</td></tr>';
 
 	// Clock Out Time
 	print '<tr><td>'.$langs->trans("ClockOutTime").'</td><td>';
 	if ($object->clock_out_time) {
-		// FIX: Use proper datetime conversion for VIEW mode
-		$clock_out_timestamp = is_string($object->clock_out_time) ? strtotime($object->clock_out_time) : $object->clock_out_time;
-		print dol_print_date($clock_out_timestamp, 'dayhour');
+		// Clock Out avec gestion fuseau utilisateur  
+		// Utilisation directe de la valeur base sans conversion préalable
+		print dol_print_date($object->clock_out_time, 'dayhour', 'user');
 	} else {
 		print '<span class="opacitymedium">'.$langs->trans("InProgress").'</span>';
 	}

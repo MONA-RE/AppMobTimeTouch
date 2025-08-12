@@ -713,10 +713,10 @@ while ($i < $imaxinloop) {
 	// Clock In
 	if (!empty($arrayfields['t.clock_in_time']['checked'])) {
 		print '<td class="center">';
-		// FIX: Use proper datetime conversion for list display
+		// Clock In avec gestion fuseau utilisateur
 		if ($obj->clock_in_time) {
-			$clock_in_ts = is_string($obj->clock_in_time) ? strtotime($obj->clock_in_time) : $obj->clock_in_time;
-			print dol_print_date($clock_in_ts, 'dayhour');
+			// Utilisation directe de la valeur base sans conversion préalable
+			print dol_print_date($obj->clock_in_time, 'dayhour', 'user');
 		}
 		print '</td>';
 		if (!$i) $totalarray['nbfield']++;
@@ -725,10 +725,10 @@ while ($i < $imaxinloop) {
 	// Clock Out
 	if (!empty($arrayfields['t.clock_out_time']['checked'])) {
 		print '<td class="center">';
-		// FIX: Use proper datetime conversion for list display
+		// Clock Out avec gestion fuseau utilisateur
 		if ($obj->clock_out_time) {
-			$clock_out_ts = is_string($obj->clock_out_time) ? strtotime($obj->clock_out_time) : $obj->clock_out_time;
-			print dol_print_date($clock_out_ts, 'dayhour');
+			// Utilisation directe de la valeur base sans conversion préalable
+			print dol_print_date($obj->clock_out_time, 'dayhour', 'user');
 		} else {
 			print '<span class="opacitymedium">'.$langs->trans("InProgress").'</span>';
 		}
