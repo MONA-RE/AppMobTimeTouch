@@ -1,0 +1,114 @@
+# Sprint 44 - Saisie des heures supplémentaires payées
+
+## Analyse du besoin
+
+### Contexte actuel
+- Les rapports montrent les heures supplémentaires réalisées : `heures_réelles - heures_théoriques = heures_sup`
+- Exemple : 150h réelles vs 140h théoriques = 10h supplémentaires
+- Il manque la possibilité pour les managers de saisir les heures supplémentaires **effectivement payées**
+
+### Objectif Sprint 44
+En tant que manager, je dois pouvoir saisir simplement le nombre d'heures supplémentaires payées à mes salariés pour un mois donné.
+
+Une fois saisies, les rapports doivent afficher les heures supplémentaires **restantes** :
+`(heures_réelles - heures_payées) - heures_théoriques = heures_sup_restantes`
+
+Exemple : (150h - 10h payées) vs 140h théoriques = 0h supplémentaire restante
+
+---
+
+## Plan de développement MVP
+
+### Analyse :
+Après étude du code existant, l'approche la plus rapide consiste à :
+1. Créer une table dédiée pour stocker les heures supplémentaires payées
+2. Ajouter une interface simple de saisie pour les managers
+3. Modifier les rapports existants pour intégrer cette donnée
+
+L'architecture SOLID existante permet d'ajouter facilement cette fonctionnalité sans impacter le code existant.
+
+### Découpage en MVPs :
+
+#### **MVP 44.1** : Base de données et modèle (Infrastructure)
+- **Fonctionnalité core** : 
+  - Création table `llx_timeclock_overtime_paid`
+  - Classe PHP `OvertimePaid` avec CRUD standard Dolibarr
+  - Méthodes de calcul intégrées dans les rapports
+- **Interface graphique** : Page de test basique pour vérifier l'insertion en base
+- **Critères de validation** : 
+  - Table créée et accessible
+  - Insertion/lecture de données fonctionnelle
+  - Aucune régression sur l'existant
+
+#### **MVP 44.2** : Interface de saisie manager (Fonctionnalité métier)
+- **Fonctionnalité core** :
+  - Page de saisie des heures supplémentaires payées
+  - Validation des données (utilisateur, mois, heures)
+  - Intégration avec le système de permissions existant
+- **Interface graphique** :
+  - Formulaire simple : [Salarié] [Mois/Année] [Heures payées] [Valider]
+  - Listing des saisies existantes avec modification/suppression
+  - Menu dans la navigation existante
+- **Critères de validation** :
+  - Manager peut saisir des heures pour ses équipes
+  - Données persistées correctement
+  - Interface intuitive et responsive
+
+#### **MVP 44.3** : Intégration dans les rapports (Valeur métier)
+- **Fonctionnalité core** :
+  - Modification des calculs dans `getMonthlyReports()` et `getAnnualReports()`
+  - Nouvelle colonne "Heures payées" et "Heures sup. restantes"
+  - Conservation de la logique existante pour compatibilité
+- **Interface graphique** :
+  - Colonnes supplémentaires dans les rapports mensuels/annuels
+  - Indicateurs visuels (couleurs) pour les heures restantes
+  - Export avec les nouvelles données
+- **Critères de validation** :
+  - Rapports affichent les heures supplémentaires restantes
+  - Calcul correct : (réelles - payées) - théoriques
+  - Export fonctionnel avec nouvelles colonnes
+
+### Points de contrôle MVP :
+- **Après MVP 44.1** : Base de données opérationnelle, tests d'insertion/lecture via interface basique
+- **Après MVP 44.2** : Managers peuvent saisir et gérer les heures payées via interface dédiée
+- **Après MVP 44.3** : Rapports intègrent les heures payées, calcul des heures restantes fonctionnel
+
+### Validation interface :
+- **MVP 44.1** : Page de test technique avec formulaire d'insertion simple
+- **MVP 44.2** : Interface manager complète intégrée au menu principal
+- **MVP 44.3** : Rapports étendus avec nouvelles colonnes et indicateurs visuels
+
+---
+
+## Spécifications techniques
+
+### Structure de données
+```sql
+CREATE TABLE llx_timeclock_overtime_paid (
+    rowid int AUTO_INCREMENT PRIMARY KEY,
+    entity int DEFAULT 1,
+    datec datetime,
+    fk_user_creat int,
+    fk_user int,           -- Salarié concerné
+    month_year varchar(7), -- Format "YYYY-MM"
+    hours_paid decimal(5,2), -- Heures payées (ex: 10.50)
+    fk_user_manager int,   -- Manager qui a saisi
+    note_private text
+);
+```
+
+### Intégration avec l'existant
+- **Permissions** : Utilise `timeclock->readall` et `timeclock->validate` existantes
+- **Rapports** : Extension des fonctions `getMonthlyReports()` et `getAnnualReports()`
+- **Navigation** : Nouveau menu sous TimeManagement
+- **Architecture** : Respect SOLID avec nouveau service `OvertimePaidService`
+
+### Méthode d'implémentation
+Cette approche est **la plus rapide** car :
+1. ✅ Réutilise l'architecture existante (SOLID, services, templates)
+2. ✅ S'appuie sur les patterns Dolibarr standard (CommonObject, actions_addupdatedelete.inc.php)
+3. ✅ Exploite les permissions et menus déjà en place
+4. ✅ Extension naturelle des rapports existants sans refactoring majeur
+5. ✅ Chaque MVP apporte une valeur testable immédiatement
+
+**Estimation** : 3-4h de développement pour les 3 MVPs, testable à chaque étape.

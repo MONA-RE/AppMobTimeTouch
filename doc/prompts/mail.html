@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouvelles fonctionnalités AppMobTimeTouch</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px 10px 0 0;
+            margin: -30px -30px 30px -30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .subtitle {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 25px;
+            color: #2c3e50;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+        }
+        .section h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            font-size: 22px;
+        }
+        .feature {
+            background: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .feature h3 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 18px;
+        }
+        .feature-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .feature-list li:before {
+            content: "✅ ";
+            margin-right: 8px;
+        }
+        .highlight {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .technical-details {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            text-align: center;
+            color: #666;
+        }
+        .signature {
+            margin-top: 30px;
+            color: #2c3e50;
+        }
+        .commit-info {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 13px;
+            margin: 10px 0;
+            border-left: 3px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Nouvelles Fonctionnalités</h1>
+            <p class="subtitle">AppMobTimeTouch - Mise à jour Août 2025</p>
+        </div>
+
+        <div class="greeting">
+            Bonjour Jacquy,
+        </div>
+
+        <p>J'espère que vous allez bien. Je suis ravi de vous présenter les dernières améliorations apportées à votre application <strong>AppMobTimeTouch</strong>. Ces nouvelles fonctionnalités ont été développées pour répondre à vos besoins spécifiques de gestion hiérarchique et d'administration.</p>
+
+        <div class="section">
+            <h2>🔍 Filtre Responsable Hiérarchique</h2>
+            
+            <div class="feature">
+                <h3>Fonctionnalité Principale</h3>
+                <p>Implementation d'un système de filtrage intelligent par responsable hiérarchique dans les rapports et listes d'enregistrements.</p>
+                
+                <ul class="feature-list">
+                    <li><strong>Logique intelligente</strong> : Si l'utilisateur a un responsable défini (champ fk_user), celui-ci s'affiche par défaut</li>
+                    <li><strong>Fallback automatique</strong> : Sinon, l'utilisateur voit ses propres données par défaut</li>
+                    <li><strong>Interface intuitive</strong> : Sélecteur déroulant avec icône utilisateur</li>
+                    <li><strong>Gestion des permissions</strong> : Mode employé vs mode manager avec listes adaptées</li>
+                </ul>
+
+                <div class="highlight">
+                    <strong>Impact utilisateur :</strong> Les managers peuvent désormais filtrer facilement les rapports et enregistrements par responsable hiérarchique, tandis que les employés voient automatiquement les données pertinentes selon leur position dans l'organigramme.
+                </div>
+
+                <div class="technical-details">
+                    <strong>Détails techniques :</strong>
+                    <div class="commit-info">Commit 4c7f9d5 : Ajout filtre responsable hiérarchique avec logique intelligente</div>
+                    • Modification de reports.php avec fonctions getMonthlyReports() et getAnnualReports()<br>
+                    • Ajout du filtrage dans list.php avec interface $moreforfilter<br>
+                    • Traductions bilingues FR/EN complètes<br>
+                    • Debug complet avec dol_syslog pour diagnostic
+                </div>
+            </div>
+
+            <div class="feature">
+                <h3>Pages Concernées</h3>
+                <ul class="feature-list">
+                    <li><strong>Reports (reports.php)</strong> : Rapports mensuels et annuels avec filtrage hiérarchique</li>
+                    <li><strong>Liste des enregistrements (list.php)</strong> : Vue tabulaire avec filtre responsable</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ Script d'Administration</h2>
+            
+            <div class="feature">
+                <h3>Script add_monthly_entry.php</h3>
+                <p>Nouveau script d'administration pour générer automatiquement des entrées de pointage mensuelles de 140 heures.</p>
+
+                <ul class="feature-list">
+                    <li><strong>Paramètres flexibles</strong> : Mois, utilisateur, année (optionnelle)</li>
+                    <li><strong>Calcul automatique</strong> : Démarre le 1er du mois, durée de 140h précises</li>
+                    <li><strong>Sécurité renforcée</strong> : Accès administrateur uniquement</li>
+                    <li><strong>Validations</strong> : Vérification utilisateur actif et détection doublons</li>
+                    <li><strong>Gestion d'erreurs</strong> : Transactions avec rollback automatique</li>
+                </ul>
+
+                <div class="highlight">
+                    <strong>Exemple d'utilisation :</strong><br>
+                    <code>https://test-smta.mona.re/custom/appmobtimetouch/scripts/add_monthly_entry.php?month=8&user_id=3</code>
+                </div>
+
+                <div class="technical-details">
+                    <strong>Fonctionnalités avancées :</strong><br>
+                    • Génération de références uniques (SCRIPT-YYYYMM-USERID-HHMMSS)<br>
+                    • Calcul précis des dates : 140h = 5 jours 20 heures<br>
+                    • Logging complet avec dol_syslog<br>
+                    • Paramètre confirm=yes pour bypasser les avertissements
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Requête de Données</h2>
+            
+            <div class="feature">
+                <h3>Script monthly_work_duration.sql</h3>
+                <p>Requête SQL optimisée pour analyser les durées de travail par utilisateur et par mois.</p>
+
+                <ul class="feature-list">
+                    <li><strong>Groupement intelligent</strong> : Par utilisateur, année et mois</li>
+                    <li><strong>Calculs automatiques</strong> : Minutes et heures avec arrondi</li>
+                    <li><strong>Tri optimisé</strong> : Par nom d'utilisateur et période décroissante</li>
+                    <li><strong>Version étendue</strong> : Avec nombre de jours travaillés et moyenne journalière</li>
+                </ul>
+
+                <div class="technical-details">
+                    <strong>Exemple de résultat :</strong><br>
+                    • chauf1 - Juillet 2025 : 377,35 heures (22 641 minutes)<br>
+                    • chauf2 - Août 2025 : 11,03 heures (662 minutes)
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Améliorations Techniques</h2>
+            
+            <div class="feature">
+                <h3>Architecture SOLID</h3>
+                <p>Développement selon les principes SOLID pour une maintenabilité optimale :</p>
+                
+                <ul class="feature-list">
+                    <li><strong>Single Responsibility</strong> : Chaque fonction a une responsabilité unique</li>
+                    <li><strong>Open/Closed</strong> : Extension sans modification du code existant</li>
+                    <li><strong>Dependency Inversion</strong> : Injection de dépendances avec interfaces</li>
+                </ul>
+            </div>
+
+            <div class="feature">
+                <h3>Debugging et Logs</h3>
+                <ul class="feature-list">
+                    <li><strong>Messages de debug</strong> : Traçabilité complète avec DEBUG HierarchicalFilter</li>
+                    <li><strong>Commande de suivi</strong> : <code>tail -f /var/lib/dev-smta/documents/dolibarr.log | grep "DEBUG HierarchicalFilter"</code></li>
+                    <li><strong>Gestion d'erreurs</strong> : Logging des erreurs SQL et validation des données</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🌐 Internationalisation</h2>
+            
+            <div class="feature">
+                <h3>Support Multilingue</h3>
+                <ul class="feature-list">
+                    <li><strong>Français</strong> : "Responsable hiérarchique", "Tous les utilisateurs"</li>
+                    <li><strong>Anglais</strong> : "Hierarchical Manager", "All Users"</li>
+                    <li><strong>Intégration native</strong> : Utilisation du système de traduction Dolibarr</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="highlight">
+            <h2>🎯 Résumé des Bénéfices</h2>
+            <ul class="feature-list">
+                <li><strong>Gestion hiérarchique simplifiée</strong> : Filtrage intelligent selon l'organigramme</li>
+                <li><strong>Administration facilitée</strong> : Script pour générer des entrées de masse</li>
+                <li><strong>Analyse avancée</strong> : Requêtes optimisées pour le reporting</li>
+                <li><strong>Expérience utilisateur améliorée</strong> : Interface intuitive et adaptée aux rôles</li>
+                <li><strong>Robustesse technique</strong> : Architecture SOLID et debugging complet</li>
+            </ul>
+        </div>
+
+        <p>Ces nouvelles fonctionnalités sont d'ores et déjà disponibles sur votre environnement de test. Je reste à votre disposition pour toute question ou démonstration.</p>
+
+        <div class="signature">
+            Bien cordialement,<br>
+            <strong>L'équipe de développement</strong><br>
+            <em>Propulsé par Claude Code</em>
+        </div>
+
+        <div class="footer">
+            <p><small>📅 Développement réalisé en Août 2025 | 🔗 Commit principal : 4c7f9d5</small></p>
+        </div>
+    </div>
+</body>
+</html>
