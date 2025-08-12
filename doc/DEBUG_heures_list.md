@@ -1,12 +1,12 @@
 # DEBUG - Gestion des fuseaux horaires dans list.php
 
-## Problématique identifiée
+## Problï¿½matique identifiï¿½e
 
-Dans le fichier `list.php`, les heures affichées correspondent aux heures enregistrées en base de données sans prise en compte du fuseau horaire de l'utilisateur. Dolibarr dispose de fonctions natives pour gérer les fuseaux horaires et assurer un affichage correct selon les préférences de l'utilisateur.
+Dans le fichier `list.php`, les heures affichï¿½es correspondent aux heures enregistrï¿½es en base de donnï¿½es sans prise en compte du fuseau horaire de l'utilisateur. Dolibarr dispose de fonctions natives pour gï¿½rer les fuseaux horaires et assurer un affichage correct selon les prï¿½fï¿½rences de l'utilisateur.
 
 ## Analyse du code actuel
 
-### Localisation du problème (list.php:717-731)
+### Localisation du problï¿½me (list.php:717-731)
 ```php
 // Clock In - Lines 717-721
 if ($obj->clock_in_time) {
@@ -21,27 +21,27 @@ if ($obj->clock_out_time) {
 }
 ```
 
-### Problème détecté
+### Problï¿½me dï¿½tectÃ©
 - Les timestamps sont convertis avec `strtotime()` qui utilise le fuseau serveur
-- `dol_print_date()` est appelée avec un timestamp déjà converti, mais sans gestion du fuseau utilisateur
-- Les heures affichées sont donc dans le fuseau du serveur et non de l'utilisateur connecté
+- `dol_print_date()` est appelï¿½e avec un timestamp dï¿½jï¿½ converti, mais sans gestion du fuseau utilisateur
+- Les heures affichï¿½es sont donc dans le fuseau du serveur et non de l'utilisateur connectï¿½
 
-## Solution recommandée : Utilisation des fonctions Dolibarr
+## Solution recommandï¿½e : Utilisation des fonctions Dolibarr
 
 ### 1. Fonction dol_print_date() avec gestion des fuseaux
 
-Dolibarr dispose de la fonction `dol_print_date($time, $format, $tzoutput, $outputlangs, $encodetooutput)` où :
+Dolibarr dispose de la fonction `dol_print_date($time, $format, $tzoutput, $outputlangs, $encodetooutput)` oï¿½ :
 - `$time` : timestamp ou string datetime
 - `$format` : format d'affichage ('dayhour' pour date + heure)
 - `$tzoutput` : fuseau horaire de sortie ('user' pour le fuseau de l'utilisateur)
 
-### 2. Modifications à implémenter
+### 2. Modifications ï¿½ implï¿½menter
 
 #### Dans list.php, remplacer les lignes 717-721 par :
 ```php
 // Clock In avec gestion fuseau utilisateur
 if ($obj->clock_in_time) {
-    // Utilisation directe de la valeur base sans conversion préalable
+    // Utilisation directe de la valeur base sans conversion prï¿½alable
     print dol_print_date($obj->clock_in_time, 'dayhour', 'user');
 }
 ```
@@ -50,7 +50,7 @@ if ($obj->clock_in_time) {
 ```php  
 // Clock Out avec gestion fuseau utilisateur
 if ($obj->clock_out_time) {
-    // Utilisation directe de la valeur base sans conversion préalable
+    // Utilisation directe de la valeur base sans conversion prï¿½alable
     print dol_print_date($obj->clock_out_time, 'dayhour', 'user');
 }
 ```
@@ -58,29 +58,29 @@ if ($obj->clock_out_time) {
 ### 3. Principe de la solution
 
 - **Supprimer** les conversions manuelles avec `strtotime()`
-- **Utiliser directement** la valeur de base de données dans `dol_print_date()`
-- **Ajouter le paramètre** `'user'` pour le fuseau horaire de sortie
-- Dolibarr gère automatiquement la conversion depuis le fuseau UTC/serveur vers le fuseau utilisateur
+- **Utiliser directement** la valeur de base de donnï¿½es dans `dol_print_date()`
+- **Ajouter le paramï¿½tre** `'user'` pour le fuseau horaire de sortie
+- Dolibarr gï¿½re automatiquement la conversion depuis le fuseau UTC/serveur vers le fuseau utilisateur
 
 ### 4. Avantages de cette approche
 
- **Conformité Dolibarr** : Utilise les fonctions natives du framework
- **Gestion automatique** : Dolibarr gère la conversion des fuseaux
- **Préférences utilisateur** : Respecte le fuseau configuré dans le profil utilisateur
- **Maintenabilité** : Code plus simple et standard
- **Cohérence** : Même affichage que les autres modules Dolibarr
+ **Conformitï¿½ Dolibarr** : Utilise les fonctions natives du framework
+ **Gestion automatique** : Dolibarr gï¿½re la conversion des fuseaux
+ **Prï¿½fï¿½rences utilisateur** : Respecte le fuseau configurï¿½ dans le profil utilisateur
+ **Maintenabilitï¿½** : Code plus simple et standard
+ **Cohï¿½rence** : Mï¿½me affichage que les autres modules Dolibarr
 
 ### 5. Test de validation
 
-Après modification :
-1. **Configurer** un utilisateur avec un fuseau différent du serveur
-2. **Créer** un enregistrement de temps
-3. **Vérifier** que l'affichage dans list.php respecte le fuseau utilisateur
-4. **Comparer** avec d'autres pages Dolibarr pour cohérence
+Aprï¿½s modification :
+1. **Configurer** un utilisateur avec un fuseau diffï¿½rent du serveur
+2. **Crï¿½er** un enregistrement de temps
+3. **Vï¿½rifier** que l'affichage dans list.php respecte le fuseau utilisateur
+4. **Comparer** avec d'autres pages Dolibarr pour cohï¿½rence
 
 ### 6. Extension possible
 
-Cette solution peut être étendue à d'autres fichiers du module où l'affichage des heures pose le même problème :
+Cette solution peut ï¿½tre ï¿½tendue ï¿½ d'autres fichiers du module oï¿½ l'affichage des heures pose le mï¿½me problï¿½me :
 - `card.php`
 - `reports.php`
 - Templates de validation
@@ -88,4 +88,62 @@ Cette solution peut être étendue à d'autres fichiers du module où l'affichage de
 
 ## Conclusion
 
-L'utilisation du paramètre `'user'` dans `dol_print_date()` est la solution la plus simple et la plus conforme aux standards Dolibarr pour résoudre le problème d'affichage des fuseaux horaires dans `list.php`.
+L'utilisation du paramï¿½tre `'tzuser'` dans `dol_print_date()` est la solution la plus simple et la plus conforme aux standards Dolibarr pour rï¿½soudre le problï¿½me d'affichage des fuseaux horaires dans `list.php`.
+
+## Corrections supplï¿½mentaires identifiï¿½es
+
+### 7. Corrections ï¿½ envisager dans les templates de validation
+
+Aprï¿½s analyse complï¿½te du code source Dolibarr (`/core/lib/functions.lib.php`), les paramï¿½tres de fuseau horaire corrects pour `dol_print_date()` sont :
+- `'tzserver'` : Fuseau horaire du serveur
+- `'tzuser'` : Fuseau horaire de l'utilisateur connectï¿½ (recommandï¿½)
+- `'tzuserrel'` : Fuseau horaire utilisateur avec gestion relative
+
+### 8. Templates nï¿½cessitant des corrections
+
+#### A. Views/validation/record-detail.tpl
+
+**Ligne 43 - Affichage date sans fuseau utilisateur :**
+```php
+// âŒ Actuel
+<span style="color: #6c757d;"><?php echo dol_print_date($record['clock_in_time'], 'day'); ?></span>
+
+// âœ… Correction proposï¿½e  
+<span style="color: #6c757d;"><?php echo dol_print_date($record['clock_in_time'], 'day', 'tzuser'); ?></span>
+```
+
+**Ligne 221 - Date de validation sans fuseau utilisateur :**
+```php
+// âŒ Actuel
+<?php echo dol_print_date($record['validation_status']['validated_date'], 'dayhour'); ?>
+
+// âœ… Correction proposï¿½e
+<?php echo dol_print_date($record['validation_status']['validated_date'], 'dayhour', 'tzuser'); ?>
+```
+
+#### B. Views/components/RecordsList.tpl  
+
+**Lignes 35-37 - Conversion manuelle incorrecte :**
+```php
+// âŒ Actuel - Conversion manuelle avec $db->jdate()
+$record_date = dol_print_date($db->jdate($record->clock_in_time), 'day');
+$clock_in = dol_print_date($db->jdate($record->clock_in_time), 'hour');
+$clock_out = !empty($record->clock_out_time) ? dol_print_date($db->jdate($record->clock_out_time), 'hour') : '';
+
+// âœ… Correction proposï¿½e - Utilisation directe avec fuseau utilisateur
+$record_date = dol_print_date($record->clock_in_time, 'day', 'tzuser');
+$clock_in = dol_print_date($record->clock_in_time, 'hour', 'tzuser');
+$clock_out = !empty($record->clock_out_time) ? dol_print_date($record->clock_out_time, 'hour', 'tzuser') : '';
+```
+
+### 9. Rï¿½sumï¿½ des corrections restantes
+
+| Fichier | Lignes | Type de correction | Status |
+|---------|--------|-------------------|--------|
+| `list.php` | 719, 731 | `'user'` â†’ `'tzuser'` | âœ… **Corrigï¿½** |
+| `card.php` | 552, 560 | `'user'` â†’ `'tzuser'` | âœ… **Corrigï¿½** |
+| `Views/validation/record-detail.tpl` | 43, 221 | Ajouter `'tzuser'` | âš ï¸ **ï¿½ faire** |
+| `Views/components/RecordsList.tpl` | 35-37 | Supprimer `$db->jdate()` + ajouter `'tzuser'` | âš ï¸ **ï¿½ faire** |
+| `Views/validation/list-all.tpl` | 349, 358, 360 | Dï¿½jï¿½ correct avec `'tzuser'` | âœ… **OK** |
+
+Ces corrections garantiront un affichage cohï¿½rent des heures dans le fuseau horaire de l'utilisateur dans tous les templates du module.

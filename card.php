@@ -549,7 +549,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 	print '<tr><td>'.$langs->trans("ClockInTime").'</td><td>';
 	// Clock In avec gestion fuseau utilisateur
 	// Utilisation directe de la valeur base sans conversion préalable
-	print dol_print_date($object->clock_in_time, 'dayhour', 'user');
+	print dol_print_date($object->clock_in_time, 'dayhour', 'tzuser');
 	print '</td></tr>';
 
 	// Clock Out Time
@@ -557,7 +557,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 	if ($object->clock_out_time) {
 		// Clock Out avec gestion fuseau utilisateur  
 		// Utilisation directe de la valeur base sans conversion préalable
-		print dol_print_date($object->clock_out_time, 'dayhour', 'user');
+		print dol_print_date($object->clock_out_time, 'dayhour', 'tzuser');
 	} else {
 		print '<span class="opacitymedium">'.$langs->trans("InProgress").'</span>';
 	}

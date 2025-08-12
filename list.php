@@ -716,7 +716,7 @@ while ($i < $imaxinloop) {
 		// Clock In avec gestion fuseau utilisateur
 		if ($obj->clock_in_time) {
 			// Utilisation directe de la valeur base sans conversion préalable
-			print dol_print_date($obj->clock_in_time, 'dayhour', 'user');
+			print dol_print_date($obj->clock_in_time, 'dayhour', 'tzuser');
 		}
 		print '</td>';
 		if (!$i) $totalarray['nbfield']++;
@@ -728,7 +728,7 @@ while ($i < $imaxinloop) {
 		// Clock Out avec gestion fuseau utilisateur
 		if ($obj->clock_out_time) {
 			// Utilisation directe de la valeur base sans conversion préalable
-			print dol_print_date($obj->clock_out_time, 'dayhour', 'user');
+			print dol_print_date($obj->clock_out_time, 'dayhour', 'tzuser');
 		} else {
 			print '<span class="opacitymedium">'.$langs->trans("InProgress").'</span>';
 		}

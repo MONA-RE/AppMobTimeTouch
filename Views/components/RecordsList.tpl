@@ -32,9 +32,9 @@
             $type->color = '#666666';
         }
         
-        $record_date = dol_print_date($db->jdate($record->clock_in_time), 'day');
-        $clock_in = dol_print_date($db->jdate($record->clock_in_time), 'hour');
-        $clock_out = !empty($record->clock_out_time) ? dol_print_date($db->jdate($record->clock_out_time), 'hour') : '';
+        $record_date = dol_print_date($record->clock_in_time, 'day', 'tzuser');
+        $clock_in = dol_print_date($record->clock_in_time, 'hour', 'tzuser');
+        $clock_out = !empty($record->clock_out_time) ? dol_print_date($record->clock_out_time, 'hour', 'tzuser') : '';
         $duration = !empty($record->work_duration) ? TimeHelper::convertSecondsToReadableTime($record->work_duration * 60) : '';
         $status_class = '';
         

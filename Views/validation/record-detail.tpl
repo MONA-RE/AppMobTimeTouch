@@ -40,7 +40,7 @@
       <div class="content" style="padding: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <span style="font-weight: 500; color: #495057;"><?php echo $langs->trans('Date'); ?> :</span>
-          <span style="color: #6c757d;"><?php echo dol_print_date($record['clock_in_time'], 'day'); ?></span>
+          <span style="color: #6c757d;"><?php echo dol_print_date($record['clock_in_time'], 'day', 'tzuser'); ?></span>
         </div>
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -218,7 +218,7 @@
         </div>
         <?php if (!empty($record['validation_status']['validated_date'])): ?>
         <div style="font-size: 14px; color: #6c757d;">
-          <?php echo dol_print_date($record['validation_status']['validated_date'], 'dayhour'); ?>
+          <?php echo dol_print_date($record['validation_status']['validated_date'], 'dayhour', 'tzuser'); ?>
         </div>
         <?php endif; ?>
         <?php endif; ?>
