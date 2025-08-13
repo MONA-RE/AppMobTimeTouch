@@ -63,13 +63,17 @@ il faut ajouter les entrées dans le menu de dolibarr
   - Manager peut saisir des heures pour ses équipes
   - Données persistées correctement
   - Interface intuitive et responsive
+
 TODO MVP 44.2 
 
-- géré la numérotation automatique du champ ref : 
-  - lire 
-- fix problem : quand je cliquer sur le bouton créer: ([Wed Aug 13 17:33:54.076794 2025] [php:error] [pid 627854] [client ::1:56066] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/html/dev-smta/htdocs/core/class/commonnumrefgenerator.class.php' (include_path='/var/www/html/htdocs') in /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/core/modules/appmobtimetouch/modules_timeclockovertimepaid.php:24\nStack trace:\n#0 /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/core/modules/appmobtimetouch/mod_timeclockovertimepaid_standard.php(24): require_once()\n#1 /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/class/timeclockovertimepaid.class.php(984): include_once('...')\n#2 /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/class/timeclockovertimepaid.class.php(248): TimeclockOvertimePaid->getNextNumRef()\n#3 /var/www/html/dev-smta/htdocs/core/actions_addupdatedelete.inc.php(137): TimeclockOvertimePaid->create()\n#4 /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/timeclockovertimepaid_card.php(183): include('...')\n#5 {main}\n  thrown in /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/core/modules/appmobtimetouch/modules_timeclockovertimepaid.php on line 24, referer: http://localhost/dev-smta/htdocs/custom/appmobtimetouch/timeclockovertimepaid_card.php?action=create&backtopage=%2Fdev-smta%2Fhtdocs%2Fcustom%2Fappmobtimetouch%2Ftimeclockovertimepaid_list.php)
+- gérer la numérotation automatique du champ ref : 
+  - lire htdocs/core/modules/facture/mod_facture_terre.php pour s'inspirer 
+  - fix problem : quand je cliquer sur le bouton créer: ([Wed Aug 13 17:33:54.076794 2025] [php:error] [pid 627854] [client ::1:56066] PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/html/dev-smta/htdocs/core/class/commonnumrefgenerator.class.php' (include_path='/var/www/html/htdocs') in /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/core/modules/appmobtimetouch/modules_timeclockovertimepaid.php:24\nStack trace:\n#0 /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/core/modules/appmobtimetouch/mod_timeclockovertimepaid_standard.php(24): require_once()\n#1 /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/class/timeclockovertimepaid.class.php(984): include_once('...')\n#2 /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/class/timeclockovertimepaid.class.php(248): TimeclockOvertimePaid->getNextNumRef()\n#3 /var/www/html/dev-smta/htdocs/core/actions_addupdatedelete.inc.php(137): TimeclockOvertimePaid->create()\n#4 /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/timeclockovertimepaid_card.php(183): include('...')\n#5 {main}\n  thrown in /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/core/modules/appmobtimetouch/modules_timeclockovertimepaid.php on line 24, referer: http://localhost/dev-smta/htdocs/custom/appmobtimetouch/timeclockovertimepaid_card.php?action=create&backtopage=%2Fdev-smta%2Fhtdocs%2Fcustom%2Fappmobtimetouch%2Ftimeclockovertimepaid_list.php)
 
--séparer dans 2 champs distinct en base de données la valeur du mois et de l'année au lieu d'un seul champ 
+-séparer le champs 'month_year varchar(7) ) dans 2 champs distincts en base de données par un champ pour la valeur du mois et un champ pour la valeur de l'année
+  - modifier le fichier /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/sql/llx_appmobtimetouch_timeclockovertimepaid.sql
+  - modifier le fichier /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/timeclockovertimepaid_card.php
+  - modifier le fichier /var/www/html/dev-smta/htdocs/custom/appmobtimetouch/timeclockovertimepaid_list.php
 
 
 #### **MVP 44.3** : Intégration dans les rapports (Valeur métier)
