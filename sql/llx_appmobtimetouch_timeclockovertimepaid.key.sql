@@ -20,7 +20,8 @@ ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimeto
 ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_entity (entity);
 ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_fk_user (fk_user);
 ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_fk_user_manager (fk_user_manager);
-ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_month_year (month_year);
+ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_month (month);
+ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_year (year);
 ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_status (status);
 
 -- FOREIGN KEY CONSTRAINTS
@@ -29,5 +30,5 @@ ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD CONSTRAINT llx_appmobt
 ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD CONSTRAINT llx_appmobtimetouch_timeclockovertimepaid_fk_user_creat FOREIGN KEY (fk_user_creat) REFERENCES llx_user(rowid);
 
 -- UNIQUE CONSTRAINT FOR BUSINESS RULE: One record per user per month
-ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD UNIQUE INDEX uk_appmobtimetouch_timeclockovertimepaid_user_month(fk_user, month_year, entity);
+ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD UNIQUE INDEX uk_appmobtimetouch_timeclockovertimepaid_user_month(fk_user, month, year, entity);
 

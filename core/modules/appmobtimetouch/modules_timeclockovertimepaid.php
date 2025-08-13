@@ -21,12 +21,37 @@
  *  \brief      File that contains parent class for timeclockovertimepaid numbering modules
  */
 
-require_once DOL_DOCUMENT_ROOT.'/core/class/commonnumrefgenerator.class.php';
-
 /**
  * Parent class of numbering modules for TimeclockOvertimePaid references
  */
-abstract class ModeleNumRefTimeclockOvertimePaid extends CommonNumRefGenerator
+abstract class ModeleNumRefTimeclockOvertimePaid
 {
-    // No overload code
+    /**
+     * @var string Error message
+     */
+    public $error = '';
+
+    /**
+     * Return description of numbering module
+     *
+     * @return string Text with description
+     */
+    abstract public function info();
+
+    /**
+     * Return an example of numbering
+     *
+     * @return string Example
+     */
+    abstract public function getExample();
+
+    /**
+     * Return next free value
+     *
+     * @param Societe $objsoc Object thirdparty  
+     * @param Object $object Object we need next value for
+     * @param string $mode 'next' for next value or 'last' for last value
+     * @return string Value if OK, <0 if KO
+     */
+    abstract public function getNextValue($objsoc, $object, $mode = 'next');
 }

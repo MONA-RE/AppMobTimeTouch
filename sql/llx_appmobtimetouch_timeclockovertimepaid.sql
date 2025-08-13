@@ -22,7 +22,8 @@ CREATE TABLE llx_appmobtimetouch_timeclockovertimepaid(
 	
 	-- BUSINESS FIELDS FOR OVERTIME MANAGEMENT
 	fk_user integer NOT NULL COMMENT 'Employee (user) concerned by paid overtime',
-	month_year varchar(7) NOT NULL COMMENT 'Month and year format YYYY-MM',
+	month integer NOT NULL COMMENT 'Month (1-12)',
+	year integer NOT NULL COMMENT 'Year (ex: 2025)',
 	hours_paid decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT 'Number of overtime hours paid (ex: 10.50)',
 	fk_user_manager integer NOT NULL COMMENT 'Manager who entered the paid overtime',
 	

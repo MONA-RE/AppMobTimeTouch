@@ -264,6 +264,18 @@ if ($action == 'create') {
 
 	// Set some default values
 	//if (! GETPOSTISSET('fieldname')) $_POST['fieldname'] = 'myvalue';
+	
+	// MVP 44.2.2: Set default month and year for creation
+	if (!GETPOSTISSET('month')) {
+		$_POST['month'] = date('n'); // Current month (1-12)
+	}
+	if (!GETPOSTISSET('year')) {
+		$_POST['year'] = date('Y'); // Current year
+	}
+	// MVP 44.2: Set default manager to current user
+	if (!GETPOSTISSET('fk_user_manager')) {
+		$_POST['fk_user_manager'] = $user->id;
+	}
 
 	print '<table class="border centpercent tableforfieldcreate">'."\n";
 

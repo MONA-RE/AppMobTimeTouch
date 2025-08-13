@@ -114,10 +114,11 @@ class TimeclockOvertimePaid extends CommonObject
 	public $fields=array(
 		'rowid' => array('type'=>'integer', 'label'=>'ID', 'enabled'=>'1', 'position'=>1, 'notnull'=>1, 'visible'=>0, 'noteditable'=>'1', 'index'=>1, 'css'=>'left', 'comment'=>"Id"),
 		'entity' => array('type'=>'integer', 'label'=>'Entity', 'enabled'=>'1', 'position'=>5, 'notnull'=>1, 'visible'=>0, 'default'=>'1'),
-		'ref' => array('type'=>'varchar(128)', 'label'=>'Ref', 'enabled'=>'1', 'position'=>20, 'notnull'=>1, 'visible'=>3, 'noteditable'=>'1', 'index'=>1, 'searchall'=>1, 'showoncombobox'=>'1', 'validate'=>'1', 'comment'=>"Reference of paid overtime record"),
+		'ref' => array('type'=>'varchar(128)', 'label'=>'Ref', 'enabled'=>'1', 'position'=>20, 'notnull'=>1, 'visible'=>1, 'noteditable'=>'1', 'index'=>1, 'searchall'=>1, 'showoncombobox'=>'1', 'validate'=>'1', 'comment'=>"Reference of paid overtime record"),
 		
 		'fk_user' => array('type'=>'integer:User:user/class/user.class.php:1:statut=1', 'label'=>'Employee', 'picto'=>'user', 'enabled'=>'1', 'position'=>30, 'notnull'=>1, 'visible'=>1, 'index'=>1, 'css'=>'maxwidth300', 'help'=>"Employee concerned by paid overtime", 'validate'=>'1', 'showoncombobox'=>'1'),
-		'month_year' => array('type'=>'varchar(7)', 'label'=>'MonthYear', 'enabled'=>'1', 'position'=>40, 'notnull'=>1, 'visible'=>1, 'css'=>'maxwidth100', 'help'=>"Month and year in YYYY-MM format (ex: 2025-01 for January 2025)", 'validate'=>'1', 'autofocusoncreate'=>0),
+		'month' => array('type'=>'integer', 'label'=>'Month', 'enabled'=>'1', 'position'=>40, 'notnull'=>1, 'visible'=>1, 'css'=>'maxwidth75imp', 'help'=>"Month (1-12)", 'validate'=>'1', 'arrayofkeyval'=>array('1'=>'January', '2'=>'February', '3'=>'March', '4'=>'April', '5'=>'May', '6'=>'June', '7'=>'July', '8'=>'August', '9'=>'September', '10'=>'October', '11'=>'November', '12'=>'December')),
+		'year' => array('type'=>'integer', 'label'=>'Year', 'enabled'=>'1', 'position'=>45, 'notnull'=>1, 'visible'=>1, 'css'=>'maxwidth75imp', 'help'=>"Year (ex: 2025)", 'validate'=>'1'),
 		'hours_paid' => array('type'=>'real', 'label'=>'HoursPaid', 'enabled'=>'1', 'position'=>50, 'notnull'=>1, 'visible'=>1, 'default'=>'0.00', 'isameasure'=>'1', 'css'=>'maxwidth75imp', 'help'=>"Number of overtime hours paid (ex: 10.50)", 'validate'=>'1'),
 		'fk_user_manager' => array('type'=>'integer:User:user/class/user.class.php:1:statut=1', 'label'=>'Manager', 'picto'=>'user', 'enabled'=>'1', 'position'=>60, 'notnull'=>1, 'visible'=>1, 'index'=>1, 'css'=>'maxwidth300', 'help'=>"Manager who entered the paid overtime", 'validate'=>'1'),
 		
@@ -134,7 +135,8 @@ class TimeclockOvertimePaid extends CommonObject
 	public $entity;
 	public $ref;
 	public $fk_user;
-	public $month_year;
+	public $month;
+	public $year;
 	public $hours_paid;
 	public $fk_user_manager;
 	public $date_creation;
@@ -206,8 +208,9 @@ class TimeclockOvertimePaid extends CommonObject
 			$this->fields['fk_user_manager']['default'] = $user->id;
 		}
 
-		// MVP 44.2: Set default month_year to current month
-		$this->fields['month_year']['default'] = date('Y-m');
+		// MVP 44.2.2: Set default month and year to current values
+		$this->fields['month']['default'] = (int)date('n');
+		$this->fields['year']['default'] = (int)date('Y');
 		
 		// MVP 44.2: Set default ref to provisional value (will be replaced on create)
 		$this->fields['ref']['default'] = '(PROV)';
@@ -251,6 +254,14 @@ class TimeclockOvertimePaid extends CommonObject
 		// MVP 44.2: Set default manager to current user if not set
 		if (empty($this->fk_user_manager)) {
 			$this->fk_user_manager = $user->id;
+		}
+		
+		// MVP 44.2.2: Set default month/year if not set
+		if (empty($this->month)) {
+			$this->month = (int)date('n'); // Current month
+		}
+		if (empty($this->year)) {
+			$this->year = (int)date('Y'); // Current year
 		}
 		
 		$resultcreate = $this->createCommon($user, $notrigger);
@@ -991,7 +1002,7 @@ class TimeclockOvertimePaid extends CommonObject
 
 			if (class_exists($classname)) {
 				$obj = new $classname();
-				$numref = $obj->getNextValue($this);
+				$numref = $obj->getNextValue(null, $this);
 
 				if ($numref != '' && $numref != '-1') {
 					return $numref;
@@ -1093,20 +1104,17 @@ class TimeclockOvertimePaid extends CommonObject
 		global $langs;
 		$langs->load('appmobtimetouch@appmobtimetouch');
 
-		// Validate month_year format
-		if ($fieldKey === 'month_year') {
-			if (!preg_match('/^\d{4}-\d{2}$/', $fieldValue)) {
-				return $langs->trans('InvalidMonthYearFormat');
-			}
-			
-			$parts = explode('-', $fieldValue);
-			$year = (int)$parts[0];
-			$month = (int)$parts[1];
-			
+		// Validate month field
+		if ($fieldKey === 'month') {
+			$month = (int)$fieldValue;
 			if ($month < 1 || $month > 12) {
 				return $langs->trans('InvalidMonth');
 			}
-			
+		}
+		
+		// Validate year field
+		if ($fieldKey === 'year') {
+			$year = (int)$fieldValue;
 			if ($year < 2020 || $year > (date('Y') + 1)) {
 				return sprintf($langs->trans('InvalidYear'), (date('Y') + 1));
 			}
