@@ -30,14 +30,23 @@ L'architecture SOLID existante permet d'ajouter facilement cette fonctionnalité
 ### Découpage en MVPs :
 
 #### **MVP 44.1** : Base de données et modèle (Infrastructure)
-- **Fonctionnalité core** : 
-  - Création table `llx_timeclock_overtime_paid`
-  - Classe PHP `OvertimePaid` avec CRUD standard Dolibarr
-  - Méthodes de calcul intégrées dans les rapports
-- **Interface graphique** : Page de test basique pour vérifier l'insertion en base
+- **Fonctionnalité core** : Modification
+  -  de la  table `llx_timeclock_overtime_paid` (lire fichier sql/llx_appmobtimetouch_timeclockovertimepaid.sql)
+  - Classe PHP `Timeclock_OvertimePaid` avec CRUD standard Dolibarr (lire fichier class/timeclockovertimepaid.class.php)
+
+- **Interface graphique** : 
+les pages suivantes ont été créé par module builder. 
+dev-smta/htdocs/custom/appmobtimetouch/timeclockovertimepaid_agenda.php
+dev-smta/htdocs/custom/appmobtimetouch/timeclockovertimepaid_card.php
+dev-smta/htdocs/custom/appmobtimetouch/timeclockovertimepaid_contact.php
+dev-smta/htdocs/custom/appmobtimetouch/timeclockovertimepaid_document.php
+dev-smta/htdocs/custom/appmobtimetouch/timeclockovertimepaid_list.php
+dev-smta/htdocs/custom/appmobtimetouch/timeclockovertimepaid_note.php
+
+il faut ajouter les entrées dans le menu de dolibarr
 - **Critères de validation** : 
   - Table créée et accessible
-  - Insertion/lecture de données fonctionnelle
+  - accès aux pages depuis dolibarr (timeclockovertimepaid_list.php et timeclockovertimepaid_card.php )
   - Aucune régression sur l'existant
 
 #### **MVP 44.2** : Interface de saisie manager (Fonctionnalité métier)
@@ -56,6 +65,7 @@ L'architecture SOLID existante permet d'ajouter facilement cette fonctionnalité
 
 #### **MVP 44.3** : Intégration dans les rapports (Valeur métier)
 - **Fonctionnalité core** :
+  - Méthodes de calcul intégrées dans les rapports
   - Modification des calculs dans `getMonthlyReports()` et `getAnnualReports()`
   - Nouvelle colonne "Heures payées" et "Heures sup. restantes"
   - Conservation de la logique existante pour compatibilité
