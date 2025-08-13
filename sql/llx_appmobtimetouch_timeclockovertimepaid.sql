@@ -15,24 +15,26 @@
 
 
 CREATE TABLE llx_appmobtimetouch_timeclockovertimepaid(
-	-- BEGIN MODULEBUILDER FIELDS
+	-- PRIMARY FIELDS
 	rowid integer AUTO_INCREMENT PRIMARY KEY NOT NULL, 
+	entity integer DEFAULT 1 NOT NULL,
 	ref varchar(128) NOT NULL, 
-	label varchar(255), 
-	amount double DEFAULT NULL, 
-	qty real, 
-	fk_soc integer, 
-	fk_project integer, 
-	description text, 
-	note_public text, 
-	note_private text, 
+	
+	-- BUSINESS FIELDS FOR OVERTIME MANAGEMENT
+	fk_user integer NOT NULL COMMENT 'Employee (user) concerned by paid overtime',
+	month_year varchar(7) NOT NULL COMMENT 'Month and year format YYYY-MM',
+	hours_paid decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT 'Number of overtime hours paid (ex: 10.50)',
+	fk_user_manager integer NOT NULL COMMENT 'Manager who entered the paid overtime',
+	
+	-- AUDIT AND TRACKING FIELDS
 	date_creation datetime NOT NULL, 
 	tms timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, 
 	fk_user_creat integer NOT NULL, 
 	fk_user_modif integer, 
-	last_main_doc varchar(255), 
+	
+	-- OPTIONAL FIELDS
+	note_private text COMMENT 'Private note for internal use',
 	import_key varchar(14), 
-	model_pdf varchar(255), 
-	status integer NOT NULL
-	-- END MODULEBUILDER FIELDS
+	status integer NOT NULL DEFAULT 1 COMMENT '0=Draft, 1=Active, 9=Disabled'
+	
 ) ENGINE=innodb;

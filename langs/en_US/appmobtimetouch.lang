@@ -304,6 +304,12 @@ PaidOvertimeHours = Paid Overtime Hours
 Permission13600708 = Read paid overtime hours records
 Permission13600709 = Add paid overtime hours records
 Permission13600710 = Modify paid overtime hours records
+
+# Fields for paid overtime hours
+Employee = Employee
+Manager = Manager
+MonthYear = Month-Year
+HoursPaid = Hours paid
 Statistics = Statistics
 TotalTimeRecords = Total Time Records
 TodayTimeRecords = Today's Records

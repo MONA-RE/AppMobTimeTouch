@@ -661,6 +661,12 @@ PaidOvertimeHours = Heures supplémentaires payées
 Permission13600708 = Consulter les enregistrements d'heures supplémentaires payées
 Permission13600709 = Ajouter des enregistrements d'heures supplémentaires payées
 Permission13600710 = Modifier les enregistrements d'heures supplémentaires payées
+
+# Champs pour heures supplémentaires payées
+Employee = Employé
+Manager = Manager
+MonthYear = Mois-Année
+HoursPaid = Heures payées
 Statistics = Statistiques
 TotalTimeRecords = Total Enregistrements
 TodayTimeRecords = Enregistrements du Jour

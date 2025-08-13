@@ -14,16 +14,20 @@
 -- along with this program.  If not, see https://www.gnu.org/licenses/.
 
 
--- BEGIN MODULEBUILDER INDEXES
+-- BUSINESS INDEXES FOR OVERTIME MANAGEMENT
 ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_rowid (rowid);
 ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_ref (ref);
-ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_fk_soc (fk_soc);
-ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_fk_project (fk_project);
-ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD CONSTRAINT llx_appmobtimetouch_timeclockovertimepaid_fk_user_creat FOREIGN KEY (fk_user_creat) REFERENCES llx_user(rowid);
+ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_entity (entity);
+ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_fk_user (fk_user);
+ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_fk_user_manager (fk_user_manager);
+ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_month_year (month_year);
 ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD INDEX idx_appmobtimetouch_timeclockovertimepaid_status (status);
--- END MODULEBUILDER INDEXES
 
---ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD UNIQUE INDEX uk_appmobtimetouch_timeclockovertimepaid_fieldxy(fieldx, fieldy);
+-- FOREIGN KEY CONSTRAINTS
+ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD CONSTRAINT llx_appmobtimetouch_timeclockovertimepaid_fk_user FOREIGN KEY (fk_user) REFERENCES llx_user(rowid);
+ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD CONSTRAINT llx_appmobtimetouch_timeclockovertimepaid_fk_user_manager FOREIGN KEY (fk_user_manager) REFERENCES llx_user(rowid);
+ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD CONSTRAINT llx_appmobtimetouch_timeclockovertimepaid_fk_user_creat FOREIGN KEY (fk_user_creat) REFERENCES llx_user(rowid);
 
---ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD CONSTRAINT llx_appmobtimetouch_timeclockovertimepaid_fk_field FOREIGN KEY (fk_field) REFERENCES llx_appmobtimetouch_myotherobject(rowid);
+-- UNIQUE CONSTRAINT FOR BUSINESS RULE: One record per user per month
+ALTER TABLE llx_appmobtimetouch_timeclockovertimepaid ADD UNIQUE INDEX uk_appmobtimetouch_timeclockovertimepaid_user_month(fk_user, month_year, entity);
 
