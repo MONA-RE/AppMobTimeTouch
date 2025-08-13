@@ -55,9 +55,10 @@ il faut ajouter les entrées dans le menu de dolibarr
   - Validation des données (utilisateur, mois, heures)
   - Intégration avec le système de permissions existant
 - **Interface graphique** :
-  - Formulaire simple : [Salarié] [Mois/Année] [Heures payées] [Valider]
-  - Listing des saisies existantes avec modification/suppression
-  - Menu dans la navigation existante
+  - Formulaire standard dolibarr  : [Salarié] [Mois/Année] [Heures payées] [Valider]
+  - dans le fomulaire de création et modification permettre au manager de selectionner le mois et l'année avec la souris
+  - supprimer le champs (ref) et afficher l'id de l'enregistrement en base d donnée à la place. Le champ ID ne doit pas être saisisable ou modifiable par l'utilisateur dans les fomulaire de création et modification 
+  - dans le fomulaire de création le champ manager doit automatiquement est selectionné sur l'utilisateur connecté
 - **Critères de validation** :
   - Manager peut saisir des heures pour ses équipes
   - Données persistées correctement
