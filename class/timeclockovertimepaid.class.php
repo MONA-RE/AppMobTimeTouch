@@ -112,12 +112,12 @@ class TimeclockOvertimePaid extends CommonObject
 	 * @var array  Array with all fields and their property. Do not use it as a static var. It may be modified by constructor.
 	 */
 	public $fields=array(
-		'rowid' => array('type'=>'integer', 'label'=>'TechnicalID', 'enabled'=>'1', 'position'=>1, 'notnull'=>1, 'visible'=>0, 'noteditable'=>'1', 'index'=>1, 'css'=>'left', 'comment'=>"Id"),
+		'rowid' => array('type'=>'integer', 'label'=>'ID', 'enabled'=>'1', 'position'=>1, 'notnull'=>1, 'visible'=>0, 'noteditable'=>'1', 'index'=>1, 'css'=>'left', 'comment'=>"Id"),
 		'entity' => array('type'=>'integer', 'label'=>'Entity', 'enabled'=>'1', 'position'=>5, 'notnull'=>1, 'visible'=>0, 'default'=>'1'),
-		'ref' => array('type'=>'varchar(128)', 'label'=>'Ref', 'enabled'=>'1', 'position'=>20, 'notnull'=>1, 'visible'=>1, 'index'=>1, 'searchall'=>1, 'showoncombobox'=>'1', 'validate'=>'1', 'comment'=>"Reference of paid overtime record"),
+		'ref' => array('type'=>'varchar(128)', 'label'=>'Ref', 'enabled'=>'1', 'position'=>20, 'notnull'=>1, 'visible'=>3, 'noteditable'=>'1', 'index'=>1, 'searchall'=>1, 'showoncombobox'=>'1', 'validate'=>'1', 'comment'=>"Reference of paid overtime record"),
 		
 		'fk_user' => array('type'=>'integer:User:user/class/user.class.php:1:statut=1', 'label'=>'Employee', 'picto'=>'user', 'enabled'=>'1', 'position'=>30, 'notnull'=>1, 'visible'=>1, 'index'=>1, 'css'=>'maxwidth300', 'help'=>"Employee concerned by paid overtime", 'validate'=>'1', 'showoncombobox'=>'1'),
-		'month_year' => array('type'=>'varchar(7)', 'label'=>'MonthYear', 'enabled'=>'1', 'position'=>40, 'notnull'=>1, 'visible'=>1, 'css'=>'maxwidth100', 'help'=>"Month and year in YYYY-MM format", 'validate'=>'1'),
+		'month_year' => array('type'=>'varchar(7)', 'label'=>'MonthYear', 'enabled'=>'1', 'position'=>40, 'notnull'=>1, 'visible'=>1, 'css'=>'maxwidth100', 'help'=>"Month and year in YYYY-MM format (ex: 2025-01 for January 2025)", 'validate'=>'1', 'autofocusoncreate'=>0),
 		'hours_paid' => array('type'=>'real', 'label'=>'HoursPaid', 'enabled'=>'1', 'position'=>50, 'notnull'=>1, 'visible'=>1, 'default'=>'0.00', 'isameasure'=>'1', 'css'=>'maxwidth75imp', 'help'=>"Number of overtime hours paid (ex: 10.50)", 'validate'=>'1'),
 		'fk_user_manager' => array('type'=>'integer:User:user/class/user.class.php:1:statut=1', 'label'=>'Manager', 'picto'=>'user', 'enabled'=>'1', 'position'=>60, 'notnull'=>1, 'visible'=>1, 'index'=>1, 'css'=>'maxwidth300', 'help'=>"Manager who entered the paid overtime", 'validate'=>'1'),
 		
@@ -190,22 +190,28 @@ class TimeclockOvertimePaid extends CommonObject
 	 */
 	public function __construct(DoliDB $db)
 	{
-		global $conf, $langs;
+		global $conf, $langs, $user;
 
 		$this->db = $db;
 
-		if (empty($conf->global->MAIN_SHOW_TECHNICAL_ID) && isset($this->fields['rowid']) && !empty($this->fields['ref'])) {
-			$this->fields['rowid']['visible'] = 0;
-		}
+		// MVP 44.2: Always show ID instead of ref
+		$this->fields['rowid']['visible'] = 1;
+		
 		if (empty($conf->multicompany->enabled) && isset($this->fields['entity'])) {
 			$this->fields['entity']['enabled'] = 0;
 		}
 
-		// Example to show how to set values of fields definition dynamically
-		/*if ($user->rights->appmobtimetouch->timeclockovertimepaid->read) {
-			$this->fields['myfield']['visible'] = 1;
-			$this->fields['myfield']['noteditable'] = 0;
-		}*/
+		// MVP 44.2: Pre-select current user as manager for new records
+		if (isset($user) && $user->id > 0) {
+			$this->fields['fk_user_manager']['default'] = $user->id;
+		}
+
+		// MVP 44.2: Set default month_year to current month
+		$this->fields['month_year']['default'] = date('Y-m');
+		
+		// MVP 44.2: Set default ref to provisional value (will be replaced on create)
+		$this->fields['ref']['default'] = '(PROV)';
+		$this->ref = '(PROV)';
 
 		// Unset fields that are disabled
 		foreach ($this->fields as $key => $val) {
@@ -235,6 +241,18 @@ class TimeclockOvertimePaid extends CommonObject
 	 */
 	public function create(User $user, $notrigger = false)
 	{
+		global $conf;
+		
+		// MVP 44.2: Auto-generate reference if empty or provisional
+		if (empty($this->ref) || $this->ref == '(PROV)') {
+			$this->ref = $this->getNextNumRef();
+		}
+		
+		// MVP 44.2: Set default manager to current user if not set
+		if (empty($this->fk_user_manager)) {
+			$this->fk_user_manager = $user->id;
+		}
+		
 		$resultcreate = $this->createCommon($user, $notrigger);
 
 		//$resultvalidate = $this->validate($user, $notrigger);
@@ -1059,6 +1077,49 @@ class TimeclockOvertimePaid extends CommonObject
 		$this->db->commit();
 
 		return $error;
+	}
+
+
+	/**
+	 * Validate field value (MVP 44.2)
+	 *
+	 * @param array $fields Array of fields
+	 * @param string $fieldKey Field key
+	 * @param mixed $fieldValue Field value
+	 * @return string Empty string if validation OK, error message if KO
+	 */
+	public function validateField($fields, $fieldKey, $fieldValue)
+	{
+		global $langs;
+		$langs->load('appmobtimetouch@appmobtimetouch');
+
+		// Validate month_year format
+		if ($fieldKey === 'month_year') {
+			if (!preg_match('/^\d{4}-\d{2}$/', $fieldValue)) {
+				return $langs->trans('InvalidMonthYearFormat');
+			}
+			
+			$parts = explode('-', $fieldValue);
+			$year = (int)$parts[0];
+			$month = (int)$parts[1];
+			
+			if ($month < 1 || $month > 12) {
+				return $langs->trans('InvalidMonth');
+			}
+			
+			if ($year < 2020 || $year > (date('Y') + 1)) {
+				return sprintf($langs->trans('InvalidYear'), (date('Y') + 1));
+			}
+		}
+
+		// Validate hours_paid
+		if ($fieldKey === 'hours_paid') {
+			if ($fieldValue < 0 || $fieldValue > 500) {
+				return $langs->trans('InvalidHours');
+			}
+		}
+
+		return parent::validateField($fields, $fieldKey, $fieldValue);
 	}
 }
 
