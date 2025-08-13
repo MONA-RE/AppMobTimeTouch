@@ -282,6 +282,25 @@ class modAppMobTimeTouch extends DolibarrModules
 		$this->rights[$r][5] = 'config';
 		$r++;
 
+		// Overtime paid permissions
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1);
+		$this->rights[$r][1] = 'Read paid overtime hours records';
+		$this->rights[$r][4] = 'overtimepaid';
+		$this->rights[$r][5] = 'read';
+		$r++;
+
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1);
+		$this->rights[$r][1] = 'Add paid overtime hours records';
+		$this->rights[$r][4] = 'overtimepaid';
+		$this->rights[$r][5] = 'add';
+		$r++;
+
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", $r + 1);
+		$this->rights[$r][1] = 'Modify paid overtime hours records';
+		$this->rights[$r][4] = 'overtimepaid';
+		$this->rights[$r][5] = 'modify';
+		$r++;
+
 		// Main menu entries
 		$this->menu = array();
 		$r = 0;
@@ -347,6 +366,22 @@ class modAppMobTimeTouch extends DolibarrModules
 			'position'=>1000+$r,
 			'enabled'=>'$conf->appmobtimetouch->enabled',
 			'perms'=>'$user->rights->appmobtimetouch->timeclock->export',
+			'target'=>'',
+			'user'=>2,
+		);
+
+		// Left menu - Heures supplémentaires payées
+		$this->menu[$r++] = array(
+			'fk_menu'=>'fk_mainmenu=appmobtimetouch',
+			'type'=>'left',
+			'titre'=>'PaidOvertimeHours',
+			'mainmenu'=>'appmobtimetouch',
+			'leftmenu'=>'paidovertime',
+			'url'=>'/appmobtimetouch/timeclockovertimepaid_list.php',
+			'langs'=>'appmobtimetouch@appmobtimetouch',
+			'position'=>1000+$r,
+			'enabled'=>'$conf->appmobtimetouch->enabled',
+			'perms'=>'$user->rights->appmobtimetouch->overtimepaid->read',
 			'target'=>'',
 			'user'=>2,
 		);

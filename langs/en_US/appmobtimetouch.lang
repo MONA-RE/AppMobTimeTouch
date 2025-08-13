@@ -298,6 +298,12 @@ TimeManagement = Time Management
 AllRecords = All Records
 Validation = Validation
 Reports = Reports
+PaidOvertimeHours = Paid Overtime Hours
+
+# Permissions for paid overtime hours
+Permission13600708 = Read paid overtime hours records
+Permission13600709 = Add paid overtime hours records
+Permission13600710 = Modify paid overtime hours records
 Statistics = Statistics
 TotalTimeRecords = Total Time Records
 TodayTimeRecords = Today's Records

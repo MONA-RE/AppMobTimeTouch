@@ -655,6 +655,12 @@ TimeManagement = Gestion des temps
 AllRecords = Tous les enregistrements
 Validation = Validation
 Reports = Rapports
+PaidOvertimeHours = Heures supplémentaires payées
+
+# Permissions pour heures supplémentaires payées
+Permission13600708 = Consulter les enregistrements d'heures supplémentaires payées
+Permission13600709 = Ajouter des enregistrements d'heures supplémentaires payées
+Permission13600710 = Modifier les enregistrements d'heures supplémentaires payées
 Statistics = Statistiques
 TotalTimeRecords = Total Enregistrements
 TodayTimeRecords = Enregistrements du Jour
