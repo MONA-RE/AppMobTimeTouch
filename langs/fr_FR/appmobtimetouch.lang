@@ -667,6 +667,12 @@ Employee = Employé
 Manager = Manager
 MonthYear = Mois-Année
 HoursPaid = Heures payées
+
+# Messages de validation
+InvalidMonthYearFormat = Format mois-année invalide. Utilisez AAAA-MM (ex: 2025-01)
+InvalidMonth = Mois invalide. Doit être entre 01 et 12
+InvalidYear = Année invalide. Doit être entre 2020 et %d
+InvalidHours = Heures invalides. Doit être entre 0 et 500
 Statistics = Statistiques
 TotalTimeRecords = Total Enregistrements
 TodayTimeRecords = Enregistrements du Jour

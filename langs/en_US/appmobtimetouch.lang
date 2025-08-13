@@ -310,6 +310,12 @@ Employee = Employee
 Manager = Manager
 MonthYear = Month-Year
 HoursPaid = Hours paid
+
+# Validation messages
+InvalidMonthYearFormat = Invalid month-year format. Use YYYY-MM (ex: 2025-01)
+InvalidMonth = Invalid month. Must be between 01 and 12
+InvalidYear = Invalid year. Must be between 2020 and %d
+InvalidHours = Invalid hours. Must be between 0 and 500
 Statistics = Statistics
 TotalTimeRecords = Total Time Records
 TodayTimeRecords = Today's Records
