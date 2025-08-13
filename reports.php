@@ -152,13 +152,19 @@ function getAnnualReports($db, $user, $year, $hierarchical_manager_id = null) {
                     END
                 ) as total_seconds,
                 COUNT(tr.rowid) as total_records,
-                COUNT(CASE WHEN tr.clock_out_time IS NULL THEN 1 END) as incomplete_records
+                COUNT(CASE WHEN tr.clock_out_time IS NULL THEN 1 END) as incomplete_records,
+                COALESCE(SUM(otp.hours_paid), 0) as paid_overtime_hours_total
             FROM " . MAIN_DB_PREFIX . "user u
             LEFT JOIN " . MAIN_DB_PREFIX . "timeclock_records tr ON (
                 tr.fk_user = u.rowid 
                 AND DATE(tr.clock_in_time) >= '" . $db->escape($startDate) . "'
                 AND DATE(tr.clock_in_time) <= '" . $db->escape($endDate) . "'
                 AND tr.status IN (1, 3)
+            )
+            LEFT JOIN " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockovertimepaid otp ON (
+                otp.fk_user = u.rowid 
+                AND otp.year = " . (int)$year . "
+                AND otp.status = 1
             )
             WHERE u.statut = 1";
     
@@ -181,7 +187,14 @@ function getAnnualReports($db, $user, $year, $hierarchical_manager_id = null) {
     if ($resql) {
         while ($obj = $db->fetch_object($resql)) {
             $worked_hours = round($obj->total_seconds / 3600, 2);
+            $paid_overtime_hours_total = (float)$obj->paid_overtime_hours_total;
+            
+            // MVP 44.3: Nouveau calcul avec heures supplémentaires payées
+            // Delta = heures travaillées - heures théoriques (ancien calcul pour compatibilité)
             $delta_hours = $worked_hours - $theoretical_hours;
+            
+            // Heures supplémentaires restantes = (heures travaillées - total heures payées année) - heures théoriques
+            $remaining_overtime_hours = ($worked_hours - $paid_overtime_hours_total) - $theoretical_hours;
             
             $reports[] = [
                 'user_id' => $obj->user_id,
@@ -190,7 +203,9 @@ function getAnnualReports($db, $user, $year, $hierarchical_manager_id = null) {
                 'total_seconds' => (int)$obj->total_seconds,
                 'total_hours' => $worked_hours,
                 'theoretical_hours' => $theoretical_hours,
-                'delta_hours' => $delta_hours,
+                'delta_hours' => $delta_hours, // Conservation ancien calcul
+                'paid_overtime_hours' => $paid_overtime_hours_total, // Nouveau (total année)
+                'remaining_overtime_hours' => $remaining_overtime_hours, // Nouveau
                 'total_records' => (int)$obj->total_records,
                 'incomplete_records' => (int)$obj->incomplete_records,
                 'period_type' => 'annual',
@@ -231,13 +246,20 @@ function getMonthlyReports($db, $user, $month, $year, $hierarchical_manager_id =
                     END
                 ) as total_seconds,
                 COUNT(tr.rowid) as total_records,
-                COUNT(CASE WHEN tr.clock_out_time IS NULL THEN 1 END) as incomplete_records
+                COUNT(CASE WHEN tr.clock_out_time IS NULL THEN 1 END) as incomplete_records,
+                COALESCE(otp.hours_paid, 0) as paid_overtime_hours
             FROM " . MAIN_DB_PREFIX . "user u
             LEFT JOIN " . MAIN_DB_PREFIX . "timeclock_records tr ON (
                 tr.fk_user = u.rowid 
                 AND DATE(tr.clock_in_time) >= '" . $db->escape($startDate) . "'
                 AND DATE(tr.clock_in_time) <= '" . $db->escape($endDate) . "'
                 AND tr.status IN (1, 3)
+            )
+            LEFT JOIN " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockovertimepaid otp ON (
+                otp.fk_user = u.rowid 
+                AND otp.month = " . (int)$month . "
+                AND otp.year = " . (int)$year . "
+                AND otp.status = 1
             )
             WHERE u.statut = 1";
     
@@ -266,7 +288,14 @@ function getMonthlyReports($db, $user, $month, $year, $hierarchical_manager_id =
     if ($resql) {
         while ($obj = $db->fetch_object($resql)) {
             $worked_hours = round($obj->total_seconds / 3600, 2);
+            $paid_overtime_hours = (float)$obj->paid_overtime_hours;
+            
+            // MVP 44.3: Nouveau calcul avec heures supplémentaires payées
+            // Delta = heures travaillées - heures théoriques (ancien calcul pour compatibilité)
             $delta_hours = $worked_hours - $theoretical_hours;
+            
+            // Heures supplémentaires restantes = (heures travaillées - heures payées) - heures théoriques
+            $remaining_overtime_hours = ($worked_hours - $paid_overtime_hours) - $theoretical_hours;
             
             $reports[] = [
                 'user_id' => $obj->user_id,
@@ -275,7 +304,9 @@ function getMonthlyReports($db, $user, $month, $year, $hierarchical_manager_id =
                 'total_seconds' => (int)$obj->total_seconds,
                 'total_hours' => $worked_hours,
                 'theoretical_hours' => $theoretical_hours,
-                'delta_hours' => $delta_hours,
+                'delta_hours' => $delta_hours, // Conservation ancien calcul
+                'paid_overtime_hours' => $paid_overtime_hours, // Nouveau
+                'remaining_overtime_hours' => $remaining_overtime_hours, // Nouveau
                 'total_records' => (int)$obj->total_records,
                 'incomplete_records' => (int)$obj->incomplete_records
             ];

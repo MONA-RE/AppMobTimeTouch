@@ -667,6 +667,8 @@ Employee = Employé
 Manager = Manager
 MonthYear = Mois-Année
 HoursPaid = Heures payées
+PaidHours = Heures supp. payées
+RemainingOvertime =Heures supp. restantes
 
 # Messages de validation
 InvalidMonthYearFormat = Format mois-année invalide. Utilisez AAAA-MM (ex: 2025-01)

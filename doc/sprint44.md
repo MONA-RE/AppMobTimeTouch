@@ -85,11 +85,11 @@ TODO MVP 44.2
 - **Interface graphique** :
   - Colonnes supplémentaires dans les rapports mensuels/annuels
   - Indicateurs visuels (couleurs) pour les heures restantes
-  - Export avec les nouvelles données
+  
 - **Critères de validation** :
   - Rapports affichent les heures supplémentaires restantes
   - Calcul correct : (réelles - payées) - théoriques
-  - Export fonctionnel avec nouvelles colonnes
+  
 
 ### Points de contrôle MVP :
 - **Après MVP 44.1** : Base de données opérationnelle, tests d'insertion/lecture via interface basique

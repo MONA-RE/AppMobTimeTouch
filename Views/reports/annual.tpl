@@ -266,7 +266,7 @@
     </div>
     
     <!-- En-tête du tableau -->
-    <div style="display: flex; padding: 10px 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; font-weight: 500; font-size: 14px;">
+    <div style="display: flex; padding: 10px 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; font-weight: 500; font-size: 12px;">
       <div style="flex: 2; color: #495057;">
         <?php echo $langs->trans('User'); ?>
       </div>
@@ -281,6 +281,13 @@
       </div>
       <div style="flex: 1; text-align: center; color: #495057;">
         <?php echo $langs->trans('Delta'); ?>
+      </div>
+      <!-- MVP 44.3: Nouvelles colonnes heures supplémentaires -->
+      <div style="flex: 1; text-align: center; color: #495057;">
+        <?php echo $langs->trans('PaidHours'); ?>
+      </div>
+      <div style="flex: 1; text-align: center; color: #495057;">
+        <?php echo $langs->trans('RemainingOvertime'); ?>
       </div>
       <div style="flex: 1; text-align: center; color: #495057;">
         <?php echo $langs->trans('MonthlyAverage'); ?>
@@ -353,6 +360,37 @@
         <div style="display: inline-block; background-color: <?php echo $delta_bg; ?>; color: <?php echo $delta_color; ?>; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">
           <ons-icon icon="<?php echo $delta_icon; ?>" style="font-size: 10px; margin-right: 2px;"></ons-icon>
           <?php echo ($delta >= 0 ? '+' : '') . number_format($delta, 1); ?>h
+        </div>
+      </div>
+      
+      <!-- MVP 44.3: Heures payées (total année) -->
+      <div style="flex: 1; text-align: center;">
+        <div style="font-size: 14px; color: #007bff;">
+          <?php echo number_format($report['paid_overtime_hours'] ?? 0, 1); ?>h
+        </div>
+      </div>
+      
+      <!-- MVP 44.3: Heures supplémentaires restantes -->
+      <div style="flex: 1; text-align: center;">
+        <?php 
+        $remaining = $report['remaining_overtime_hours'] ?? $report['delta_hours'];
+        $remaining_color = '#6c757d';
+        $remaining_bg = '#f8f9fa';
+        $remaining_icon = 'md-remove';
+        
+        if ($remaining > 0) {
+            $remaining_color = '#dc3545';
+            $remaining_bg = '#f8d7da';
+            $remaining_icon = 'md-warning';
+        } elseif ($remaining < 0) {
+            $remaining_color = '#28a745';
+            $remaining_bg = '#d4edda';
+            $remaining_icon = 'md-check';
+        }
+        ?>
+        <div style="display: inline-block; background-color: <?php echo $remaining_bg; ?>; color: <?php echo $remaining_color; ?>; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">
+          <ons-icon icon="<?php echo $remaining_icon; ?>" style="font-size: 10px; margin-right: 2px;"></ons-icon>
+          <?php echo ($remaining >= 0 ? '+' : '') . number_format($remaining, 1); ?>h
         </div>
       </div>
       
