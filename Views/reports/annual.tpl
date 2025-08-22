@@ -245,7 +245,7 @@
           <ons-icon icon="md-info" style="margin-right: 5px;"></ons-icon>
           <?php 
           $current_month_name = $months[date('n')];
-          echo $langs->trans('YTDInfo', $current_month_name, date('d/m/Y')); 
+          echo html_entity_decode($langs->trans('YTDInfo', $current_month_name, date('d/m/Y')), ENT_QUOTES, 'UTF-8'); 
           ?>
         </small>
       </div>
