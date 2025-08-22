@@ -149,6 +149,7 @@ function getAnnualReports($db, $user, $year, $hierarchical_manager_id = null) {
     $current_month = ($year == date('Y')) ? date('n') : 12; // Si année actuelle, mois actuel, sinon 12 mois
     $theoretical_hours = $monthly_theoretical * $current_month;
     
+    // TK2508-0365: Requête corrigée pour éviter le produit cartésien avec les heures payées
     $sql = "SELECT 
                 u.rowid as user_id,
                 u.firstname,
@@ -163,7 +164,7 @@ function getAnnualReports($db, $user, $year, $hierarchical_manager_id = null) {
                 ) as total_seconds,
                 COUNT(tr.rowid) as total_records,
                 COUNT(CASE WHEN tr.clock_out_time IS NULL THEN 1 END) as incomplete_records,
-                COALESCE(SUM(otp.hours_paid), 0) as paid_overtime_hours_total
+                COALESCE(otp_sum.paid_overtime_hours_total, 0) as paid_overtime_hours_total
             FROM " . MAIN_DB_PREFIX . "user u
             LEFT JOIN " . MAIN_DB_PREFIX . "timeclock_records tr ON (
                 tr.fk_user = u.rowid 
@@ -171,11 +172,14 @@ function getAnnualReports($db, $user, $year, $hierarchical_manager_id = null) {
                 AND DATE(tr.clock_in_time) <= '" . $db->escape($endDate) . "'
                 AND tr.status IN (1, 3)
             )
-            LEFT JOIN " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockovertimepaid otp ON (
-                otp.fk_user = u.rowid 
-                AND otp.year = " . (int)$year . "
-                AND otp.status = 1
-            )
+            LEFT JOIN (
+                SELECT 
+                    fk_user, 
+                    SUM(hours_paid) as paid_overtime_hours_total 
+                FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockovertimepaid 
+                WHERE year = " . (int)$year . " AND status = 1 
+                GROUP BY fk_user
+            ) otp_sum ON otp_sum.fk_user = u.rowid
             WHERE u.statut = 1";
     
     // Filtre par responsable hiérarchique si spécifié
@@ -243,6 +247,7 @@ function getMonthlyReports($db, $user, $month, $year, $hierarchical_manager_id =
     $theoretical_hours = !empty($conf->global->APPMOBTIMETOUCH_NB_HEURE_THEORIQUE_MENSUEL) ? 
         (int)$conf->global->APPMOBTIMETOUCH_NB_HEURE_THEORIQUE_MENSUEL : 140;
     
+    // TK2508-0365: Requête cohérente avec correction annuelle (même si moins critique pour mensuel)
     $sql = "SELECT 
                 u.rowid as user_id,
                 u.firstname,
@@ -257,7 +262,7 @@ function getMonthlyReports($db, $user, $month, $year, $hierarchical_manager_id =
                 ) as total_seconds,
                 COUNT(tr.rowid) as total_records,
                 COUNT(CASE WHEN tr.clock_out_time IS NULL THEN 1 END) as incomplete_records,
-                COALESCE(otp.hours_paid, 0) as paid_overtime_hours
+                COALESCE(otp_month.paid_overtime_hours, 0) as paid_overtime_hours
             FROM " . MAIN_DB_PREFIX . "user u
             LEFT JOIN " . MAIN_DB_PREFIX . "timeclock_records tr ON (
                 tr.fk_user = u.rowid 
@@ -265,12 +270,14 @@ function getMonthlyReports($db, $user, $month, $year, $hierarchical_manager_id =
                 AND DATE(tr.clock_in_time) <= '" . $db->escape($endDate) . "'
                 AND tr.status IN (1, 3)
             )
-            LEFT JOIN " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockovertimepaid otp ON (
-                otp.fk_user = u.rowid 
-                AND otp.month = " . (int)$month . "
-                AND otp.year = " . (int)$year . "
-                AND otp.status = 1
-            )
+            LEFT JOIN (
+                SELECT 
+                    fk_user, 
+                    SUM(hours_paid) as paid_overtime_hours 
+                FROM " . MAIN_DB_PREFIX . "appmobtimetouch_timeclockovertimepaid 
+                WHERE month = " . (int)$month . " AND year = " . (int)$year . " AND status = 1 
+                GROUP BY fk_user
+            ) otp_month ON otp_month.fk_user = u.rowid
             WHERE u.statut = 1";
     
     // Filtre par responsable hiérarchique si spécifié
