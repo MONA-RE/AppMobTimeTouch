@@ -116,6 +116,8 @@ Reports = Reports
 MonthlyReports = Monthly Reports
 MyMonthlyReports = My Monthly Reports
 MyHours = My Hours
+# TK2508-0367 MVP 2: New translation for employee detailed section
+MyDetailedHours = My Detailed Hours
 ReportFilters = Report Filters
 Month = Month
 Year = Year

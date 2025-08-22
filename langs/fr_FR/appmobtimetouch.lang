@@ -158,6 +158,8 @@ Reports = Rapports
 MonthlyReports = Rapports mensuels
 MyMonthlyReports = Mes rapports mensuels
 MyHours = Mes heures
+# TK2508-0367 MVP 2: Nouvelle traduction pour section détaillée employé
+MyDetailedHours = Mes heures détaillées
 ReportFilters = Filtres de rapport
 Month = Mois
 Year = Année

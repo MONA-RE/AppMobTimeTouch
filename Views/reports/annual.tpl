@@ -255,21 +255,29 @@
 </div>
 
 <!-- Liste des utilisateurs et leurs heures annuelles -->
-<?php if (!empty($annual_reports) && !$is_personal_view): ?>
+<!-- TK2508-0367 MVP 3: Les employés peuvent maintenant voir cette section avec leurs propres données -->
+<?php if (!empty($annual_reports) && $show_user_list): ?>
 <div style="padding: 0 15px 15px 15px;">
   <ons-card>
     <div class="title" style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
       <h4 style="margin: 0; color: #495057;">
+        <?php if ($is_personal_view): ?>
+        <ons-icon icon="md-person" style="color: #6c757d; margin-right: 8px;"></ons-icon>
+        <?php echo $user_list_title; ?>
+        <?php else: ?>
         <ons-icon icon="md-people" style="color: #6c757d; margin-right: 8px;"></ons-icon>
-        <?php echo $langs->trans('UsersAnnualHours'); ?> (<?php echo count($annual_reports); ?>)
+        <?php echo $user_list_title; ?> (<?php echo count($annual_reports); ?>)
+        <?php endif; ?>
       </h4>
     </div>
     
     <!-- En-tête du tableau -->
     <div style="display: flex; padding: 10px 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; font-weight: 500; font-size: 12px;">
+      <?php if (!$is_personal_view): ?>
       <div style="flex: 2; color: #495057;">
         <?php echo $langs->trans('User'); ?>
       </div>
+      <?php endif; ?>
       <div style="flex: 1; text-align: center; color: #495057;">
         <?php echo $langs->trans('Records'); ?>
       </div>
@@ -300,6 +308,7 @@
     <!-- Lignes des utilisateurs -->
     <?php foreach ($annual_reports as $index => $report): ?>
     <div class="user-row" style="display: flex; padding: 12px 15px; border-bottom: 1px solid #f0f0f0; align-items: center;">
+      <?php if (!$is_personal_view): ?>
       <!-- Nom utilisateur -->
       <div style="flex: 2;">
         <div style="font-weight: 500; margin-bottom: 3px;">
@@ -309,6 +318,7 @@
           <?php echo dol_escape_htmltag($report['login']); ?>
         </div>
       </div>
+      <?php endif; ?>
       
       <!-- Nombre d'enregistrements -->
       <div style="flex: 1; text-align: center;">

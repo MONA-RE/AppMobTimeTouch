@@ -81,6 +81,13 @@ try {
         }
     }
     
+    // TK2508-0367 MVP 1: Contrôle d'affichage de la section "Liste des utilisateurs"
+    // Les employés peuvent maintenant voir leurs propres données dans cette section
+    $show_user_list = true; // Toujours afficher la section utilisateurs
+    
+    // Définir le titre de la section selon le profil utilisateur
+    $user_list_title = $is_personal_view ? $langs->trans('MyDetailedHours') : $langs->trans('UsersHours');
+    
     // Récupérer le statut de pointage pour la toolbar (comme index.php)
     $is_clocked_in = getUserClockStatus($db, $user);
     
@@ -107,7 +114,10 @@ try {
         'user_list' => $user_list,
         'page_title' => $page_title,
         'is_personal_view' => $is_personal_view,
-        'is_clocked_in' => $is_clocked_in
+        'is_clocked_in' => $is_clocked_in,
+        // TK2508-0367 MVP 1: Nouvelles variables pour contrôler l'affichage utilisateurs
+        'show_user_list' => $show_user_list,
+        'user_list_title' => $user_list_title
     ];
     
 } catch (Exception $e) {
@@ -402,11 +412,17 @@ $search_hierarchical_manager = $data['search_hierarchical_manager'] ?? $user->id
 $user_list = $data['user_list'] ?? [];
 $is_personal_view = $data['is_personal_view'] ?? false;
 $is_clocked_in = $data['is_clocked_in'] ?? false;
+// TK2508-0367 MVP 1: Extraction des nouvelles variables
+$show_user_list = $data['show_user_list'] ?? true;
+$user_list_title = $data['user_list_title'] ?? $langs->trans('UsersHours');
 
 // Debug des variables template
 dol_syslog("DEBUG Template Variables: search_hierarchical_manager=" . $search_hierarchical_manager, LOG_DEBUG);
 dol_syslog("DEBUG Template Variables: user_list count=" . count($user_list), LOG_DEBUG);
 dol_syslog("DEBUG Template Variables: is_personal_view=" . ($is_personal_view ? 'true' : 'false'), LOG_DEBUG);
+// TK2508-0367 MVP 1: Debug nouvelles variables
+dol_syslog("DEBUG Template Variables: show_user_list=" . ($show_user_list ? 'true' : 'false'), LOG_DEBUG);
+dol_syslog("DEBUG Template Variables: user_list_title=" . $user_list_title, LOG_DEBUG);
 
 // Variables pour compatibilité rightmenu.tpl selon INDEX_HOME_COMPATIBILITY.md
 $pending_validation_count = 0; // Pas utilisé dans reports mais requis pour rightmenu.tpl

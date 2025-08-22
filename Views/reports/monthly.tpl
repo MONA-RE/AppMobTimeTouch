@@ -243,17 +243,18 @@
 </div>
 
 <!-- Liste des utilisateurs et leurs heures -->
-<?php if (!empty($monthly_reports) && !$is_personal_view): ?>
+<!-- TK2508-0367 MVP 2: Les employés peuvent maintenant voir cette section avec leurs propres données -->
+<?php if (!empty($monthly_reports) && $show_user_list): ?>
 <div style="padding: 0 15px 15px 15px;">
   <ons-card>
     <div class="title" style="padding: 15px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
       <h4 style="margin: 0; color: #495057;">
         <?php if ($is_personal_view): ?>
         <ons-icon icon="md-person" style="color: #6c757d; margin-right: 8px;"></ons-icon>
-        <?php echo $langs->trans('MyHours'); ?>
+        <?php echo $user_list_title; ?>
         <?php else: ?>
         <ons-icon icon="md-people" style="color: #6c757d; margin-right: 8px;"></ons-icon>
-        <?php echo $langs->trans('UsersHours'); ?> (<?php echo count($monthly_reports); ?>)
+        <?php echo $user_list_title; ?> (<?php echo count($monthly_reports); ?>)
         <?php endif; ?>
       </h4>
     </div>
