@@ -286,9 +286,6 @@
       <div style="flex: 1; text-align: center; color: #495057;">
         <?php echo $langs->trans('RemainingOvertime'); ?>
       </div>
-      <div style="flex: 1; text-align: center; color: #495057;">
-        <?php echo $langs->trans('Status'); ?>
-      </div>
     </div>
     
     <!-- Lignes des utilisateurs -->
@@ -385,25 +382,6 @@
           <ons-icon icon="<?php echo $remaining_icon; ?>" style="font-size: 10px; margin-right: 2px;"></ons-icon>
           <?php echo ($remaining >= 0 ? '+' : '') . number_format($remaining, 1); ?>h
         </div>
-      </div>
-      
-      <!-- Statut -->
-      <div style="flex: 1; text-align: center;">
-        <?php if ($report['total_hours'] == 0): ?>
-          <span style="background-color: #f8f9fa; color: #6c757d; padding: 3px 8px; border-radius: 12px; font-size: 11px;">
-            <?php echo $langs->trans('NoActivity'); ?>
-          </span>
-        <?php elseif ($report['incomplete_records'] > 0): ?>
-          <span style="background-color: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 12px; font-size: 11px;">
-            <ons-icon icon="md-warning" style="font-size: 10px;"></ons-icon>
-            <?php echo $langs->trans('Incomplete'); ?>
-          </span>
-        <?php else: ?>
-          <span style="background-color: #d4edda; color: #155724; padding: 3px 8px; border-radius: 12px; font-size: 11px;">
-            <ons-icon icon="md-check" style="font-size: 10px;"></ons-icon>
-            <?php echo $langs->trans('Complete'); ?>
-          </span>
-        <?php endif; ?>
       </div>
     </div>
     <?php endforeach; ?>
